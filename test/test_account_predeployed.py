@@ -6,7 +6,7 @@ from starkware.starknet.core.os.class_hash import compute_class_hash
 
 from starknet_devnet.chargeable_account import ChargeableAccount
 from starknet_devnet.contract_class_wrapper import (
-    DEFAULT_ACCOUNT_HASH_BYTES,
+    DEFAULT_ACCOUNT_CLASS_HASH,
     DEFAULT_ACCOUNT_PATH,
 )
 
@@ -32,7 +32,7 @@ def test_precomputed_account_hash():
 
     contract_class = load_contract_class(DEFAULT_ACCOUNT_PATH)
     recalculated_hash = compute_class_hash(contract_class=contract_class)
-    assert_equal(recalculated_hash, int.from_bytes(DEFAULT_ACCOUNT_HASH_BYTES, "big"))
+    assert_equal(recalculated_hash, DEFAULT_ACCOUNT_CLASS_HASH)
 
 
 @pytest.mark.account_predeployed

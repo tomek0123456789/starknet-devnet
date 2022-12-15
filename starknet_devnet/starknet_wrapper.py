@@ -58,7 +58,7 @@ from .block_info_generator import BlockInfoGenerator
 from .blocks import DevnetBlocks
 from .blueprints.rpc.structures.types import Felt
 from .chargeable_account import ChargeableAccount
-from .constants import DUMMY_STATE_ROOT, OZ_ACCOUNT_CLASS_HASH
+from .constants import DUMMY_STATE_ROOT, STARKNET_CLI_ACCOUNT_CLASS_HASH
 from .devnet_config import DevnetConfig
 from .fee_token import FeeToken
 from .forked_state import get_forked_starknet
@@ -702,7 +702,7 @@ class StarknetWrapper:
     async def __predeclare_oz_account(self):
         """Predeclares the account class used by Starknet CLI"""
         await self.get_state().state.set_contract_class(
-            to_bytes(OZ_ACCOUNT_CLASS_HASH), oz_account_class
+            to_bytes(STARKNET_CLI_ACCOUNT_CLASS_HASH), oz_account_class
         )
 
     async def __deploy_chargeable_account(self):

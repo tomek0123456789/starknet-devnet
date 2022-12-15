@@ -11,16 +11,13 @@ import time
 from typing import IO, List
 
 import requests
-from starkware.starknet.cli.starknet_cli import get_salt
 from starkware.starknet.definitions.error_codes import StarknetErrorCode
 from starkware.starknet.definitions.transaction_type import TransactionType
 from starkware.starknet.services.api.contract_class import ContractClass
-from starkware.starknet.services.api.gateway.transaction import Deploy
 
 from starknet_devnet.general_config import DEFAULT_GENERAL_CONFIG
 
 from .settings import APP_URL, HOST, PORT
-from .shared import SUPPORTED_TX_VERSION
 
 
 class ReturnCodeAssertionError(AssertionError):
@@ -123,7 +120,7 @@ def assert_equal(actual, expected, explanation=None):
 
 def assert_hex_equal(actual, expected):
     """Assert that two hex strings are equal when converted to ints"""
-    assert int(actual, 16) == int(expected, 16)
+    assert hex(int(actual, 16)) == hex(int(expected, 16))
 
 
 def extract(regex, stdout):
@@ -179,26 +176,6 @@ def send_tx(transaction: dict, tx_type: TransactionType, gateway_url=APP_URL) ->
     )
     assert resp.status_code == 200
     return resp.json()
-
-
-def deploy(contract, inputs=None, salt=None, gateway_url=APP_URL):
-    """Wrapper around starknet deploy"""
-
-    inputs = inputs or []
-
-    deploy_tx = Deploy(
-        contract_address_salt=get_salt(salt),
-        contract_definition=load_contract_class(contract),
-        constructor_calldata=[int(value, 0) for value in inputs],
-        version=SUPPORTED_TX_VERSION,
-    ).dump()
-
-    resp = send_tx(deploy_tx, TransactionType.DEPLOY, gateway_url)
-
-    return {
-        "tx_hash": resp["transaction_hash"],
-        "address": resp["address"],
-    }
 
 
 def estimate_message_fee(
@@ -615,6 +592,7 @@ def assert_salty_deploy(
 ):
     """Deploy with salt and assert."""
 
+    # TODO
     deploy_info = deploy(contract_path, inputs=inputs, salt=salt)
     assert_tx_status(deploy_info["tx_hash"], expected_status)
     assert_equal(
@@ -624,6 +602,7 @@ def assert_salty_deploy(
 
 def assert_failing_deploy(contract_path):
     """Run deployment for a contract that's expected to be rejected."""
+    # TODO
     deploy_info = deploy(contract_path)
     assert_tx_status(deploy_info["tx_hash"], "REJECTED")
     assert_transaction(deploy_info["tx_hash"], "REJECTED")
