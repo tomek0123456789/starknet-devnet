@@ -6,11 +6,11 @@ Latest changes based on https://github.com/OpenZeppelin/nile/pull/184
 from typing import List, Tuple
 
 import requests
+from starkware.crypto.signature.signature import private_to_stark_key, sign
 from starkware.starknet.cli.starknet_cli import get_salt
 from starkware.starknet.core.os.contract_address.contract_address import (
     calculate_contract_address_from_hash,
 )
-from starkware.crypto.signature.signature import private_to_stark_key, sign
 from starkware.starknet.core.os.transaction_hash.transaction_hash import (
     calculate_declare_transaction_hash,
     calculate_deploy_account_transaction_hash,
@@ -21,8 +21,8 @@ from starkware.starknet.definitions.general_config import StarknetChainId
 from starknet_devnet.account_util import AccountCall, get_execute_args
 from starkware.starknet.definitions.constants import QUERY_VERSION
 from starkware.starknet.definitions.general_config import (
-    StarknetChainId,
     DEFAULT_CHAIN_ID,
+    StarknetChainId,
 )
 from starkware.starknet.definitions.transaction_type import TransactionType
 from starkware.starknet.public.abi import get_selector_from_name
@@ -31,17 +31,13 @@ from starkware.starknet.services.api.gateway.transaction import DeployAccount
 from starknet_devnet.contract_class_wrapper import DEFAULT_ACCOUNT_CLASS_HASH
 
 from .settings import APP_URL
-from .shared import (
-    EXPECTED_UDC_ADDRESS,
-    PREDEPLOYED_ACCOUNT_ADDRESS,
-    PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
-    SUPPORTED_TX_VERSION,
-)
+from .shared import EXPECTED_UDC_ADDRESS, SUPPORTED_TX_VERSION
 from .util import (
     assert_hex_equal,
     estimate_fee,
     extract_class_hash,
     extract_tx_hash,
+    get_transaction_receipt,
     load_contract_class,
     run_starknet,
     send_tx,
@@ -53,9 +49,6 @@ ACCOUNT_VERSION = "0.5.1"
 
 ACCOUNT_PATH = f"{ACCOUNT_ARTIFACTS_PATH}/{ACCOUNT_AUTHOR}/{ACCOUNT_VERSION}/Account.cairo/Account.json"
 ACCOUNT_ABI_PATH = f"{ACCOUNT_ARTIFACTS_PATH}/{ACCOUNT_AUTHOR}/{ACCOUNT_VERSION}/Account.cairo/Account_abi.json"
-
-PRIVATE_KEY = 123456789987654321
-PUBLIC_KEY = private_to_stark_key(PRIVATE_KEY)
 
 
 def get_nonce(account_address: str, feeder_gateway_url=APP_URL) -> int:
@@ -204,9 +197,10 @@ def invoke(
 def declare(
     contract_path: str,
     account_address: str,
-    private_key: str,
+    private_key: int,
     nonce: int = None,
     max_fee: int = 0,
+    gateway_url=APP_URL,
 ):
     """Wrapper around starknet declare"""
 
@@ -234,7 +228,8 @@ def declare(
             account_address,
             "--max_fee",
             str(max_fee),
-        ]
+        ],
+        gateway_url=gateway_url,
     )
     return {
         "tx_hash": extract_tx_hash(output.stdout),
@@ -242,26 +237,19 @@ def declare(
     }
 
 
-def declare_and_deploy(
-    contract: str,
+def deploy(
+    class_hash: str,
     account_address: str,
-    private_key: str,
+    private_key: int,
     inputs=None,
     salt=None,
+    unique=False,
     gateway_url=APP_URL,
 ):
     """Wrapper around starknet deploy"""
 
     ctor_args = inputs or []
     salt = get_salt(salt)
-
-    # first need to declare
-    declare_info = declare(
-        contract_path=contract,
-        account_address=account_address,
-        private_key=private_key,
-    )
-    class_hash = declare_info["class_hash"]
 
     invoke_tx_hash = invoke(
         calls=[
@@ -271,23 +259,33 @@ def declare_and_deploy(
                 [
                     int(class_hash, 16),
                     salt,
-                    0,  # unique
+                    int(unique),
                     len(ctor_args),
                     *ctor_args,
                 ],
             )
         ],
-        account_address=PREDEPLOYED_ACCOUNT_ADDRESS,
-        private_key=PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
+        account_address=account_address,
+        private_key=private_key,
         gateway_url=gateway_url,
     )
 
+    tx_receipt = get_transaction_receipt(invoke_tx_hash, feeder_gateway_url=gateway_url)
+    # there can be multiple events, e.g. from fee_token, but the first one is ours
+    event = tx_receipt["events"][0]
+    # look at the ABI for reference, 0 is the index of the address in the event
+    contract_address_from_event = event["data"][0]
+
     contract_address = calculate_contract_address_from_hash(
         salt=salt,
-        class_hash=class_hash,
+        class_hash=int(class_hash, 16),
         constructor_calldata=ctor_args,
-        deployer_address=account_address,
+        deployer_address=0 if not unique else int(account_address, 16),
     )
+    contract_address = hex(contract_address)
+
+    assert_hex_equal(contract_address_from_event, contract_address)
+    assert contract_address == contract_address_from_event
 
     return {
         "tx_hash": invoke_tx_hash,
@@ -295,12 +293,42 @@ def declare_and_deploy(
     }
 
 
-def deploy_account_contract(salt=None):
-    """Deploy account contract."""
-    # using pre-created key pair
+def declare_and_deploy(
+    contract: str,
+    account_address: str,
+    private_key: int,
+    inputs=None,
+    salt=None,
+    gateway_url=APP_URL,
+):
+    """Declare a class and deploy its instance using the provided account"""
 
-    class_hash = DEFAULT_ACCOUNT_CLASS_HASH
-    constructor_calldata = [PUBLIC_KEY]
+    declare_info = declare(
+        contract_path=contract,
+        account_address=account_address,
+        private_key=private_key,
+        gateway_url=gateway_url,
+    )
+    class_hash = declare_info["class_hash"]
+
+    return deploy(
+        class_hash=class_hash,
+        account_address=account_address,
+        private_key=private_key,
+        inputs=inputs,
+        salt=salt,
+        gateway_url=gateway_url,
+    )
+
+
+def deploy_account_contract(
+    private_key: int,
+    class_hash=DEFAULT_ACCOUNT_CLASS_HASH,
+    salt=None,
+):
+    """Deploy account contract. Defaults to using a pre-created key."""
+
+    constructor_calldata = [private_to_stark_key(private_key)]
     salt = get_salt(salt)
     account_address = calculate_contract_address_from_hash(
         salt=salt,
@@ -326,7 +354,7 @@ def deploy_account_contract(salt=None):
     deploy_tx = DeployAccount(
         version=version,
         max_fee=max_fee,
-        signature=[int(s) for s in _get_signature(tx_hash, PRIVATE_KEY)],
+        signature=[int(s) for s in _get_signature(tx_hash, private_key)],
         nonce=nonce,
         class_hash=class_hash,
         contract_address_salt=salt,

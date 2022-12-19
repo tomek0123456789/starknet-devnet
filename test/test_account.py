@@ -4,11 +4,10 @@ Test account functionality.
 
 import pytest
 import requests
+from starkware.crypto.signature.signature import private_to_stark_key
 
 from .account import (
     ACCOUNT_ABI_PATH,
-    PRIVATE_KEY,
-    PUBLIC_KEY,
     declare_and_deploy,
     deploy_account_contract,
     get_estimated_fee,
@@ -52,15 +51,34 @@ ACCOUNTS_SEED_DEVNET_ARGS = [
     "1_000_000_000_000_000_000_000",
 ]
 
-
-def deploy_empty_contract():
-    """Deploy sample contract with balance = 0."""
-    return declare_and_deploy(CONTRACT_PATH, inputs=["0"], salt=SALT)
+PRIVATE_KEY = 123456789987654321
+PUBLIC_KEY = private_to_stark_key(PRIVATE_KEY)
 
 
-def deploy_events_contract():
+def deploy_empty_contract(account_address: str, private_key: int):
+    """
+    Deploy sample contract with balance = 0.
+    This function expects to be called when running devnet in background with the usual seed
+    """
+    deploy_info = declare_and_deploy(
+        contract=CONTRACT_PATH,
+        account_address=account_address,
+        private_key=private_key,
+        inputs=[0],
+        salt=SALT,
+    )
+    assert_tx_status(deploy_info["tx_hash"], "ACCEPTED_ON_L2")
+    return deploy_info
+
+
+def deploy_events_contract(account_address: str, private_key: int):
     """Deploy events contract with salt of 0x99."""
-    return declare_and_deploy(EVENTS_CONTRACT_PATH, salt=SALT)
+    return declare_and_deploy(
+        contract=EVENTS_CONTRACT_PATH,
+        account_address=account_address,
+        private_key=private_key,
+        salt=SALT,
+    )
 
 
 def get_account_balance(address: str, server_url=APP_URL) -> int:
@@ -71,10 +89,10 @@ def get_account_balance(address: str, server_url=APP_URL) -> int:
 
 
 @pytest.mark.account
-@devnet_in_background()
+@devnet_in_background(*ACCOUNTS_SEED_DEVNET_ARGS)
 def test_account_contract_deploy():
     """Test account contract deploy, public key and initial nonce value."""
-    account_deploy_info = deploy_account_contract(salt=SALT)
+    account_deploy_info = deploy_account_contract(private_key=PRIVATE_KEY, salt=SALT)
     account_address = account_deploy_info["address"]
     assert_hex_equal(account_address, SALTY_ACCOUNT_ADDRESS)
 
@@ -82,39 +100,53 @@ def test_account_contract_deploy():
     assert int(deployed_public_key, 16) == PUBLIC_KEY
 
     nonce = get_nonce(account_address)
-    assert nonce == 1 # TODO check if expected 0 or 1
+    assert nonce == 1  # tested on alpha-goerli2 - nonce is 1 just after deployment
 
 
 @pytest.mark.account
-@devnet_in_background()
+@devnet_in_background(*ACCOUNTS_SEED_DEVNET_ARGS)
 def test_invoking_another_contract():
     """Test invoking another contract through a newly deployed (not predeployed) account."""
-    deploy_info = deploy_empty_contract()
-    account_address = deploy_account_contract(salt=SALT)["address"]
+    # deploy the non-account contract
+    deploy_info = deploy_empty_contract(
+        account_address=PREDEPLOYED_ACCOUNT_ADDRESS,
+        private_key=PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
+    )
     to_address = deploy_info["address"]
+
+    deploy_account_info = deploy_account_contract(private_key=PRIVATE_KEY, salt=SALT)
+    assert_tx_status(deploy_account_info["tx_hash"], "ACCEPTED_ON_L2")
+    account_address = deploy_account_info["address"]
 
     # execute increase_balance call
     calls = [(to_address, "increase_balance", [10, 20])]
     # setting max_fee=0 skips fee subtraction, otherwise account would need funds
-    tx_hash = invoke(calls, account_address, PRIVATE_KEY, 0, max_fee=0)
+    tx_hash = invoke(calls, account_address, PRIVATE_KEY, nonce=1, max_fee=0)
 
     assert_tx_status(tx_hash, "ACCEPTED_ON_L2")
 
     # check if nonce is increased
     nonce = get_nonce(account_address)
-    assert nonce == 1
+    assert nonce == 2
 
     # check if balance is increased
     balance = call("get_balance", to_address, ABI_PATH, [])
     assert balance == "30"
 
 
+# TODO add test which will cover how the new account deploys a contract (if this doesn't already exist)
+
+
 @pytest.mark.account
-@devnet_in_background()
+@devnet_in_background(*ACCOUNTS_SEED_DEVNET_ARGS)
 def test_estimated_fee():
     """Test estimate fees."""
-    deploy_info = deploy_empty_contract()
-    account_address = deploy_account_contract(salt=SALT)["address"]
+    deploy_info = deploy_empty_contract(
+        account_address=PREDEPLOYED_ACCOUNT_ADDRESS,
+        private_key=PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
+    )
+    deploy_account_info = deploy_account_contract(private_key=PRIVATE_KEY, salt=SALT)
+    account_address = deploy_account_info["address"]
 
     initial_balance = call("get_balance", deploy_info["address"], abi_path=ABI_PATH)
 
@@ -132,11 +164,15 @@ def test_estimated_fee():
 
 
 @pytest.mark.account
-@devnet_in_background()
+@devnet_in_background(*ACCOUNTS_SEED_DEVNET_ARGS)
 def test_low_max_fee():
     """Test if transaction is rejected with low max fee"""
-    deploy_info = deploy_empty_contract()
-    account_address = deploy_account_contract(salt=SALT)["address"]
+    deploy_info = deploy_empty_contract(
+        account_address=PREDEPLOYED_ACCOUNT_ADDRESS,
+        private_key=PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
+    )
+    deploy_account_info = deploy_account_contract(private_key=PRIVATE_KEY, salt=SALT)
+    account_address = deploy_account_info["address"]
 
     initial_balance = call("get_balance", deploy_info["address"], abi_path=ABI_PATH)
 
@@ -158,7 +194,10 @@ def test_low_max_fee():
 @devnet_in_background(*ACCOUNTS_SEED_DEVNET_ARGS)
 def test_sufficient_max_fee():
     """Test invoking with a sufficient max fee."""
-    deploy_info = deploy_empty_contract()
+    deploy_info = deploy_empty_contract(
+        account_address=PREDEPLOYED_ACCOUNT_ADDRESS,
+        private_key=PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
+    )
     account_address = PREDEPLOYED_ACCOUNT_ADDRESS
     private_key = PREDEPLOYED_ACCOUNT_PRIVATE_KEY
     initial_account_balance = get_account_balance(account_address)
@@ -197,7 +236,10 @@ def test_sufficient_max_fee():
 )
 def test_insufficient_balance():
     """Test handling of insufficient account balance"""
-    deploy_info = deploy_empty_contract()
+    deploy_info = deploy_empty_contract(
+        account_address=PREDEPLOYED_ACCOUNT_ADDRESS,
+        private_key=PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
+    )
     account_address = PREDEPLOYED_ACCOUNT_ADDRESS
     private_key = PREDEPLOYED_ACCOUNT_PRIVATE_KEY
     initial_account_balance = get_account_balance(account_address)
@@ -229,11 +271,15 @@ def test_insufficient_balance():
 
 
 @pytest.mark.account
-@devnet_in_background()
+@devnet_in_background(*ACCOUNTS_SEED_DEVNET_ARGS)
 def test_multicall():
     """Test making multiple calls."""
-    deploy_info = deploy_empty_contract()
-    account_address = deploy_account_contract(salt=SALT)["address"]
+    deploy_info = deploy_empty_contract(
+        account_address=PREDEPLOYED_ACCOUNT_ADDRESS,
+        private_key=PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
+    )
+    deploy_account_info = deploy_account_contract(private_key=PRIVATE_KEY, salt=SALT)
+    account_address = deploy_account_info["address"]
     to_address = deploy_info["address"]
 
     # execute increase_balance calls
@@ -248,7 +294,7 @@ def test_multicall():
 
     # check if nonce is increased
     nonce = get_nonce(account_address)
-    assert nonce == 1
+    assert nonce == 2
 
     # check if balance is increased
     balance = call("get_balance", deploy_info["address"], abi_path=ABI_PATH)
@@ -259,7 +305,11 @@ def test_multicall():
 @devnet_in_background(*ACCOUNTS_SEED_DEVNET_ARGS)
 def test_events():
     """Test transaction receipt events"""
-    deploy_info = deploy_events_contract()
+    deploy_info = deploy_events_contract(
+        account_address=PREDEPLOYED_ACCOUNT_ADDRESS,
+        private_key=PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
+    )
+
     account_address = PREDEPLOYED_ACCOUNT_ADDRESS
     private_key = PREDEPLOYED_ACCOUNT_PRIVATE_KEY
 
@@ -287,7 +337,10 @@ def test_get_nonce_endpoint():
     assert initial_resp.status_code == 200
     assert initial_resp.json() == "0x0"
 
-    deployment_info = deploy_empty_contract()
+    deployment_info = deploy_empty_contract(
+        account_address=PREDEPLOYED_ACCOUNT_ADDRESS,
+        private_key=PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
+    )
 
     invoke_tx_hash = invoke(
         calls=[(deployment_info["address"], "increase_balance", [10, 20])],

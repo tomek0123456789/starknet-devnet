@@ -592,7 +592,7 @@ def assert_salty_deploy(
 ):
     """Deploy with salt and assert."""
 
-    # TODO
+    # TODO probably best to remove these functions
     deploy_info = deploy(contract_path, inputs=inputs, salt=salt)
     assert_tx_status(deploy_info["tx_hash"], expected_status)
     assert_equal(

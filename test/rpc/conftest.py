@@ -5,7 +5,6 @@ Fixtures for RPC tests
 from __future__ import annotations
 
 import json
-from test.account import PRIVATE_KEY, PUBLIC_KEY
 from test.rpc.rpc_utils import (
     add_transaction,
     gateway_call,
@@ -17,6 +16,7 @@ from test.util import load_file_content, mint
 from typing import Tuple, cast
 
 import pytest
+from starkware.crypto.signature.signature import private_to_stark_key
 from starkware.starknet.business_logic.transaction.objects import InternalDeployAccount
 from starkware.starknet.core.os.class_hash import compute_class_hash
 from starkware.starknet.definitions.general_config import DEFAULT_CHAIN_ID
@@ -50,6 +50,9 @@ from starknet_devnet.general_config import DEFAULT_GENERAL_CONFIG
 DEPLOY_CONTENT = load_file_content("deploy_rpc.json")
 INVOKE_CONTENT = load_file_content("invoke_rpc.json")
 DECLARE_CONTENT = load_file_content("declare_rpc.json")
+
+PRIVATE_KEY = 123456789987654321
+PUBLIC_KEY = private_to_stark_key(PRIVATE_KEY)
 
 
 @pytest.fixture(name="contract_class")
