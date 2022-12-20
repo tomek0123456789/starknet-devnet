@@ -27,6 +27,9 @@ from starkware.starknet.definitions.general_config import (
 from starkware.starknet.definitions.transaction_type import TransactionType
 from starkware.starknet.public.abi import get_selector_from_name
 from starkware.starknet.services.api.gateway.transaction import DeployAccount
+from starkware.starknet.services.api.feeder_gateway.response_objects import (
+    TransactionStatus,
+)
 
 from starknet_devnet.contract_class_wrapper import DEFAULT_ACCOUNT_CLASS_HASH
 
@@ -270,12 +273,6 @@ def deploy(
         gateway_url=gateway_url,
     )
 
-    tx_receipt = get_transaction_receipt(invoke_tx_hash, feeder_gateway_url=gateway_url)
-    # there can be multiple events, e.g. from fee_token, but the first one is ours
-    event = tx_receipt["events"][0]
-    # look at the ABI for reference, 0 is the index of the address in the event
-    contract_address_from_event = event["data"][0]
-
     contract_address = calculate_contract_address_from_hash(
         salt=salt,
         class_hash=int(class_hash, 16),
@@ -284,8 +281,14 @@ def deploy(
     )
     contract_address = hex(contract_address)
 
-    assert_hex_equal(contract_address_from_event, contract_address)
-    assert contract_address == contract_address_from_event
+    # TODO no receipt if failed tx - instead of checking here, let's have a test for this - maybe we already do
+    # tx_receipt = get_transaction_receipt(invoke_tx_hash, feeder_gateway_url=gateway_url)
+    # assert tx_receipt["status"] == TransactionStatus.ACCEPTED_ON_L2.name, tx_receipt
+    # # there can be multiple events, e.g. from fee_token, but the first one is ours
+    # event = tx_receipt["events"][0]
+    # # look at the ABI for reference, 0 is the index of the address in the event
+    # contract_address_from_event = event["data"][0]
+    # assert_hex_equal(contract_address_from_event, contract_address)
 
     return {
         "tx_hash": invoke_tx_hash,

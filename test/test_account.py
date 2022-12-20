@@ -226,6 +226,15 @@ def test_sufficient_max_fee():
     assert_equal(final_account_balance, initial_account_balance - actual_fee)
 
 
+def _assert_subtraction_overflow(tx_hash: str):
+    assert_tx_status(tx_hash, "REJECTED")
+    invoke_receipt = get_transaction_receipt(tx_hash)
+    assert (
+        "subtraction overflow"
+        in invoke_receipt["transaction_failure_reason"]["error_message"]
+    )
+
+
 @pytest.mark.account
 @devnet_in_background(
     *PREDEPLOY_ACCOUNT_CLI_ARGS,
@@ -236,6 +245,7 @@ def test_sufficient_max_fee():
 )
 def test_insufficient_balance():
     """Test handling of insufficient account balance"""
+    # TODO - separate this into two tests?
     deploy_info = deploy_empty_contract(
         account_address=PREDEPLOYED_ACCOUNT_ADDRESS,
         private_key=PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
@@ -252,14 +262,9 @@ def test_insufficient_balance():
     calls = [(deploy_info["address"], "increase_balance", args)]
     invoke_tx_hash = invoke(
         calls, account_address, private_key, max_fee=10**21
-    )  # big enough
+    )  # big enough to fail
 
-    assert_tx_status(invoke_tx_hash, "REJECTED")
-    invoke_receipt = get_transaction_receipt(invoke_tx_hash)
-    assert (
-        "subtraction overflow"
-        in invoke_receipt["transaction_failure_reason"]["error_message"]
-    )
+    _assert_subtraction_overflow(invoke_tx_hash)
 
     final_contract_balance = call(
         "get_balance", deploy_info["address"], abi_path=ABI_PATH
@@ -342,6 +347,10 @@ def test_get_nonce_endpoint():
         private_key=PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
     )
 
+    final_resp = get_nonce_with_request(address=account_address)
+    assert final_resp.status_code == 200
+    assert final_resp.json() == "0x2"  # declare and deploy
+
     invoke_tx_hash = invoke(
         calls=[(deployment_info["address"], "increase_balance", [10, 20])],
         account_address=account_address,
@@ -351,4 +360,4 @@ def test_get_nonce_endpoint():
 
     final_resp = get_nonce_with_request(address=account_address)
     assert final_resp.status_code == 200
-    assert final_resp.json() == "0x1"
+    assert final_resp.json() == "0x3"  # invoke
