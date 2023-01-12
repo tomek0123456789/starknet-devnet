@@ -246,6 +246,7 @@ def _assert_subtraction_overflow(tx_hash: str):
 def test_insufficient_balance():
     """Test handling of insufficient account balance"""
     # TODO - separate this into two tests?
+    # TODO - deploy this using the always present funded account (could be added while resolving #373)
     deploy_info = deploy_empty_contract(
         account_address=PREDEPLOYED_ACCOUNT_ADDRESS,
         private_key=PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
