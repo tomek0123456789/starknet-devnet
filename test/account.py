@@ -16,21 +16,14 @@ from starkware.starknet.core.os.transaction_hash.transaction_hash import (
     calculate_deploy_account_transaction_hash,
 )
 from starkware.starknet.definitions.constants import QUERY_VERSION
-from starkware.starknet.definitions.general_config import StarknetChainId
-
-from starknet_devnet.account_util import AccountCall, get_execute_args
-from starkware.starknet.definitions.constants import QUERY_VERSION
 from starkware.starknet.definitions.general_config import (
     DEFAULT_CHAIN_ID,
     StarknetChainId,
 )
 from starkware.starknet.definitions.transaction_type import TransactionType
-from starkware.starknet.public.abi import get_selector_from_name
 from starkware.starknet.services.api.gateway.transaction import DeployAccount
-from starkware.starknet.services.api.feeder_gateway.response_objects import (
-    TransactionStatus,
-)
 
+from starknet_devnet.account_util import AccountCall, get_execute_args
 from starknet_devnet.contract_class_wrapper import DEFAULT_ACCOUNT_CLASS_HASH
 
 from .settings import APP_URL
@@ -40,7 +33,6 @@ from .util import (
     estimate_fee,
     extract_class_hash,
     extract_tx_hash,
-    get_transaction_receipt,
     load_contract_class,
     run_starknet,
     send_tx,
