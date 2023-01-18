@@ -6,10 +6,10 @@ import pytest
 import requests
 from starkware.crypto.signature.signature import private_to_stark_key
 
-from starknet_devnet.chargeable_account import ChargeableAccount
 from .account import (
     ACCOUNT_ABI_PATH,
     declare_and_deploy,
+    declare_and_deploy_with_chargeable,
     deploy_account_contract,
     get_estimated_fee,
     get_nonce,
@@ -61,10 +61,8 @@ def deploy_empty_contract():
     Deploy sample contract with balance = 0.
     This function expects to be called when running devnet in background with the usual seed
     """
-    deploy_info = declare_and_deploy(
+    deploy_info = declare_and_deploy_with_chargeable(
         contract=CONTRACT_PATH,
-        account_address=hex(ChargeableAccount.ADDRESS),
-        private_key=ChargeableAccount.PRIVATE_KEY,
         inputs=[0],
         salt=SALT,
     )
@@ -74,10 +72,8 @@ def deploy_empty_contract():
 
 def deploy_events_contract():
     """Deploy events contract with salt of 0x99."""
-    return declare_and_deploy(
+    return declare_and_deploy_with_chargeable(
         contract=EVENTS_CONTRACT_PATH,
-        account_address=hex(ChargeableAccount.ADDRESS),
-        private_key=ChargeableAccount.PRIVATE_KEY,
         salt=SALT,
     )
 
@@ -326,7 +322,7 @@ def test_get_nonce_endpoint():
         contract=CONTRACT_PATH,
         account_address=account_address,
         private_key=PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
-        inputs=[0]
+        inputs=[0],
     )
 
     final_resp = get_nonce_with_request(address=account_address)

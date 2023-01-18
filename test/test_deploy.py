@@ -11,9 +11,6 @@ from starkware.starknet.definitions.general_config import DEFAULT_CHAIN_ID
 from starkware.starknet.definitions.transaction_type import TransactionType
 from starkware.starknet.public.abi import get_selector_from_name
 from starkware.starknet.services.api.contract_class import ContractClass
-from starkware.starknet.services.api.feeder_gateway.response_objects import (
-    TransactionStatus,
-)
 from starkware.starknet.services.api.gateway.transaction import Deploy
 from starkware.starknet.third_party.open_zeppelin.starknet_contracts import (
     account_contract as oz_account_class,
@@ -24,11 +21,13 @@ from starkware.starknet.wallets.open_zeppelin import (
 )
 
 from starknet_devnet.constants import STARKNET_CLI_ACCOUNT_CLASS_HASH
-from starknet_devnet.devnet_config import DevnetConfig, parse_args
-from starknet_devnet.starknet_wrapper import StarknetWrapper
 from starknet_devnet.udc import UDC
 
-from .account import declare, invoke
+from .account import (
+    declare,
+    declare_and_deploy_with_chargeable,
+    invoke,
+)
 from .shared import (
     ABI_PATH,
     CONTRACT_PATH,
@@ -47,7 +46,6 @@ from .util import (
     assert_hex_equal,
     assert_tx_status,
     call,
-    deploy,
     devnet_in_background,
     get_class_hash_at,
     get_transaction_receipt,
@@ -63,6 +61,7 @@ def get_contract_class():
         return ContractClass.loads(contract_class_file.read())
 
 
+# TODO drop this
 def get_deploy_transaction(inputs: List[int], salt=0):
     """Get a Deploy transaction."""
     contract_class = get_contract_class()
@@ -81,52 +80,6 @@ def fixture_starknet_wrapper_args(request):
     Fixture to return values of dev net arguments
     """
     return request.param
-
-
-@pytest.mark.parametrize(
-    "starknet_wrapper_args, expected_block_hash",
-    [
-        (
-            [*PREDEPLOY_ACCOUNT_CLI_ARGS],
-            "",
-        ),
-        (
-            [*PREDEPLOY_ACCOUNT_CLI_ARGS, "--lite-mode"],
-            "0x1",
-        ),
-    ],
-    indirect=True,
-)
-@pytest.mark.asyncio
-async def test_deploy(starknet_wrapper_args, expected_block_hash):
-    """
-    Test the deployment of a contract.
-    """
-    devnet = StarknetWrapper(config=DevnetConfig(parse_args(starknet_wrapper_args)))
-    await devnet.initialize()
-    deploy_transaction = get_deploy_transaction(inputs=[0])
-
-    contract_address, tx_hash = await devnet.deploy(
-        deploy_transaction=deploy_transaction,
-    )
-    expected_contract_address = calculate_contract_address(
-        deployer_address=0,
-        constructor_calldata=deploy_transaction.constructor_calldata,
-        salt=deploy_transaction.contract_address_salt,
-        contract_class=deploy_transaction.contract_definition,
-    )
-
-    assert_hex_equal(
-        hex(tx_hash),
-        "0x29c0f6e2321da26dd143dc772740526416294e9300634ec646cb525c3eb9c5e",
-    )
-    assert contract_address == expected_contract_address
-
-    tx_status = await devnet.transactions.get_transaction_status(hex(tx_hash))
-    assert tx_status["tx_status"] == TransactionStatus.ACCEPTED_ON_L2.name
-
-    if "--lite-mode" in starknet_wrapper_args:
-        assert tx_status["block_hash"] == expected_block_hash
 
 
 def test_predeclared_oz_account():
@@ -184,7 +137,9 @@ def deploy_account_test_body():
 
     # deploy a contract for testing
     init_balance = 10
-    contract_deploy_info = deploy(contract=CONTRACT_PATH, inputs=[str(init_balance)])
+    contract_deploy_info = declare_and_deploy_with_chargeable(
+        contract=CONTRACT_PATH, inputs=[init_balance]
+    )
     contract_address = contract_deploy_info["address"]
 
     # increase balance of test contract
@@ -251,16 +206,16 @@ def test_deploy_through_deployer_constructor():
     assert_class_by_hash(class_hash, CONTRACT_PATH)
 
     # Deploy the deployer - also deploys a contract of the declared class using the deploy syscall
-    initial_balance_in_constructor = "5"
-    deployer_deploy_info = deploy(
+    initial_balance_in_constructor = 5
+    deployer_deploy_info = declare_and_deploy_with_chargeable(
         contract=DEPLOYER_CONTRACT_PATH,
-        inputs=[class_hash, initial_balance_in_constructor],
+        inputs=[int(class_hash, 16), initial_balance_in_constructor],
     )
 
     _assert_deployed_through_syscall(
         tx_hash=deployer_deploy_info["tx_hash"],
         address_index=0,
-        initial_balance=initial_balance_in_constructor,
+        initial_balance=str(initial_balance_in_constructor),
     )
 
 
@@ -283,7 +238,6 @@ def test_deploy_with_udc():
     deploy_with_udc_test_body()
 
 
-# TODO redundant as this is now the default/only way of deploying new contracts
 def deploy_with_udc_test_body():
     """The body of udc deployment test."""
     # Declare the class to be deployed

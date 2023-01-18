@@ -24,6 +24,7 @@ from starkware.starknet.definitions.transaction_type import TransactionType
 from starkware.starknet.services.api.gateway.transaction import DeployAccount
 
 from starknet_devnet.account_util import AccountCall, get_execute_args
+from starknet_devnet.chargeable_account import ChargeableAccount
 from starknet_devnet.contract_class_wrapper import DEFAULT_ACCOUNT_CLASS_HASH
 
 from .settings import APP_URL
@@ -290,7 +291,7 @@ def deploy(
 
 def declare_and_deploy(
     contract: str,
-    account_address: str, # TODO why have address as hex str and private_key as int?
+    account_address: str,  # TODO why have address as hex str and private_key as int?
     private_key: int,
     inputs=None,
     salt=None,
@@ -310,6 +311,23 @@ def declare_and_deploy(
         class_hash=class_hash,
         account_address=account_address,
         private_key=private_key,
+        inputs=inputs,
+        salt=salt,
+        gateway_url=gateway_url,
+    )
+
+
+def declare_and_deploy_with_chargeable(
+    contract: str,
+    inputs=None,
+    salt=None,
+    gateway_url=APP_URL,
+):
+    """Declare a class and deploy its instance using the chargeable account"""
+    return declare_and_deploy(
+        contract=contract,
+        account_address=hex(ChargeableAccount.ADDRESS),
+        private_key=ChargeableAccount.PRIVATE_KEY,
         inputs=inputs,
         salt=salt,
         gateway_url=gateway_url,
