@@ -290,7 +290,7 @@ def deploy(
 
 def declare_and_deploy(
     contract: str,
-    account_address: str,
+    account_address: str, # TODO why have address as hex str and private_key as int?
     private_key: int,
     inputs=None,
     salt=None,
