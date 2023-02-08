@@ -4,7 +4,7 @@ Tests RPC miscellaneous
 
 from __future__ import annotations
 
-from test.account import declare, invoke
+from test.account import declare, declare_and_deploy_with_chargeable, invoke
 from test.rpc.rpc_utils import deploy_and_invoke_storage_contract, rpc_call
 from test.rpc.test_data.get_events import (
     BLOCK_FROM_0_TO_LATEST_MALFORMED_REQUEST,
@@ -22,7 +22,7 @@ from test.shared import (
 )
 from test.test_account import deploy_empty_contract
 from test.test_state_update import get_class_hash_at_path
-from test.util import assert_hex_equal, assert_transaction, deploy
+from test.util import assert_hex_equal, assert_transaction
 
 import pytest
 from starkware.starknet.public.abi import get_storage_var_address
@@ -68,7 +68,7 @@ def test_get_state_update():
 
     # Deploy the deployer - also deploys a contract of the declared class using the deploy syscall
     initial_balance_in_constructor = "5"
-    deployer_deploy_info = deploy(
+    deployer_deploy_info = declare_and_deploy_with_chargeable(
         contract=DEPLOYER_CONTRACT_PATH,
         inputs=[contract_class_hash, initial_balance_in_constructor],
     )
@@ -177,7 +177,7 @@ def test_get_events(input_data, expected_data):
     """
     Test RPC get_events.
     """
-    deploy_info = deploy(EVENTS_CONTRACT_PATH)
+    deploy_info = declare_and_deploy_with_chargeable(EVENTS_CONTRACT_PATH)
     for i in range(2):
         invoke(
             calls=[(deploy_info["address"], "increase_balance", [i])],

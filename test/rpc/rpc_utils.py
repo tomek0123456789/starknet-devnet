@@ -5,14 +5,14 @@ Utilities for RPC tests
 from __future__ import annotations
 
 import re
-from test.account import invoke
+from test.account import declare_and_deploy_with_chargeable, invoke
 from test.settings import APP_URL
 from test.shared import (
     PREDEPLOYED_ACCOUNT_ADDRESS,
     PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
     STORAGE_CONTRACT_PATH,
 )
-from test.util import assert_transaction, deploy
+from test.util import assert_transaction
 from typing import List, Union
 
 import requests
@@ -98,7 +98,7 @@ def deploy_and_invoke_storage_contract(value: int) -> List[str]:
     """
     Deploy and invoke storage contract
     """
-    deploy_dict = deploy(STORAGE_CONTRACT_PATH)
+    deploy_dict = declare_and_deploy_with_chargeable(STORAGE_CONTRACT_PATH)
     contract_address = deploy_dict["address"]
 
     invoke_tx_hash = invoke(

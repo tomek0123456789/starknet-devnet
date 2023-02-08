@@ -240,11 +240,12 @@ def deploy(
     inputs=None,
     salt=None,
     unique=False,
+    max_fee=None,
     gateway_url=APP_URL,
 ):
     """Wrapper around starknet deploy"""
 
-    ctor_args = inputs or []
+    ctor_args = [int(val, 0) for val in inputs or []]
     salt = get_salt(salt)
 
     invoke_tx_hash = invoke(
@@ -263,6 +264,7 @@ def deploy(
         ],
         account_address=account_address,
         private_key=private_key,
+        max_fee=max_fee,
         gateway_url=gateway_url,
     )
 
@@ -295,9 +297,14 @@ def declare_and_deploy(
     private_key: int,
     inputs=None,
     salt=None,
+    max_fee=None,
     gateway_url=APP_URL,
 ):
-    """Declare a class and deploy its instance using the provided account"""
+    """
+    Declare a class and deploy its instance using the provided account.
+    The max_fee only refers to deployment.
+    Returns deploy info.
+    """
 
     declare_info = declare(
         contract_path=contract,
@@ -313,6 +320,7 @@ def declare_and_deploy(
         private_key=private_key,
         inputs=inputs,
         salt=salt,
+        max_fee=max_fee,
         gateway_url=gateway_url,
     )
 
@@ -321,15 +329,21 @@ def declare_and_deploy_with_chargeable(
     contract: str,
     inputs=None,
     salt=None,
+    max_fee=None,
     gateway_url=APP_URL,
 ):
-    """Declare a class and deploy its instance using the chargeable account"""
+    """
+    Declare a class and deploy its instance using the chargeable account.
+    The max_fee only refers to deployment.
+    Returns deploy info.
+    """
     return declare_and_deploy(
         contract=contract,
         account_address=hex(ChargeableAccount.ADDRESS),
         private_key=ChargeableAccount.PRIVATE_KEY,
         inputs=inputs,
         salt=salt,
+        max_fee=max_fee,
         gateway_url=gateway_url,
     )
 

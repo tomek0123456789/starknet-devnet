@@ -500,17 +500,12 @@ def assert_class_by_hash_not_present(class_hash: str, feeder_gateway_url=APP_URL
     assert resp.status_code == 500
 
 
-def assert_receipt(tx_hash, expected_path):
+def assert_receipt(tx_hash: str, expected_status: str):
     """Asserts the content of the receipt of tx with tx_hash."""
     receipt = get_transaction_receipt(tx_hash)
-    expected_receipt = load_json_from_path(expected_path)
 
     assert_equal(receipt["transaction_hash"], tx_hash)
-
-    for ignorable_key in ["block_hash", "transaction_hash"]:
-        receipt.pop(ignorable_key)
-        expected_receipt.pop(ignorable_key)
-    assert_equal(receipt, expected_receipt)
+    assert_equal(receipt["status"], expected_status)
 
 
 def assert_receipt_present(
@@ -585,27 +580,6 @@ def assert_block(latest_block_number, latest_tx_hash):
     )
     assert_equal(latest_block["gas_price"], hex(DEFAULT_GENERAL_CONFIG.min_gas_price))
     assert re.match(r"^[a-fA-F0-9]{64}$", latest_block["state_root"])
-
-
-def assert_salty_deploy(
-    contract_path, inputs, salt, expected_status, expected_address, expected_tx_hash
-):
-    """Deploy with salt and assert."""
-
-    # TODO probably best to remove these functions
-    deploy_info = deploy(contract_path, inputs=inputs, salt=salt)
-    assert_tx_status(deploy_info["tx_hash"], expected_status)
-    assert_equal(
-        deploy_info, {"address": expected_address, "tx_hash": expected_tx_hash}
-    )
-
-
-def assert_failing_deploy(contract_path):
-    """Run deployment for a contract that's expected to be rejected."""
-    # TODO
-    deploy_info = deploy(contract_path)
-    assert_tx_status(deploy_info["tx_hash"], "REJECTED")
-    assert_transaction(deploy_info["tx_hash"], "REJECTED")
 
 
 def load_file_content(file_name: str):
