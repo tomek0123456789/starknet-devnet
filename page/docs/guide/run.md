@@ -25,7 +25,7 @@ optional arguments:
                         Specify the path to dump to
   --dump-on DUMP_ON     Specify when to dump; can dump on: exit, transaction
   --lite-mode           Introduces speed-up by skipping block hash calculation - applies sequential numbering instead (0x0, 0x1, 0x2, ...).
-  --blocks-on-demand    Introduces block generation on demand via /create_block_on_demand endpoint
+  --blocks-on-demand    Introduces block generation on demand via /create_block endpoint
   --accounts ACCOUNTS   Specify the number of accounts to be predeployed; defaults to 10
   --initial-balance INITIAL_BALANCE, -e INITIAL_BALANCE
                         Specify the initial balance of accounts to be predeployed; defaults to 1e+21

@@ -190,14 +190,7 @@ async def mint():
 
 @base.route("/create_block", methods=["POST"])
 async def create_block():
-    """Create empty block"""
-    block = await state.starknet_wrapper.create_empty_block()
-    return Response(block.dumps(), status=200, mimetype="application/json")
-
-
-@base.route("/create_block_on_demand", methods=["POST"])
-async def create_block_on_demand():
-    """Create block on demand"""
+    """Create block with pending transactions."""
     block = await state.starknet_wrapper.generate_latest_block()
 
     return jsonify({"block_hash": hex(block.block_hash)})

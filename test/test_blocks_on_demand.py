@@ -81,8 +81,8 @@ def test_invokable_on_pending_block():
     demand_block_creation()
     assert_tx_status(invoke_hash, "ACCEPTED_ON_L2")
 
-    balance_after_create_block_on_demand = get_contract_balance()
-    assert int(balance_after_create_block_on_demand) == 30
+    balance_after_create_block = get_contract_balance()
+    assert int(balance_after_create_block) == 30
 
     latest_block = get_block(block_number="latest", parse=True)
     block_number_after_block_on_demand_call = latest_block["block_number"]
@@ -118,7 +118,7 @@ def test_calling_works_after_block_creation():
     """
     Test deploy in blocks-on-demand mode for invoke and contract call.
     Balance after invoke should be 0 even when we increased it.
-    Only after calling create_block_on_demand balance should be increased in this mode.
+    Only after calling create_block balance should be increased in this mode.
     """
     # Deploy and invoke
     deploy_info = deploy(CONTRACT_PATH, inputs=["0"])
@@ -144,8 +144,8 @@ def test_calling_works_after_block_creation():
     assert int(balance_after_invoke) == 0
 
     demand_block_creation()
-    balance_after_create_block_on_demand = get_contract_balance()
-    assert int(balance_after_create_block_on_demand) == 30
+    balance_after_create_block = get_contract_balance()
+    assert int(balance_after_create_block) == 30
 
 
 @devnet_in_background(*PREDEPLOY_ACCOUNT_CLI_ARGS, "--blocks-on-demand")
