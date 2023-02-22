@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "starknet_devnet"
-version = "0.4.5"
+version = "0.4.6"
 description = "A local testnet for Starknet"
 authors = ["FabijanC <fabijan.corak@gmail.com>"]
 license = "ISC"
@@ -17,7 +17,7 @@ flask-cors = "~3.0.10"
 cairo-lang = "0.10.3"
 Werkzeug = "~2.0.3"
 cloudpickle = "~2.1.0"
-crypto-cpp-py = "~1.0.4"
+crypto-cpp-py = "~1.2.0"
 marshmallow = "~3.17.0"
 typing-extensions = "~4.3.0"
 gunicorn = "~20.1.0"

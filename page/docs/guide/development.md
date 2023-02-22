@@ -53,6 +53,13 @@ poetry run pytest test/<TEST_FILE> # for a single file
 poetry run pytest test/<TEST_FILE>::<TEST_CASE> # for a single test case
 ```
 
+:::info
+
+If you are experiencing test failures on macOS related to `fork()` command
+consider running `export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES` in your shell.
+
+:::
+
 ## Development - Check versioning consistency
 
 ```
@@ -138,9 +145,10 @@ poetry version
 poetry run starknet-devnet --version
 ```
 
-Add a tag to the version update commit (Notice the `v`):
+Commit and tag (Notice the `v`):
 
 ```
+git add starknet_devnet/__init__.py pyproject.toml
 git commit -m "Bump version to v<VERSION>"
 git tag v<VERSION>
 git push origin v<VERSION>
