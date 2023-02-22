@@ -302,7 +302,8 @@ def test_create_block_endpoint():
     assert resp.get("block_hash") == GENESIS_BLOCK_HASH
     assert resp.get("block_number") == GENESIS_BLOCK_NUMBER
 
-    resp = create_empty_block()
+    create_empty_block()
+    resp = get_block_by_number({"blockNumber": "latest"}).json()
     assert resp.get("block_number") == GENESIS_BLOCK_NUMBER + 1
     assert resp.get("block_hash") == hex(GENESIS_BLOCK_NUMBER + 1)
     assert resp.get("status") == "ACCEPTED_ON_L2"
@@ -313,7 +314,8 @@ def test_create_block_endpoint():
     resp = get_block_by_number({"blockNumber": "latest"}).json()
     assert resp.get("block_number") == GENESIS_BLOCK_NUMBER + 2
 
-    resp = create_empty_block()
+    create_empty_block()
+    resp = get_block_by_number({"blockNumber": "latest"}).json()
     assert resp.get("block_number") == GENESIS_BLOCK_NUMBER + 3
     assert resp.get("block_hash") == hex(GENESIS_BLOCK_NUMBER + 3)
 
