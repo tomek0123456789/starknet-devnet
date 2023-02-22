@@ -23,11 +23,7 @@ from starkware.starknet.wallets.open_zeppelin import (
 from starknet_devnet.constants import STARKNET_CLI_ACCOUNT_CLASS_HASH
 from starknet_devnet.udc import UDC
 
-from .account import (
-    declare,
-    declare_and_deploy_with_chargeable,
-    invoke,
-)
+from .account import declare, declare_and_deploy_with_chargeable, invoke
 from .shared import (
     ABI_PATH,
     CONTRACT_PATH,

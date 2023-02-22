@@ -10,6 +10,7 @@ from starkware.starknet.services.api.feeder_gateway.response_objects import (
 from starkware.starknet.services.api.gateway.transaction import AccountTransaction
 from starkware.starkware_utils.error_handling import StarkException
 
+from starknet_devnet.blueprints.rpc.schema import validate_schema
 from starknet_devnet.blueprints.rpc.structures.payloads import (
     RpcBroadcastedDeclareTxn,
     RpcBroadcastedDeployAccountTxn,
@@ -33,7 +34,8 @@ from starknet_devnet.blueprints.rpc.structures.responses import (
 )
 from starknet_devnet.blueprints.rpc.structures.types import BlockId, RpcError, TxnHash
 from starknet_devnet.blueprints.rpc.utils import (
-    assert_block_id_is_latest_or_pending,
+    assert_block_id_is_valid,
+    gateway_felt,
     get_block_by_block_id,
     rpc_felt,
 )
@@ -41,6 +43,7 @@ from starknet_devnet.state import state
 from starknet_devnet.util import StarknetDevnetException
 
 
+@validate_schema("getTransactionByHash")
 async def get_transaction_by_hash(transaction_hash: TxnHash) -> dict:
     """
     Get the details and status of a submitted transaction
@@ -50,14 +53,15 @@ async def get_transaction_by_hash(transaction_hash: TxnHash) -> dict:
             transaction_hash
         )
     except StarknetDevnetException as ex:
-        raise RpcError(code=25, message="Transaction hash not found") from ex
+        raise RpcError.from_spec_name("TXN_HASH_NOT_FOUND") from ex
 
     if result.status == TransactionStatus.NOT_RECEIVED:
-        raise RpcError(code=25, message="Transaction hash not found")
+        raise RpcError.from_spec_name("TXN_HASH_NOT_FOUND")
 
     return rpc_transaction(result.transaction)
 
 
+@validate_schema("getTransactionByBlockIdAndIndex")
 async def get_transaction_by_block_id_and_index(block_id: BlockId, index: int) -> dict:
     """
     Get the details of a transaction by a given block id and index
@@ -67,11 +71,12 @@ async def get_transaction_by_block_id_and_index(block_id: BlockId, index: int) -
     try:
         transaction_hash: int = block.transactions[index].transaction_hash
     except IndexError as ex:
-        raise RpcError(code=27, message="Invalid transaction index in a block") from ex
+        raise RpcError.from_spec_name("INVALID_TXN_INDEX") from ex
 
     return await get_transaction_by_hash(transaction_hash=rpc_felt(transaction_hash))
 
 
+@validate_schema("getTransactionReceipt")
 async def get_transaction_receipt(transaction_hash: TxnHash) -> dict:
     """
     Get the transaction receipt by the transaction hash
@@ -81,14 +86,15 @@ async def get_transaction_receipt(transaction_hash: TxnHash) -> dict:
             tx_hash=transaction_hash
         )
     except StarknetDevnetException as ex:
-        raise RpcError(code=25, message="Transaction hash not found") from ex
+        raise RpcError.from_spec_name("TXN_HASH_NOT_FOUND") from ex
 
     if result.status == TransactionStatus.NOT_RECEIVED:
-        raise RpcError(code=25, message="Transaction hash not found")
+        raise RpcError.from_spec_name("TXN_HASH_NOT_FOUND")
 
     return await rpc_transaction_receipt(result)
 
 
+@validate_schema("pendingTransactions")
 async def pending_transactions() -> List[RpcTransaction]:
     """
     Returns the transactions in the transaction pool, recognized by this sequencer
@@ -96,6 +102,7 @@ async def pending_transactions() -> List[RpcTransaction]:
     raise NotImplementedError()
 
 
+@validate_schema("addInvokeTransaction")
 async def add_invoke_transaction(invoke_transaction: RpcBroadcastedInvokeTxn) -> dict:
     """
     Submit a new transaction to be added to the chain
@@ -110,6 +117,7 @@ async def add_invoke_transaction(invoke_transaction: RpcBroadcastedInvokeTxn) ->
     )
 
 
+@validate_schema("addDeclareTransaction")
 async def add_declare_transaction(
     declare_transaction: RpcBroadcastedDeclareTxn,
 ) -> dict:
@@ -127,6 +135,7 @@ async def add_declare_transaction(
     )
 
 
+@validate_schema("addDeployTransaction")
 async def add_deploy_transaction(deploy_transaction: RpcBroadcastedDeployTxn) -> dict:
     """
     Submit a new deploy contract transaction
@@ -142,6 +151,7 @@ async def add_deploy_transaction(deploy_transaction: RpcBroadcastedDeployTxn) ->
     )
 
 
+@validate_schema("addDeployAccountTransaction")
 async def add_deploy_account_transaction(
     deploy_account_transaction: RpcBroadcastedDeployAccountTxn,
 ) -> dict:
@@ -161,7 +171,7 @@ async def add_deploy_account_transaction(
         status_response["tx_status"] == "REJECTED"
         and "is not declared" in status_response["tx_failure_reason"].error_message
     ):
-        raise RpcError(code=28, message="Class hash not found")
+        raise RpcError.from_spec_name("CLASS_HASH_NOT_FOUND")
 
     return RpcDeployAccountTransactionResult(
         transaction_hash=rpc_felt(transaction_hash),
@@ -185,26 +195,27 @@ def make_transaction(txn: RpcBroadcastedTxn) -> AccountTransaction:
     raise NotImplementedError(f"Unexpected type {txn_type}.")
 
 
+@validate_schema("estimateFee")
 async def estimate_fee(request: RpcBroadcastedTxn, block_id: BlockId) -> dict:
     """
     Estimate the fee for a given StarkNet transaction
     """
-    await assert_block_id_is_latest_or_pending(block_id)
+    await assert_block_id_is_valid(block_id)
     transaction = make_transaction(request)
     try:
         _, fee_response = await state.starknet_wrapper.calculate_trace_and_fee(
-            transaction
+            transaction, block_id
         )
     except StarkException as ex:
         if "entry_point_selector" in request and (
-            f"Entry point {hex(int(request['entry_point_selector'], 16))} not found"
+            f"Entry point {gateway_felt(request['entry_point_selector'])} not found"
             in ex.message
         ):
-            raise RpcError(code=21, message="Invalid message selector") from ex
+            raise RpcError.from_spec_name("INVALID_MESSAGE_SELECTOR") from ex
         if "While handling calldata" in ex.message:
-            raise RpcError(code=22, message="Invalid call data") from ex
+            raise RpcError.from_spec_name("INVALID_CALL_DATA") from ex
         if "is not deployed" in ex.message:
-            raise RpcError(code=20, message="Contract not found") from ex
+            raise RpcError.from_spec_name("CONTRACT_NOT_FOUND") from ex
         raise RpcError(code=-1, message=ex.message) from ex
 
     return rpc_fee_estimate(fee_response)
