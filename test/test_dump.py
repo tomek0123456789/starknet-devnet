@@ -10,7 +10,7 @@ from asyncio import subprocess
 import pytest
 import requests
 
-from .account import invoke
+from .account import declare_and_deploy_with_chargeable, invoke
 from .settings import APP_URL
 from .shared import (
     ABI_PATH,
@@ -21,13 +21,7 @@ from .shared import (
 )
 from .test_account import get_account_balance
 from .test_fee_token import mint
-from .util import (
-    DevnetBackgroundProc,
-    call,
-    deploy,
-    devnet_in_background,
-    terminate_and_wait,
-)
+from .util import DevnetBackgroundProc, call, devnet_in_background, terminate_and_wait
 
 DUMP_PATH = "dump.pkl"
 
@@ -105,7 +99,7 @@ def deploy_empty_contract():
     Deploy sample contract with balance = 0.
     Returns contract address.
     """
-    deploy_dict = deploy(CONTRACT_PATH, inputs=["0"])
+    deploy_dict = declare_and_deploy_with_chargeable(CONTRACT_PATH, inputs=["0"])
     contract_address = deploy_dict["address"]
     initial_balance = call("get_balance", contract_address, ABI_PATH)
     assert initial_balance == "0"

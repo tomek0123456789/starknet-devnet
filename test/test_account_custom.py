@@ -7,7 +7,7 @@ import pytest
 from starkware.starknet.core.os.class_hash import compute_class_hash
 from starkware.starknet.services.api.contract_class import ContractClass
 
-from .account import invoke
+from .account import declare_and_deploy_with_chargeable, invoke
 from .shared import (
     ABI_PATH,
     CONTRACT_PATH,
@@ -18,7 +18,6 @@ from .shared import (
 from .util import (
     DevnetBackgroundProc,
     call,
-    deploy,
     devnet_in_background,
     get_class_hash_at,
     load_file_content,
@@ -72,7 +71,7 @@ def test_providing_correct_account_class():
     )
     assert fetched_class_hash == compute_class_hash(expected_contract_class)
 
-    deploy_info = deploy(CONTRACT_PATH, inputs=["0"])
+    deploy_info = declare_and_deploy_with_chargeable(CONTRACT_PATH, inputs=["0"])
     invoke(
         calls=[(deploy_info["address"], "increase_balance", [10, 20])],
         account_address=PREDEPLOYED_ACCOUNT_ADDRESS,

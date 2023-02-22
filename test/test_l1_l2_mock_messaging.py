@@ -7,7 +7,7 @@ from starkware.starknet.definitions.error_codes import StarknetErrorCode
 from starkware.starknet.public.abi import get_selector_from_name
 from starkware.starkware_utils.error_handling import StarkErrorCode
 
-from .account import invoke
+from .account import declare_and_deploy_with_chargeable, invoke
 from .settings import APP_URL
 from .shared import (
     L1L2_ABI_PATH,
@@ -16,13 +16,7 @@ from .shared import (
     PREDEPLOYED_ACCOUNT_ADDRESS,
     PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
 )
-from .util import (
-    assert_tx_status,
-    call,
-    deploy,
-    devnet_in_background,
-    load_file_content,
-)
+from .util import assert_tx_status, call, devnet_in_background, load_file_content
 
 DEPLOY_CONTENT = load_file_content("deploy.json")
 INVOKE_CONTENT = load_file_content("invoke.json")
@@ -64,7 +58,7 @@ def consume_message_from_l2(req_dict: dict):
 def test_send_message_to_l2_deploy_execute():
     """Test POST l1 to l2 deploy contract and execute transaction"""
     # Deploy L1L2 contract
-    deploy_info = deploy(contract=L1L2_CONTRACT_PATH)
+    deploy_info = declare_and_deploy_with_chargeable(contract=L1L2_CONTRACT_PATH)
 
     # Create l1 to l2 mock transaction
     response = send_message_to_l2(
@@ -128,7 +122,7 @@ def test_send_message_to_l2_execute_without_deploy():
 @devnet_in_background(*PREDEPLOY_ACCOUNT_CLI_ARGS)
 def test_consume_message_from_l2_deploy_execute():
     """Test POST l2 to l1 deploy contract and execute transaction"""
-    deploy_info = deploy(L1L2_CONTRACT_PATH)
+    deploy_info = declare_and_deploy_with_chargeable(L1L2_CONTRACT_PATH)
 
     # increase and withdraw balance
     invoke(
@@ -162,7 +156,7 @@ def test_consume_message_from_l2_deploy_execute():
 @devnet_in_background(*PREDEPLOY_ACCOUNT_CLI_ARGS)
 def test_consume_message_from_l2_deploy_execute_without_withdraw():
     """Test POST l2 to l1 deploy contract and try to execute transaction without calling withdraw"""
-    deploy_info = deploy(L1L2_CONTRACT_PATH)
+    deploy_info = declare_and_deploy_with_chargeable(L1L2_CONTRACT_PATH)
     response = consume_message_from_l2(
         {
             "l2_contract_address": deploy_info["address"],

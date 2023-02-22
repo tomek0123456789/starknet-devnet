@@ -4,7 +4,7 @@ Test block number
 
 import pytest
 
-from .account import declare, invoke
+from .account import declare, declare_and_deploy_with_chargeable, invoke
 from .shared import (
     ARTIFACTS_PATH,
     FAILING_CONTRACT_PATH,
@@ -13,7 +13,7 @@ from .shared import (
     PREDEPLOYED_ACCOUNT_ADDRESS,
     PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
 )
-from .util import call, deploy, devnet_in_background
+from .util import call, devnet_in_background
 
 BLOCK_NUMBER_CONTRACT_PATH = f"{ARTIFACTS_PATH}/block_number.cairo/block_number.json"
 BLOCK_NUMBER_ABI_PATH = f"{ARTIFACTS_PATH}/block_number.cairo/block_number_abi.json"
@@ -44,7 +44,9 @@ def test_block_number_incremented():
     In regular mode with salt "0x42" our expected hash is {EXPECTED_TX_HASH}.
     """
 
-    deploy_info = deploy(BLOCK_NUMBER_CONTRACT_PATH, salt="0x42")
+    deploy_info = declare_and_deploy_with_chargeable(
+        BLOCK_NUMBER_CONTRACT_PATH, salt="0x42"
+    )
     block_number_before = my_get_block_number(deploy_info["address"])
 
     assert int(block_number_before) == GENESIS_BLOCK_NUMBER + 1
@@ -72,7 +74,7 @@ def test_block_number_incremented():
 def test_block_number_incremented_on_declare():
     """Declare tx should increment get_block_number response"""
 
-    deploy_info = deploy(BLOCK_NUMBER_CONTRACT_PATH)
+    deploy_info = declare_and_deploy_with_chargeable(BLOCK_NUMBER_CONTRACT_PATH)
     block_number_before = my_get_block_number(deploy_info["address"])
     assert int(block_number_before) == GENESIS_BLOCK_NUMBER + 1
 
@@ -94,11 +96,11 @@ def test_block_number_not_incremented_if_deploy_fails():
     get_block_number should return an unchanged value
     """
 
-    deploy_info = deploy(BLOCK_NUMBER_CONTRACT_PATH)
+    deploy_info = declare_and_deploy_with_chargeable(BLOCK_NUMBER_CONTRACT_PATH)
     block_number_before = my_get_block_number(deploy_info["address"])
     assert int(block_number_before) == GENESIS_BLOCK_NUMBER + 1
 
-    deploy(FAILING_CONTRACT_PATH)
+    declare_and_deploy_with_chargeable(FAILING_CONTRACT_PATH)
 
     block_number_after = my_get_block_number(deploy_info["address"])
     assert int(block_number_after) == GENESIS_BLOCK_NUMBER + 1
@@ -111,7 +113,7 @@ def test_block_number_not_incremented_if_invoke_fails():
     get_block_number should return an unchanged value
     """
 
-    deploy_info = deploy(BLOCK_NUMBER_CONTRACT_PATH)
+    deploy_info = declare_and_deploy_with_chargeable(BLOCK_NUMBER_CONTRACT_PATH)
     block_number_before = my_get_block_number(deploy_info["address"])
     assert int(block_number_before) == GENESIS_BLOCK_NUMBER + 1
 

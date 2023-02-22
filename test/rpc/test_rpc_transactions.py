@@ -4,7 +4,12 @@ Tests RPC transactions
 
 from __future__ import annotations
 
-from test.account import _get_signature, declare, get_nonce
+from test.account import (
+    _get_signature,
+    declare,
+    declare_and_deploy_with_chargeable,
+    get_nonce,
+)
 from test.rpc.conftest import prepare_deploy_account_tx, rpc_deploy_account_from_gateway
 from test.rpc.rpc_utils import (
     deploy_and_invoke_storage_contract,
@@ -22,7 +27,7 @@ from test.shared import (
     STARKNET_CLI_ACCOUNT_ABI_PATH,
     SUPPORTED_RPC_TX_VERSION,
 )
-from test.util import assert_tx_status, call, deploy, load_contract_class, mint, send_tx
+from test.util import assert_tx_status, call, load_contract_class, mint, send_tx
 from typing import List
 
 import pytest
@@ -421,7 +426,9 @@ def test_add_invoke_transaction():
     Add invoke transaction
     """
     initial_balance, amount1, amount2 = 100, 13, 56
-    deploy_dict = deploy(CONTRACT_PATH, [str(initial_balance)])
+    deploy_dict = declare_and_deploy_with_chargeable(
+        CONTRACT_PATH, [str(initial_balance)]
+    )
     contract_address = deploy_dict["address"]
 
     calls = [(contract_address, "increase_balance", [amount1, amount2])]
@@ -467,7 +474,9 @@ def test_add_invoke_transaction_v0():
     Add invoke transaction with tx v0
     """
     initial_balance, amount1, amount2 = 100, 13, 56
-    deploy_dict = deploy(CONTRACT_PATH, [str(initial_balance)])
+    deploy_dict = declare_and_deploy_with_chargeable(
+        CONTRACT_PATH, [str(initial_balance)]
+    )
     contract_address = deploy_dict["address"]
 
     invoke_transaction = RpcBroadcastedInvokeTxnV0(
@@ -740,7 +749,9 @@ def test_add_deploy_account_transaction(deploy_account_details):
 
     # deploy a contract for testing
     init_balance = 10
-    contract_deploy_info = deploy(contract=CONTRACT_PATH, inputs=[str(init_balance)])
+    contract_deploy_info = declare_and_deploy_with_chargeable(
+        contract=CONTRACT_PATH, inputs=[str(init_balance)]
+    )
     contract_address = contract_deploy_info["address"]
 
     # increase balance of test contract

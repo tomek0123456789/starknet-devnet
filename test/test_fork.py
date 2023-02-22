@@ -8,7 +8,7 @@ import requests
 
 from starknet_devnet.constants import DEFAULT_INITIAL_BALANCE
 
-from .account import get_nonce, invoke
+from .account import declare_and_deploy_with_chargeable, get_nonce, invoke
 from .settings import APP_URL, HOST, bind_free_port
 from .shared import (
     ABI_PATH,
@@ -32,7 +32,6 @@ from .util import (
     assert_address_has_no_class_hash,
     assert_tx_status,
     call,
-    deploy,
     devnet_in_background,
     mint,
 )
@@ -117,7 +116,7 @@ def test_forking_devnet_with_account_on_origin():
 
     # deploy on origin
     initial_balance = "10"
-    deploy_info = deploy(
+    deploy_info = declare_and_deploy_with_chargeable(
         contract=CONTRACT_PATH,
         inputs=[initial_balance],
         gateway_url=ORIGIN_URL,
@@ -167,9 +166,9 @@ def test_forking_devnet_with_account_on_fork():
     Assert only fork changed
     """
 
-    # deploy on origin
+    # declare_and_deploy_with_chargeable on origin
     initial_balance = "10"
-    deploy_info = deploy(
+    deploy_info = declare_and_deploy_with_chargeable(
         contract=CONTRACT_PATH,
         inputs=[initial_balance],
         gateway_url=ORIGIN_URL,
@@ -250,7 +249,9 @@ def test_deploy_on_fork(origin_url):
     Assert usability on fork. Assert no change on origin.
     """
 
-    deploy_info = deploy(contract=CONTRACT_PATH, inputs=["10"])
+    deploy_info = declare_and_deploy_with_chargeable(
+        contract=CONTRACT_PATH, inputs=["10"]
+    )
     contract_address = deploy_info["address"]
 
     invoke_tx_hash = invoke(

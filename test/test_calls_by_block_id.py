@@ -2,7 +2,7 @@
 
 from starkware.starknet.definitions.error_codes import StarknetErrorCode
 
-from .account import invoke
+from .account import declare_and_deploy_with_chargeable, invoke
 from .shared import (
     ABI_PATH,
     BALANCE_KEY,
@@ -18,7 +18,6 @@ from .util import (
     assert_storage,
     call,
     demand_block_creation,
-    deploy,
     devnet_in_background,
     get_block,
 )
@@ -56,7 +55,9 @@ def test_call():
         assert value_at_2 == value_at_1 + increment_value
 
     initial_value = 5
-    deploy_info = deploy(CONTRACT_PATH, inputs=[str(initial_value)])
+    deploy_info = declare_and_deploy_with_chargeable(
+        CONTRACT_PATH, inputs=[str(initial_value)]
+    )
     contract_address = deploy_info["address"]
 
     increment_value = 7
@@ -98,7 +99,9 @@ def test_call_with_block_hash():
         assert value_at_2 == value_at_1 + increment_value
 
     initial_value = 5
-    deploy_info = deploy(CONTRACT_PATH, inputs=[str(initial_value)])
+    deploy_info = declare_and_deploy_with_chargeable(
+        CONTRACT_PATH, inputs=[str(initial_value)]
+    )
     deployment_block = get_block(block_number="latest", parse=True)
     deployment_block_hash = deployment_block["block_hash"]
     contract_address = deploy_info["address"]
@@ -134,7 +137,9 @@ def test_forked():
     # devnet added a genesis block at FORK_BLOCK + 1
 
     initial_balance = 10
-    deploy_info = deploy(contract=CONTRACT_PATH, inputs=[str(initial_balance)])
+    deploy_info = declare_and_deploy_with_chargeable(
+        contract=CONTRACT_PATH, inputs=[str(initial_balance)]
+    )
     contract_address = deploy_info["address"]
 
     first_increment_value = 7
@@ -167,7 +172,9 @@ def test_after_restart():
     """Call a state after calling restart - expect failure"""
 
     initial_balance = 5
-    deploy_info = deploy(contract=CONTRACT_PATH, inputs=[str(initial_balance)])
+    deploy_info = declare_and_deploy_with_chargeable(
+        contract=CONTRACT_PATH, inputs=[str(initial_balance)]
+    )
     contract_address = deploy_info["address"]
 
     # first assert that it's callable before the restart
@@ -185,7 +192,9 @@ def test_old_block_generated_on_demand():
     """Call old blocks generated on demand"""
 
     initial_balance = 10
-    deploy_info = deploy(contract=CONTRACT_PATH, inputs=[str(initial_balance)])
+    deploy_info = declare_and_deploy_with_chargeable(
+        contract=CONTRACT_PATH, inputs=[str(initial_balance)]
+    )
     contract_address = deploy_info["address"]
 
     increment_value = 5
@@ -215,7 +224,9 @@ def test_getting_storage_at_old_block():
     """Call get_storage_at on old block"""
 
     initial_balance = 10
-    deploy_info = deploy(contract=CONTRACT_PATH, inputs=[str(initial_balance)])
+    deploy_info = declare_and_deploy_with_chargeable(
+        contract=CONTRACT_PATH, inputs=[str(initial_balance)]
+    )
     deployment_block = get_block(block_number="latest", parse=True)
     contract_address = deploy_info["address"]
 

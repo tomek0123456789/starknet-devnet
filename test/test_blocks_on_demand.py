@@ -7,7 +7,7 @@ from starkware.starknet.definitions.error_codes import StarknetErrorCode
 
 from starknet_devnet.blueprints.rpc.utils import rpc_felt
 
-from .account import get_estimated_fee, invoke
+from .account import declare_and_deploy_with_chargeable, get_estimated_fee, invoke
 from .rpc.rpc_utils import rpc_call
 from .settings import APP_URL
 from .shared import (
@@ -28,7 +28,6 @@ from .util import (
     assert_tx_status,
     call,
     demand_block_creation,
-    deploy,
     devnet_in_background,
     get_block,
 )
@@ -53,7 +52,7 @@ def test_invokable_on_pending_block():
     genesis_block_number = latest_block["block_number"]
     assert genesis_block_number == 0
 
-    deploy_info = deploy(CONTRACT_PATH, inputs=["0"])
+    deploy_info = declare_and_deploy_with_chargeable(CONTRACT_PATH, inputs=["0"])
     assert_tx_status(deploy_info["tx_hash"], "PENDING")
 
     def get_contract_balance():
@@ -93,7 +92,7 @@ def test_invokable_on_pending_block():
 @devnet_in_background(*PREDEPLOY_ACCOUNT_CLI_ARGS, "--blocks-on-demand")
 def test_estimation_works_after_block_creation():
     """Test estimation works only after demanding block creation."""
-    deploy_info = deploy(CONTRACT_PATH, inputs=["0"])
+    deploy_info = declare_and_deploy_with_chargeable(CONTRACT_PATH, inputs=["0"])
     assert_tx_status(deploy_info["tx_hash"], "PENDING")
 
     def estimate_invoke_fee():
@@ -121,7 +120,7 @@ def test_calling_works_after_block_creation():
     Only after calling create_block_on_demand balance should be increased in this mode.
     """
     # Deploy and invoke
-    deploy_info = deploy(CONTRACT_PATH, inputs=["0"])
+    deploy_info = declare_and_deploy_with_chargeable(CONTRACT_PATH, inputs=["0"])
     demand_block_creation()
 
     def get_contract_balance():
@@ -153,7 +152,7 @@ def test_getting_next_block():
     """Test that artifacts related to block 1 are available only after creating on demand"""
 
     # some transaction, could be anything
-    deploy(CONTRACT_PATH, inputs=["0"])
+    declare_and_deploy_with_chargeable(CONTRACT_PATH, inputs=["0"])
 
     # expect failure on block retrieval
     next_block_number = 1
@@ -194,7 +193,7 @@ def test_pending_block():
     assert latest_block_before["status"] == "ACCEPTED_ON_L2"
 
     # some tx to generate a pending block, could be anything
-    deploy_info = deploy(CONTRACT_PATH, inputs=["0"])
+    deploy_info = declare_and_deploy_with_chargeable(CONTRACT_PATH, inputs=["0"])
 
     # assert correct pending block
     pending_block = get_block(block_number="pending", parse=True)
@@ -218,7 +217,7 @@ def test_pending_block_traces():
     latest_block_traces_before = get_block_traces({"blockNumber": "latest"})
 
     # some tx to generate a pending block, could be anything
-    deploy_info = deploy(CONTRACT_PATH, inputs=["0"])
+    deploy_info = declare_and_deploy_with_chargeable(CONTRACT_PATH, inputs=["0"])
 
     pending_block_traces = get_block_traces({"blockNumber": "pending"})
     assert_hex_equal(
@@ -238,7 +237,7 @@ def test_pending_state_update():
     latest_state_update_before = get_state_update(block_number="latest")
 
     # some tx to generate a pending block, could be anything
-    deploy_info = deploy(CONTRACT_PATH, inputs=["0"])
+    deploy_info = declare_and_deploy_with_chargeable(CONTRACT_PATH, inputs=["0"])
 
     pending_state_update = get_state_update(block_number="pending")
     pending_deployed = pending_state_update["state_diff"]["deployed_contracts"]
@@ -275,7 +274,7 @@ def test_events():
 
         return resp
 
-    deploy_info = deploy(contract=EVENTS_CONTRACT_PATH)
+    deploy_info = declare_and_deploy_with_chargeable(contract=EVENTS_CONTRACT_PATH)
 
     increase_arg = 123
     invoke(
@@ -333,7 +332,7 @@ def test_endpoint_if_no_pending_after_creation():
     Test block creation if no pending txs with on-demand flag set on
     and after one block has already been created
     """
-    deploy(CONTRACT_PATH, inputs=["10"])
+    declare_and_deploy_with_chargeable(CONTRACT_PATH, inputs=["10"])
     resp = demand_block_creation()
     _assert_correct_block_creation_response(resp)
 
@@ -359,6 +358,6 @@ def test_endpoint_without_on_demand_flag():
 @devnet_in_background("--blocks-on-demand")
 def test_endpoint_if_some_pending():
     """Test block creation with some pending txs"""
-    deploy(CONTRACT_PATH, inputs=["10"])
+    declare_and_deploy_with_chargeable(CONTRACT_PATH, inputs=["10"])
     resp = demand_block_creation()
     _assert_correct_block_creation_response(resp)

@@ -9,7 +9,7 @@ import requests
 from starkware.starknet.core.os.class_hash import compute_class_hash
 from starkware.starknet.public.abi import get_selector_from_name
 
-from .account import declare, invoke
+from .account import declare, declare_and_deploy_with_chargeable, invoke
 from .settings import APP_URL
 from .shared import (
     CONTRACT_PATH,
@@ -27,7 +27,6 @@ from .util import (
     assert_equal,
     assert_hex_equal,
     assert_transaction,
-    deploy,
     devnet_in_background,
     get_block,
     load_contract_class,
@@ -58,7 +57,7 @@ def deploy_empty_contract():
     Deploy storage contract
     Returns contract address.
     """
-    deploy_dict = deploy(STORAGE_CONTRACT_PATH)
+    deploy_dict = declare_and_deploy_with_chargeable(STORAGE_CONTRACT_PATH)
     contract_address = deploy_dict["address"]
 
     return contract_address
@@ -218,9 +217,9 @@ def test_declaration_and_deployment():
     diff_after_declare = get_state_update()["state_diff"]
     assert diff_after_declare["declared_contracts"] == [contract_class_hash]
 
-    # Deploy the deployer - also deploys a contract of the declared class using the deploy syscall
+    # Deploy the deployer - also deploys a contract of the declared class using the declare_and_deploy_with_chargeable syscall
     initial_balance_in_constructor = "5"
-    deployer_deploy_info = deploy(
+    deployer_deploy_info = declare_and_deploy_with_chargeable(
         contract=DEPLOYER_CONTRACT_PATH,
         inputs=[contract_class_hash, initial_balance_in_constructor],
     )

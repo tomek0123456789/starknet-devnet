@@ -11,9 +11,10 @@ import requests
 from starknet_devnet.block_info_generator import BlockInfo, BlockInfoGenerator
 from starknet_devnet.general_config import DEFAULT_GENERAL_CONFIG
 
+from .account import declare_and_deploy_with_chargeable
 from .settings import APP_URL
 from .shared import ARTIFACTS_PATH
-from .util import call, deploy, devnet_in_background, get_block
+from .util import call, devnet_in_background, get_block
 
 TS_CONTRACT_PATH = f"{ARTIFACTS_PATH}/timestamp.cairo/timestamp.json"
 TS_ABI_PATH = f"{ARTIFACTS_PATH}/timestamp.cairo/timestamp_abi.json"
@@ -23,7 +24,7 @@ SET_TIME_ARGUMENT = 1514764800
 
 def deploy_ts_contract():
     """Deploys the timestamp contract"""
-    return deploy(TS_CONTRACT_PATH)
+    return declare_and_deploy_with_chargeable(TS_CONTRACT_PATH)
 
 
 def get_ts_from_contract(address):

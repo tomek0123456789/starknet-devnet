@@ -8,7 +8,7 @@ from starkware.starknet.services.api.feeder_gateway.response_objects import (
     BlockTransactionTraces,
 )
 
-from .account import declare, invoke
+from .account import declare, declare_and_deploy_with_chargeable, invoke
 from .settings import APP_URL
 from .shared import (
     CONTRACT_PATH,
@@ -18,12 +18,7 @@ from .shared import (
     PREDEPLOYED_ACCOUNT_ADDRESS,
     PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
 )
-from .util import (
-    deploy,
-    devnet_in_background,
-    get_transaction_receipt,
-    load_json_from_path,
-)
+from .util import devnet_in_background, get_transaction_receipt, load_json_from_path
 
 
 def get_transaction_trace_response(tx_hash=None, server_url=APP_URL):
@@ -44,7 +39,7 @@ def deploy_empty_contract():
     Deploy sample contract with balance = 0.
     Returns transaction hash.
     """
-    return deploy(CONTRACT_PATH, inputs=["0"], salt="0x99")
+    return declare_and_deploy_with_chargeable(CONTRACT_PATH, inputs=["0"], salt="0x99")
 
 
 def assert_function_invocation(function_invocation, expected_path):
