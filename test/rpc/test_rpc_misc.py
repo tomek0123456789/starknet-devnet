@@ -155,9 +155,7 @@ def test_call_method_with_incorrect_type_params():
     ex = rpc_call(method="starknet_getClass", params=1234)
     assert ex["error"] == {
         "code": -32602,
-        # fmt: off
-        "message": "Invalid \"params\" type. Value of \"params\" must be a dict or list",
-        # fmt: on
+        "message": """Invalid "params" type. Value of "params" must be a dict or list""",
     }
 
 

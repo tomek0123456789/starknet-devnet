@@ -26,7 +26,7 @@ from starknet_devnet.blueprints.rpc.structures.types import (
     RpcError,
 )
 from starknet_devnet.blueprints.rpc.utils import (
-    assert_block_id_is_latest_or_pending,
+    assert_block_id_is_valid,
     get_block_by_block_id,
     rpc_felt,
 )
@@ -163,10 +163,10 @@ async def get_nonce(block_id: BlockId, contract_address: Address) -> Felt:
     """
     Get the nonce associated with the given address in the given block
     """
-    await assert_block_id_is_latest_or_pending(block_id)
+    await assert_block_id_is_valid(block_id)
 
     if not await state.starknet_wrapper.is_deployed(int(contract_address, 16)):
-        raise RpcError(code=20, message="Contract not found")
+        raise RpcError.from_spec_name("CONTRACT_NOT_FOUND")
 
     result = await state.starknet_wrapper.get_nonce(
         contract_address=int(contract_address, 16), block_id=block_id
