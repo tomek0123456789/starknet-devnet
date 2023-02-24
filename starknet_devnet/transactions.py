@@ -24,10 +24,8 @@ from starkware.starknet.services.api.feeder_gateway.response_objects import (
     TransactionStatus,
     TransactionTrace,
 )
-from starkware.starknet.testing.starknet import (
-    StarknetCallInfo,
-    TransactionExecutionInfo,
-)
+from starkware.starknet.testing.objects import StarknetCallInfo
+from starkware.starknet.testing.starknet import TransactionExecutionInfo
 from web3 import Web3
 
 from .origin import Origin

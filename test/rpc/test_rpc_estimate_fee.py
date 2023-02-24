@@ -21,7 +21,7 @@ from starkware.starknet.core.os.transaction_hash.transaction_hash import (
 )
 from starkware.starknet.definitions.general_config import StarknetChainId
 from starkware.starknet.public.abi import get_selector_from_name
-from starkware.starknet.services.api.contract_class import ContractClass
+from starkware.starknet.services.api.contract_class.contract_class import ContractClass
 from starkware.starknet.services.api.gateway.transaction import (
     DEFAULT_DECLARE_SENDER_ADDRESS,
 )
@@ -164,7 +164,7 @@ def test_estimate_fee_declare(declare_content):
         abi=contract_class["abi"],
     )
 
-    contract_class = decompress_program({"contract_class": contract_class}, False)[
+    contract_class = decompress_program({"contract_class": contract_class})[
         "contract_class"
     ]
     contract_class = ContractClass.load(contract_class)

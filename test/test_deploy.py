@@ -5,12 +5,12 @@ from typing import List
 import pytest
 from starkware.starknet.core.os.contract_address.contract_address import (
     calculate_contract_address,
-    compute_class_hash,
 )
+from starkware.starknet.core.os.contract_class.class_hash import compute_class_hash
 from starkware.starknet.definitions.general_config import DEFAULT_CHAIN_ID
 from starkware.starknet.definitions.transaction_type import TransactionType
 from starkware.starknet.public.abi import get_selector_from_name
-from starkware.starknet.services.api.contract_class import ContractClass
+from starkware.starknet.services.api.contract_class.contract_class import ContractClass
 from starkware.starknet.services.api.feeder_gateway.response_objects import (
     TransactionStatus,
 )

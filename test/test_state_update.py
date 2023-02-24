@@ -6,7 +6,7 @@ import re
 
 import pytest
 import requests
-from starkware.starknet.core.os.class_hash import compute_class_hash
+from starkware.starknet.core.os.contract_class.class_hash import compute_class_hash
 from starkware.starknet.public.abi import get_selector_from_name
 
 from .account import declare, invoke

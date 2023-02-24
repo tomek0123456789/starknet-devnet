@@ -27,7 +27,10 @@ from starkware.starknet.core.os.transaction_hash.transaction_hash import (
 )
 from starkware.starknet.definitions.error_codes import StarknetErrorCode
 from starkware.starknet.definitions.transaction_type import TransactionType
-from starkware.starknet.services.api.contract_class import ContractClass, EntryPointType
+from starkware.starknet.services.api.contract_class.contract_class import (
+    ContractClass,
+    EntryPointType,
+)
 from starkware.starknet.services.api.feeder_gateway.request_objects import (
     CallFunction,
     CallL1Handler,
@@ -36,7 +39,7 @@ from starkware.starknet.services.api.feeder_gateway.response_objects import (
     LATEST_BLOCK_ID,
     PENDING_BLOCK_ID,
     BlockStateUpdate,
-    DeployedContract,
+    ContractAddressHashPair,
     StarknetBlock,
     StateDiff,
     StorageEntry,
@@ -85,7 +88,7 @@ from .udc import UDC
 from .util import (
     StarknetDevnetException,
     enable_pickling,
-    get_all_declared_contracts,
+    get_all_declared_classes,
     get_fee_estimation_info,
     get_storage_diffs,
     to_bytes,
@@ -251,7 +254,7 @@ class StarknetWrapper:
 
     async def _update_pending_state(
         self,
-        deployed_contracts: List[DeployedContract] = None,
+        deployed_contracts: List[ContractAddressHashPair] = None,
         explicitly_declared_contracts: List[int] = None,
         visited_storage_entries: Set[StorageEntry] = None,
         nonces: Dict[int, int] = None,
@@ -272,7 +275,7 @@ class StarknetWrapper:
         await self.__preserve_current_state(current_state)
 
         # calculating diffs
-        declared_contracts = await get_all_declared_contracts(
+        declared_classes = await get_all_declared_classes(
             previous_state, explicitly_declared_contracts, deployed_contracts
         )
         storage_diffs = await get_storage_diffs(
@@ -280,7 +283,7 @@ class StarknetWrapper:
         )
         state_diff = StateDiff(
             deployed_contracts=deployed_contracts,
-            declared_contracts=declared_contracts,
+            declared_classes=declared_classes,
             storage_diffs=storage_diffs,
             nonces=nonces or {},
         )
@@ -355,7 +358,7 @@ class StarknetWrapper:
             internal_tx: InternalTransaction
             execution_info: TransactionExecutionInfo = TransactionExecutionInfo.empty()
             internal_calls: List[CallInfo] = []
-            deployed_contracts: List[DeployedContract] = []
+            deployed_contracts: List[ContractAddressHashPair] = []
             explicitly_declared: List[int] = []
             visited_storage_entries: Set[StorageEntry] = set()
 
@@ -508,7 +511,7 @@ class StarknetWrapper:
             )
 
             tx_handler.deployed_contracts.append(
-                DeployedContract(
+                ContractAddressHashPair(
                     address=contract_address,
                     class_hash=int.from_bytes(internal_tx.class_hash, "big"),
                 )
@@ -588,7 +591,7 @@ class StarknetWrapper:
         self,
         internal_calls: List[Union[FunctionInvocation, CallInfo]],
         tx_hash: int,
-        deployed_contracts: List[DeployedContract],
+        deployed_contracts: List[ContractAddressHashPair],
     ):
         for internal_call in internal_calls:
             if internal_call.entry_point_type == EntryPointType.CONSTRUCTOR:
@@ -596,7 +599,7 @@ class StarknetWrapper:
                 class_hash_int = int.from_bytes(class_hash_bytes, "big")
 
                 deployed_contracts.append(
-                    DeployedContract(
+                    ContractAddressHashPair(
                         address=internal_call.contract_address,
                         class_hash=class_hash_int,
                     )

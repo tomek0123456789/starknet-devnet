@@ -4,8 +4,8 @@ import os
 import subprocess
 
 import pytest
-from starkware.starknet.core.os.class_hash import compute_class_hash
-from starkware.starknet.services.api.contract_class import ContractClass
+from starkware.starknet.core.os.contract_class.class_hash import compute_class_hash
+from starkware.starknet.services.api.contract_class.contract_class import ContractClass
 
 from .account import invoke
 from .shared import (

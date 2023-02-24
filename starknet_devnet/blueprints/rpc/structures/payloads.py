@@ -9,7 +9,7 @@ from typing import Callable, List, Optional, Union
 from marshmallow.exceptions import MarshmallowError
 from starkware.starknet.definitions.general_config import StarknetGeneralConfig
 from starkware.starknet.public.abi import AbiEntryType
-from starkware.starknet.services.api.contract_class import ContractClass
+from starkware.starknet.services.api.contract_class.contract_class import ContractClass
 from starkware.starknet.services.api.feeder_gateway.request_objects import CallFunction
 from starkware.starknet.services.api.feeder_gateway.response_objects import (
     BlockStateUpdate,
@@ -414,14 +414,14 @@ def make_invoke_function(invoke_transaction: RpcBroadcastedInvokeTxn) -> InvokeF
 
     if version == LEGACY_RPC_TX_VERSION:
         invoke_function = InvokeFunction(
-            contract_address=int(invoke_transaction["contract_address"], 16),
+            sender_address=int(invoke_transaction["contract_address"], 16),
             entry_point_selector=int(invoke_transaction["entry_point_selector"], 16),
             calldata=[int(data, 16) for data in invoke_transaction.get("calldata", [])],
             **common_data,
         )
     else:
         invoke_function = InvokeFunction(
-            contract_address=int(invoke_transaction["sender_address"], 16),
+            sender_address=int(invoke_transaction["sender_address"], 16),
             calldata=[int(data, 16) for data in invoke_transaction.get("calldata", [])],
             **common_data,
         )
@@ -438,9 +438,7 @@ def make_declare(declare_transaction: RpcBroadcastedDeclareTxn) -> Declare:
         contract_class["abi"] = []
 
     try:
-        contract_class = decompress_program(declare_transaction, False)[
-            "contract_class"
-        ]
+        contract_class = decompress_program(declare_transaction)["contract_class"]
         contract_class = ContractClass.load(contract_class)
     except (StarkException, TypeError, MarshmallowError) as ex:
         raise RpcError(code=50, message="Invalid contract class") from ex
@@ -453,6 +451,7 @@ def make_declare(declare_transaction: RpcBroadcastedDeclareTxn) -> Declare:
         version=int(declare_transaction["version"], 16),
         max_fee=int(declare_transaction["max_fee"], 16),
         signature=[int(sig, 16) for sig in declare_transaction["signature"]],
+        compiled_class_hash=int(declare_transaction["compiled_class_hash"], 16),
     )
     return declare_tx
 
@@ -466,7 +465,7 @@ def make_deploy(deploy_transaction: RpcBroadcastedDeployTxn) -> Deploy:
         contract_class["abi"] = []
 
     try:
-        contract_class = decompress_program(deploy_transaction, False)["contract_class"]
+        contract_class = decompress_program(deploy_transaction)["contract_class"]
         contract_class = ContractClass.load(contract_class)
     except (StarkException, TypeError, MarshmallowError) as ex:
         raise RpcError(code=50, message="Invalid contract class") from ex

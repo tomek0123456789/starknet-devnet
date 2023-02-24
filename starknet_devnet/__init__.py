@@ -13,6 +13,8 @@ This file contains monkeypatches used across the project. Advice for monkeypatch
 import os
 import sys
 
+# TODO writing here not to forget and ensure linter reminder: replace py 3.8 with 3.9 in testing workflow
+
 __version__ = "0.4.6"
 
 
@@ -53,7 +55,9 @@ def _patch_copy():
 
     from copy import copy
 
-    from starkware.starknet.services.api.contract_class import ContractClass
+    from starkware.starknet.services.api.contract_class.contract_class import (
+        ContractClass,
+    )
 
     def simpler_copy(self, memo):  # pylint: disable=unused-argument
         """

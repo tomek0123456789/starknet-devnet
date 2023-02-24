@@ -4,12 +4,13 @@ import contextlib
 import json
 
 from services.external_api.client import BadRequest
-from starkware.python.utils import to_bytes
 from starkware.starknet.business_logic.state.state import BlockInfo, CachedState
 from starkware.starknet.business_logic.state.state_api import StateReader
 from starkware.starknet.definitions.constants import UNINITIALIZED_CLASS_HASH
 from starkware.starknet.definitions.general_config import StarknetChainId
-from starkware.starknet.services.api.contract_class import ContractClass
+from starkware.starknet.services.api.contract_class.contract_class import (
+    CompiledClassBase,
+)
 from starkware.starknet.services.api.feeder_gateway.feeder_gateway_client import (
     FeederGatewayClient,
 )
@@ -46,29 +47,32 @@ class ForkedStateReader(StateReader):
         self.__feeder_gateway_client = feeder_gateway_client
         self.__block_number = block_number
 
-    async def get_contract_class(self, class_hash: bytes) -> ContractClass:
+    async def get_compiled_class(self, compiled_class_hash: int) -> CompiledClassBase:
         try:
             with contextlib.redirect_stderr(None):
-                class_hash_hex = "0x" + class_hash.hex()
-                contract_class_dict = (
-                    await self.__feeder_gateway_client.get_class_by_hash(class_hash_hex)
+                hash_hex = hex(compiled_class_hash)
+                compiled_class_dict = (
+                    await self.__feeder_gateway_client.get_compiled_class_by_class_hash(
+                        hash_hex
+                    )
                 )
-                return ContractClass.load(contract_class_dict)
+                return CompiledClassBase.load(compiled_class_dict)
         except BadRequest as bad_request:
             original_error = StarkException(**json.loads(bad_request.text))
             raise original_error from bad_request
 
-    async def _get_raw_contract_class(self, class_hash: bytes) -> bytes:
+    async def get_compiled_class_hash(self, class_hash: int) -> int:
+        # TODO
         raise NotImplementedError
 
-    async def get_class_hash_at(self, contract_address: int) -> bytes:
+    async def get_class_hash_at(self, contract_address: int) -> int:
         try:
             with contextlib.redirect_stderr(None):
                 class_hash_hex = await self.__feeder_gateway_client.get_class_hash_at(
                     contract_address=contract_address,
                     block_number=self.__block_number,
                 )
-            return to_bytes(int(class_hash_hex, 16))
+            return int(class_hash_hex, 16)
         except BadRequest as bad_request:
             if is_originally_starknet_exception(bad_request):
                 return UNINITIALIZED_CLASS_HASH

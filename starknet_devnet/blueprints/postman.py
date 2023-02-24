@@ -76,6 +76,7 @@ async def send_message_to_l2():
         ],
         nonce=hex_converter(request_json, "nonce"),
         chain_id=state.starknet_wrapper.get_state().general_config.chain_id.value,
+        paid_fee_on_l1=hex_converter(request_json, "paid_fee_on_l1"),
     )
 
     result = await state.starknet_wrapper.mock_message_to_l2(transaction)

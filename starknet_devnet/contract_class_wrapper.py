@@ -4,7 +4,7 @@ import os
 from dataclasses import dataclass
 
 from starkware.python.utils import to_bytes
-from starkware.starknet.services.api.contract_class import ContractClass
+from starkware.starknet.services.api.contract_class.contract_class import ContractClass
 
 
 @dataclass

@@ -15,7 +15,7 @@ import requests
 from starkware.starknet.cli.starknet_cli import get_salt
 from starkware.starknet.definitions.error_codes import StarknetErrorCode
 from starkware.starknet.definitions.transaction_type import TransactionType
-from starkware.starknet.services.api.contract_class import ContractClass
+from starkware.starknet.services.api.contract_class.contract_class import ContractClass
 from starkware.starknet.services.api.gateway.transaction import Deploy
 
 from starknet_devnet.general_config import DEFAULT_GENERAL_CONFIG

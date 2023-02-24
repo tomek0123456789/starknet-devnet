@@ -2,7 +2,7 @@
 
 from starkware.python.utils import to_bytes
 from starkware.solidity.utils import load_nearby_contract
-from starkware.starknet.services.api.contract_class import ContractClass
+from starkware.starknet.services.api.contract_class.contract_class import ContractClass
 from starkware.starknet.testing.starknet import Starknet
 
 

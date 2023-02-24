@@ -2,7 +2,7 @@
 
 import pytest
 import requests
-from starkware.starknet.core.os.class_hash import compute_class_hash
+from starkware.starknet.core.os.contract_class.class_hash import compute_class_hash
 
 from starknet_devnet.chargeable_account import ChargeableAccount
 from starknet_devnet.contract_class_wrapper import (

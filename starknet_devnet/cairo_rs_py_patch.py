@@ -41,7 +41,7 @@ from starkware.starknet.business_logic.fact_state.state import ExecutionResource
 from starkware.starknet.business_logic.state.state_api import SyncState
 from starkware.starknet.business_logic.utils import validate_contract_deployed
 from starkware.starknet.core.os import os_utils, segment_utils, syscall_utils
-from starkware.starknet.core.os.class_hash import (
+from starkware.starknet.core.os.contract_class.class_hash import (
     get_contract_class_struct,
     load_program,
 )
@@ -49,7 +49,7 @@ from starkware.starknet.definitions.error_codes import StarknetErrorCode
 from starkware.starknet.definitions.general_config import StarknetGeneralConfig
 from starkware.starknet.public import abi as starknet_abi
 from starkware.starknet.public.abi import SYSCALL_PTR_OFFSET
-from starkware.starknet.services.api.contract_class import ContractClass
+from starkware.starknet.services.api.contract_class.contract_class import ContractClass
 from starkware.starkware_utils.error_handling import (
     ErrorCode,
     StarkException,

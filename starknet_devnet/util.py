@@ -10,7 +10,7 @@ from typing import Dict, List, Set, Union
 from starkware.starknet.business_logic.state.state import CachedState
 from starkware.starknet.definitions.error_codes import StarknetErrorCode
 from starkware.starknet.services.api.feeder_gateway.response_objects import (
-    DeployedContract,
+    ContractAddressHashPair,
     FeeEstimationInfo,
     StorageEntry,
 )
@@ -108,17 +108,17 @@ def str_to_felt(text: str) -> int:
     return int.from_bytes(bytes(text, "ascii"), "big")
 
 
-async def get_all_declared_contracts(
+async def get_all_declared_classes(
     previous_state: CachedState,
     explicitly_declared_contracts: List[int],
-    deployed_contracts: List[DeployedContract],
+    deployed_contracts: List[ContractAddressHashPair],
 ):
     """Returns a tuple of explicitly and implicitly declared classes"""
     declared_contracts_set = set(explicitly_declared_contracts)
     for deployed_contract in deployed_contracts:
         class_hash_bytes = to_bytes(deployed_contract.class_hash)
         try:
-            await previous_state.get_contract_class(class_hash_bytes)
+            await previous_state.get_compiled_class_by_class_hash(class_hash_bytes)
         except StarkException:
             declared_contracts_set.add(deployed_contract.class_hash)
     return tuple(declared_contracts_set)

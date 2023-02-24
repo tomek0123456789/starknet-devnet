@@ -18,9 +18,9 @@ from typing import Tuple, cast
 
 import pytest
 from starkware.starknet.business_logic.transaction.objects import InternalDeployAccount
-from starkware.starknet.core.os.class_hash import compute_class_hash
+from starkware.starknet.core.os.contract_class.class_hash import compute_class_hash
 from starkware.starknet.definitions.general_config import DEFAULT_CHAIN_ID
-from starkware.starknet.services.api.contract_class import ContractClass
+from starkware.starknet.services.api.contract_class.contract_class import ContractClass
 from starkware.starknet.services.api.feeder_gateway.response_objects import (
     DeployAccountSpecificInfo,
 )
