@@ -287,13 +287,13 @@ files = [
 
 [[package]]
 name = "cairo-lang"
-version = "0.10.3"
+version = "0.11.0a0"
 description = "Compiler and runner for the Cairo language"
 category = "main"
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "cairo-lang-0.10.3.zip", hash = "sha256:3093946334590f199d99471912049c182cec1f90d4ad02029f460a0de3a27502"},
+    {file = "cairo-lang-0.11.0a0.zip", hash = "sha256:9c3ceaa51a4a9682a3c098a4924dc257c8fc17bda085ac17e55e240ec36bafef"},
 ]
 
 [package.dependencies]
@@ -302,7 +302,7 @@ cachetools = "*"
 ecdsa = "*"
 eth-hash = {version = "*", extras = ["pycryptodome"]}
 fastecdsa = "*"
-frozendict = "1.2"
+frozendict = "*"
 lark = "*"
 marshmallow = ">=3.2.1"
 marshmallow-dataclass = ">=7.1.0"
@@ -2835,4 +2835,4 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<3.10"
-content-hash = "d51781c3af05c1d43f6cd43da86c3a4911b6167d5df6935484b9830e14fd0019"
+content-hash = "b503aeb47bf6cf0b90240a4b526230a6e9a826d057b4cb106c55a2501dfaf2a2"
