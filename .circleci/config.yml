@@ -10,8 +10,7 @@ aliases:
 
   - &on_master_after_test_and_build
     <<: *on_master
-    requires:
-      - test_py_min
+    requires:py_min
       - test_py_max
       - test_py_max_rust
       - image_build
@@ -63,10 +62,12 @@ jobs:
       - store_artifacts:
           path: test-results
 
-  test_py_min:
-    <<: *test_template
-    docker:
-      - image: cimg/python:3.8-node
+  # Since cairo-lang 0.11.0, supported py_min and py_max are the same.
+  # Uncomment and modify these lines if py_min and py_max stop being the same.
+  # test_py_min:
+  #   <<: *test_template
+  #   docker:
+  #     - image: cimg/python: <PY_VERSION> -node
 
   test_py_max_rust:
     <<: *test_template
@@ -125,7 +126,6 @@ workflows:
   version: 2
   test_and_publish:
     jobs:
-      - test_py_min
       - test_py_max
       - test_py_max_rust
       - image_build:

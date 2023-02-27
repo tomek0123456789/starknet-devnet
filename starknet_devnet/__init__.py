@@ -13,8 +13,6 @@ This file contains monkeypatches used across the project. Advice for monkeypatch
 import os
 import sys
 
-# TODO writing here not to forget and ensure linter reminder: replace py 3.8 with 3.9 in testing workflow
-
 __version__ = "0.4.6"
 
 
