@@ -275,7 +275,7 @@ class DevnetTransactions:
         return status_response
 
 
-def create_empty_internal_declare(tx_hash, class_hash) -> InternalDeclare:
+def create_empty_internal_declare(tx_hash: int, class_hash: int) -> InternalDeclare:
     "Create InternalDeclare used in the genesis block"
     return InternalDeclare(
         hash_value=tx_hash,
@@ -284,6 +284,7 @@ def create_empty_internal_declare(tx_hash, class_hash) -> InternalDeclare:
         signature=[],
         nonce=0,
         class_hash=class_hash,
+        compiled_class_hash=None,
         sender_address=1,
     )
 

@@ -10,7 +10,9 @@ from starkware.starknet.core.os.contract_class.class_hash import compute_class_h
 from starkware.starknet.definitions.general_config import DEFAULT_CHAIN_ID
 from starkware.starknet.definitions.transaction_type import TransactionType
 from starkware.starknet.public.abi import get_selector_from_name
-from starkware.starknet.services.api.contract_class.contract_class import ContractClass
+from starkware.starknet.services.api.contract_class.contract_class import (
+    DeprecatedCompiledClass,
+)
 from starkware.starknet.services.api.feeder_gateway.response_objects import (
     TransactionStatus,
 )
@@ -60,7 +62,7 @@ from .util import (
 def get_contract_class():
     """Get the contract class from the contract.json file."""
     with open(CONTRACT_PATH, "r", encoding="utf-8") as contract_class_file:
-        return ContractClass.loads(contract_class_file.read())
+        return DeprecatedCompiledClass.loads(contract_class_file.read())
 
 
 def get_deploy_transaction(inputs: List[int], salt=0):

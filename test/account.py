@@ -201,6 +201,7 @@ def declare(
 
     tx_hash = calculate_declare_transaction_hash(
         contract_class=load_contract_class(contract_path),
+        compiled_class_hash=None,  # TODO
         chain_id=StarknetChainId.TESTNET.value,
         sender_address=int(account_address, 16),
         max_fee=max_fee,

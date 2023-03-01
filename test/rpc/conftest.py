@@ -20,7 +20,9 @@ import pytest
 from starkware.starknet.business_logic.transaction.objects import InternalDeployAccount
 from starkware.starknet.core.os.contract_class.class_hash import compute_class_hash
 from starkware.starknet.definitions.general_config import DEFAULT_CHAIN_ID
-from starkware.starknet.services.api.contract_class.contract_class import ContractClass
+from starkware.starknet.services.api.contract_class.contract_class import (
+    CompiledClassBase,
+)
 from starkware.starknet.services.api.feeder_gateway.response_objects import (
     DeployAccountSpecificInfo,
 )
@@ -53,7 +55,7 @@ DECLARE_CONTENT = load_file_content("declare_rpc.json")
 
 
 @pytest.fixture(name="contract_class")
-def fixture_contract_class() -> ContractClass:
+def fixture_contract_class() -> CompiledClassBase:
     """
     Make ContractDefinition from deployment transaction used in tests
     """
@@ -197,7 +199,10 @@ def fixture_deploy_account_details() -> dict:
 
 
 def prepare_deploy_account_tx(
-    private_key: int, public_key: int, account_salt: int, contract_class: ContractClass
+    private_key: int,
+    public_key: int,
+    account_salt: int,
+    contract_class: CompiledClassBase,
 ) -> Tuple[DeployAccount, int]:
     """Return (signed deploy account tx, address)"""
     account_address, deploy_account_tx = sign_deploy_account_tx(

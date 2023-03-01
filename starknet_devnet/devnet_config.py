@@ -12,10 +12,11 @@ from typing import List
 from aiohttp.client_exceptions import ClientConnectorError, InvalidURL
 from marshmallow.exceptions import ValidationError
 from services.external_api.client import BadRequest, RetryConfig
-from starkware.python.utils import to_bytes
 from starkware.starknet.core.os.contract_class.class_hash import compute_class_hash
 from starkware.starknet.definitions.general_config import StarknetChainId
-from starkware.starknet.services.api.contract_class.contract_class import ContractClass
+from starkware.starknet.services.api.contract_class.contract_class import (
+    DeprecatedCompiledClass,
+)
 from starkware.starknet.services.api.feeder_gateway.feeder_gateway_client import (
     FeederGatewayClient,
 )
@@ -30,9 +31,9 @@ from .constants import (
     DEFAULT_TIMEOUT,
 )
 from .contract_class_wrapper import (
-    DEFAULT_ACCOUNT_HASH_BYTES,
+    DEFAULT_ACCOUNT_HASH,
     DEFAULT_ACCOUNT_PATH,
-    ContractClassWrapper,
+    CompiledClassWrapper,
 )
 
 NETWORK_TO_URL = {
@@ -103,7 +104,7 @@ def _parse_dump_on(option: str):
 EXPECTED_ACCOUNT_METHODS = ["__execute__", "__validate__", "__validate_declare__"]
 
 
-def _parse_account_class(class_path: str) -> ContractClassWrapper:
+def _parse_account_class(class_path: str) -> CompiledClassWrapper:
     """Parse account class"""
     class_path = os.path.abspath(class_path)
 
@@ -117,12 +118,12 @@ def _parse_account_class(class_path: str) -> ContractClassWrapper:
             sys.exit(f"Error: {class_path} is not a valid JSON file")
 
     try:
-        contract_class = ContractClass.load(loaded_dict)
+        contract_class = DeprecatedCompiledClass.load(loaded_dict)
     except ValidationError:
         sys.exit(f"Error: {class_path} is not a valid contract class artifact")
 
     if class_path == DEFAULT_ACCOUNT_PATH:
-        class_hash_bytes = DEFAULT_ACCOUNT_HASH_BYTES
+        class_hash = DEFAULT_ACCOUNT_HASH
     else:
         contract_methods = [entry["name"] for entry in contract_class.abi]
         missing_methods = [
@@ -132,9 +133,9 @@ def _parse_account_class(class_path: str) -> ContractClassWrapper:
             sys.exit(
                 f"Error: {class_path} is missing account methods: {', '.join(missing_methods)}"
             )
-        class_hash_bytes = to_bytes(compute_class_hash(contract_class))
+        class_hash = compute_class_hash(contract_class)
 
-    return ContractClassWrapper(contract_class, class_hash_bytes)
+    return CompiledClassWrapper(contract_class, class_hash)
 
 
 def _get_feeder_gateway_client(url: str, block_id: str):

@@ -21,7 +21,9 @@ from starkware.starknet.core.os.transaction_hash.transaction_hash import (
 )
 from starkware.starknet.definitions.general_config import StarknetChainId
 from starkware.starknet.public.abi import get_selector_from_name
-from starkware.starknet.services.api.contract_class.contract_class import ContractClass
+from starkware.starknet.services.api.contract_class.contract_class import (
+    DeprecatedCompiledClass,
+)
 from starkware.starknet.services.api.gateway.transaction import (
     DEFAULT_DECLARE_SENDER_ADDRESS,
 )
@@ -167,11 +169,12 @@ def test_estimate_fee_declare(declare_content):
     contract_class = decompress_program({"contract_class": contract_class})[
         "contract_class"
     ]
-    contract_class = ContractClass.load(contract_class)
+    contract_class = DeprecatedCompiledClass.load(contract_class)
 
     nonce = get_nonce(PREDEPLOYED_ACCOUNT_ADDRESS)
     tx_hash = calculate_declare_transaction_hash(
         contract_class=contract_class,
+        compiled_class_hash=None,  # TODO shouldn't be None
         chain_id=StarknetChainId.TESTNET.value,
         sender_address=int(PREDEPLOYED_ACCOUNT_ADDRESS, 16),
         max_fee=0,

@@ -551,6 +551,7 @@ def test_add_declare_transaction(declare_content):
     nonce = get_nonce(PREDEPLOYED_ACCOUNT_ADDRESS)
     tx_hash = calculate_declare_transaction_hash(
         contract_class=load_contract_class(CONTRACT_PATH),
+        compiled_class_hash=None,  # TODO shouldn't be None
         chain_id=StarknetChainId.TESTNET.value,
         sender_address=int(PREDEPLOYED_ACCOUNT_ADDRESS, 16),
         max_fee=max_fee,

@@ -10,7 +10,7 @@ from starkware.starknet.testing.contract import StarknetContract
 from starkware.starknet.testing.starknet import Starknet
 
 from starknet_devnet.account_util import set_balance
-from starknet_devnet.contract_class_wrapper import ContractClassWrapper
+from starknet_devnet.contract_class_wrapper import CompiledClassWrapper
 
 
 class Account:
@@ -23,13 +23,13 @@ class Account:
         private_key: int,
         public_key: int,
         initial_balance: int,
-        account_class_wrapper: ContractClassWrapper,
+        account_class_wrapper: CompiledClassWrapper,
     ):
         self.starknet_wrapper = starknet_wrapper
         self.private_key = private_key
         self.public_key = public_key
         self.contract_class = account_class_wrapper.contract_class
-        self.class_hash_bytes = account_class_wrapper.hash_bytes
+        self.class_hash = account_class_wrapper.hash
 
         # salt and class_hash have frozen values that make the constructor_calldata
         # the only thing that affects the account address
@@ -54,10 +54,8 @@ class Account:
         """Deploy this account and set its balance."""
         starknet: Starknet = self.starknet_wrapper.starknet
         contract_class = self.contract_class
-        await starknet.state.state.set_contract_class(
-            self.class_hash_bytes, contract_class
-        )
-        await starknet.state.state.deploy_contract(self.address, self.class_hash_bytes)
+        starknet.state.state.contract_classes[self.class_hash] = contract_class
+        await starknet.state.state.deploy_contract(self.address, self.class_hash)
 
         await starknet.state.state.set_storage_at(
             self.address, get_selector_from_name("Account_public_key"), self.public_key

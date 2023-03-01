@@ -9,7 +9,9 @@ from typing import Callable, List, Optional, Union
 from marshmallow.exceptions import MarshmallowError
 from starkware.starknet.definitions.general_config import StarknetGeneralConfig
 from starkware.starknet.public.abi import AbiEntryType
-from starkware.starknet.services.api.contract_class.contract_class import ContractClass
+from starkware.starknet.services.api.contract_class.contract_class import (
+    DeprecatedCompiledClass,
+)
 from starkware.starknet.services.api.feeder_gateway.request_objects import CallFunction
 from starkware.starknet.services.api.feeder_gateway.response_objects import (
     BlockStateUpdate,
@@ -439,7 +441,7 @@ def make_declare(declare_transaction: RpcBroadcastedDeclareTxn) -> Declare:
 
     try:
         contract_class = decompress_program(declare_transaction)["contract_class"]
-        contract_class = ContractClass.load(contract_class)
+        contract_class = DeprecatedCompiledClass.load(contract_class)
     except (StarkException, TypeError, MarshmallowError) as ex:
         raise RpcError(code=50, message="Invalid contract class") from ex
 
@@ -466,7 +468,7 @@ def make_deploy(deploy_transaction: RpcBroadcastedDeployTxn) -> Deploy:
 
     try:
         contract_class = decompress_program(deploy_transaction)["contract_class"]
-        contract_class = ContractClass.load(contract_class)
+        contract_class = DeprecatedCompiledClass.load(contract_class)
     except (StarkException, TypeError, MarshmallowError) as ex:
         raise RpcError(code=50, message="Invalid contract class") from ex
 
@@ -630,7 +632,7 @@ class RpcContractClass(TypedDict):
     abi: Optional[List[AbiEntry]]
 
 
-def rpc_contract_class(contract_class: ContractClass) -> RpcContractClass:
+def rpc_contract_class(contract_class: DeprecatedCompiledClass) -> RpcContractClass:
     """
     Convert gateway contract class to rpc contract class
     """

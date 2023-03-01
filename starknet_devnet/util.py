@@ -5,7 +5,7 @@ Utility functions used across the project.
 import os
 import sys
 from dataclasses import dataclass
-from typing import Dict, List, Set, Union
+from typing import Dict, List, Set
 
 from starkware.starknet.business_logic.state.state import CachedState
 from starkware.starknet.definitions.error_codes import StarknetErrorCode
@@ -82,14 +82,6 @@ def enable_pickling():
     StarknetContract.__setstate__ = contract_setstate
 
 
-def to_bytes(value: Union[int, bytes]) -> bytes:
-    """
-    If int, convert to 32-byte big-endian bytes instance
-    If bytes, return the received value
-    """
-    return value if isinstance(value, bytes) else value.to_bytes(32, "big")
-
-
 def check_valid_dump_path(dump_path: str):
     """Checks if dump path is a directory. Raises ValueError if not."""
 
@@ -116,9 +108,10 @@ async def get_all_declared_classes(
     """Returns a tuple of explicitly and implicitly declared classes"""
     declared_contracts_set = set(explicitly_declared_contracts)
     for deployed_contract in deployed_contracts:
-        class_hash_bytes = to_bytes(deployed_contract.class_hash)
         try:
-            await previous_state.get_compiled_class_by_class_hash(class_hash_bytes)
+            await previous_state.get_compiled_class_by_class_hash(
+                deployed_contract.class_hash
+            )
         except StarkException:
             declared_contracts_set.add(deployed_contract.class_hash)
     return tuple(declared_contracts_set)

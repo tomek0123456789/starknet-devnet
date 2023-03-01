@@ -15,7 +15,10 @@ import requests
 from starkware.starknet.cli.starknet_cli import get_salt
 from starkware.starknet.definitions.error_codes import StarknetErrorCode
 from starkware.starknet.definitions.transaction_type import TransactionType
-from starkware.starknet.services.api.contract_class.contract_class import ContractClass
+from starkware.starknet.services.api.contract_class.contract_class import (
+    CompiledClassBase,
+    DeprecatedCompiledClass,
+)
 from starkware.starknet.services.api.gateway.transaction import Deploy
 
 from starknet_devnet.general_config import DEFAULT_GENERAL_CONFIG
@@ -386,7 +389,7 @@ def load_contract_class(contract_path: str):
     """Loads the contract class from the contract path"""
     loaded_contract = load_json_from_path(contract_path)
 
-    return ContractClass.load(loaded_contract)
+    return DeprecatedCompiledClass.load(loaded_contract)
 
 
 def assert_tx_status(tx_hash, expected_tx_status: str, feeder_gateway_url=APP_URL):
@@ -429,7 +432,7 @@ def assert_contract_code_not_present(address: str, feeder_gateway_url=APP_URL):
     assert resp.status_code == 200
 
 
-def assert_contract_class(actual_class: ContractClass, expected_class_path: str):
+def assert_contract_class(actual_class: CompiledClassBase, expected_class_path: str):
     """Asserts equality between `actual_class` and class at `expected_class_path`."""
 
     loaded_contract_class = load_contract_class(expected_class_path)
@@ -471,13 +474,13 @@ def get_transaction_receipt(tx_hash: str, feeder_gateway_url=APP_URL):
 
 def get_full_contract(
     contract_address: str, feeder_gateway_url=APP_URL
-) -> ContractClass:
+) -> CompiledClassBase:
     """Gets contract class by contract address"""
     output = run_starknet(
         ["get_full_contract", "--contract_address", contract_address],
         gateway_url=feeder_gateway_url,
     )
-    return ContractClass.loads(output.stdout)
+    return DeprecatedCompiledClass.loads(output.stdout)
 
 
 def assert_full_contract_not_present(address: str, feeder_gateway_url=APP_URL):
@@ -541,7 +544,7 @@ def assert_class_by_hash(
 ):
     """Assert the class at `class_hash` matches what is at `expected_path`."""
     resp = get_class_by_hash(class_hash, feeder_gateway_url=feeder_gateway_url)
-    class_by_hash = ContractClass.loads(resp.text)
+    class_by_hash = DeprecatedCompiledClass.loads(resp.text)
     assert_contract_class(class_by_hash, expected_class_path=expected_path)
     assert resp.status_code == 200
 

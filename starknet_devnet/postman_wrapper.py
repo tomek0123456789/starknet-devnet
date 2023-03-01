@@ -207,6 +207,8 @@ class Postman:
                 calldata=[int(args["fromAddress"], 16), *args["payload"]],
                 nonce=args["nonce"],
                 chain_id=self.starknet.state.general_config.chain_id.value,
+                # TODO update .sol ? in some other way make fee obligatory?
+                paid_fee_on_l1=args["fee"],
             )
             transactions_to_execute.append(transaction)
             self.mock_starknet_messaging_contract.mockConsumeMessageToL2.transact(
@@ -215,6 +217,7 @@ class Postman:
                 args["selector"],
                 args["payload"],
                 args["nonce"],
+                args["fee"],
             )
 
         return transactions_to_execute
