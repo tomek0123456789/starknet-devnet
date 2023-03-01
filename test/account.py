@@ -126,6 +126,7 @@ def get_estimated_fee(
         nonce=nonce,
         block_number=block_number,
         feeder_gateway_url=feeder_gateway_url,
+        chain_id=chain_id,
     )
 
 
@@ -179,6 +180,8 @@ def invoke(
             *signature,
             "--max_fee",
             str(max_fee),
+            "--chain_id",
+            hex(chain_id.value),  # TODO
         ],
         gateway_url=gateway_url,
     )

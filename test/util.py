@@ -14,6 +14,7 @@ import pytest
 import requests
 from starkware.starknet.cli.starknet_cli import get_salt
 from starkware.starknet.definitions.error_codes import StarknetErrorCode
+from starkware.starknet.definitions.general_config import StarknetChainId
 from starkware.starknet.definitions.transaction_type import TransactionType
 from starkware.starknet.services.api.contract_class.contract_class import (
     CompiledClassBase,
@@ -253,7 +254,7 @@ def assert_transaction(
     if tx_type == "INVOKE_FUNCTION":
         invoke_transaction_keys = [
             "calldata",
-            "contract_address",
+            "sender_address",
             "max_fee",
             "signature",
             "transaction_hash",
@@ -324,6 +325,7 @@ def estimate_fee(
     nonce=None,
     block_number=None,
     block_hash=None,
+    chain_id=StarknetChainId.TESTNET,
     feeder_gateway_url=APP_URL,
 ):
     """Wrapper around starknet estimate_fee. Returns fee in wei."""
@@ -338,6 +340,8 @@ def estimate_fee(
         address,
         "--abi",
         abi_path,
+        "--chain_id",
+        hex(chain_id.value),
     ]
 
     if signature:

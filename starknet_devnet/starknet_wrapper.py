@@ -536,7 +536,7 @@ class StarknetWrapper:
                 tx_handler.execution_info.get_visited_storage_entries()
             )
 
-        return external_tx.contract_address, tx_handler.internal_tx.hash_value
+        return external_tx.sender_address, tx_handler.internal_tx.hash_value
 
     async def __get_query_state(self, block_id: BlockId = DEFAULT_BLOCK_ID):
         if block_id == PENDING_BLOCK_ID:
