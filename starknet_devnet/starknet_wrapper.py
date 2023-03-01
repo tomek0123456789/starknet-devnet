@@ -155,7 +155,7 @@ class StarknetWrapper:
             await self.__udc.deploy()
 
             await self.__preserve_current_state(starknet.state.state)
-            # await self.__create_genesis_block() TODO temporarily disable
+            await self.__create_genesis_block()
             self.__initialized = True
 
     async def __create_genesis_block(self):
@@ -283,7 +283,7 @@ class StarknetWrapper:
         state_diff = StateDiff(
             deployed_contracts=deployed_contracts,
             old_declared_contracts=old_declared_contracts,
-            declared_classes=tuple(),
+            declared_classes=[],
             replaced_classes=[],  # TODO
             storage_diffs=storage_diffs,
             nonces=nonces or {},

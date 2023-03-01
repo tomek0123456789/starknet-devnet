@@ -7,6 +7,7 @@ from typing import Dict, List
 from services.everest.business_logic.transaction_execution_objects import (
     TransactionFailureReason,
 )
+from starkware.python.utils import to_bytes
 from starkware.starknet.business_logic.transaction.objects import (
     InternalDeclare,
     InternalDeploy,
@@ -295,7 +296,7 @@ def create_empty_internal_deploy(
     "Create InternalDeploy used in the genesis block"
     return InternalDeploy(
         contract_address=contract_address,
-        contract_hash=class_hash,
+        contract_hash=to_bytes(class_hash),
         contract_address_salt=0,
         hash_value=tx_hash,
         version=0,
