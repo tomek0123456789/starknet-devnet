@@ -8,6 +8,7 @@ from services.everest.business_logic.transaction_execution_objects import (
     TransactionFailureReason,
 )
 from starkware.python.utils import to_bytes
+from starkware.starknet.business_logic.execution.objects import TransactionExecutionInfo
 from starkware.starknet.business_logic.transaction.objects import (
     InternalDeclare,
     InternalDeploy,
@@ -26,7 +27,7 @@ from starkware.starknet.services.api.feeder_gateway.response_objects import (
     TransactionTrace,
 )
 from starkware.starknet.testing.objects import StarknetCallInfo
-from starkware.starknet.testing.starknet import TransactionExecutionInfo
+from starkware.starkware_utils.error_handling import StarkErrorCode
 from web3 import Web3
 
 from .origin import Origin
@@ -193,8 +194,16 @@ class DevnetTransactions:
         """
         Get a transaction by hash.
         """
-        numeric_hash = int(tx_hash, 16)
-        return self.__instances.get(numeric_hash)
+        if tx_hash.startswith("0x"):
+            try:
+                return self.__instances.get(int(tx_hash, 16))
+            except ValueError:
+                pass
+
+        raise StarknetDevnetException(
+            code=StarkErrorCode.MALFORMED_REQUEST,
+            message=f"Transaction hash should be a hexadecimal string starting with 0x, or 'null'; got: '{tx_hash}'.",
+        )
 
     def get_count(self):
         """

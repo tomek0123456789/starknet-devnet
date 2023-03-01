@@ -30,7 +30,7 @@ CALL_CONTENT = load_file_content("call.json")
 INVALID_HASH = "0x58d4d4ed7580a7a98ab608883ec9fe722424ce52c19f2f369eeea301f535914"
 INVALID_ADDRESS = "0x123"
 USER_ID = 1
-L1_CONTRACT_ADDRESS = 0xE7F1725E7734CE288F8367E1BB143E90BB3F0512
+L1_CONTRACT_ADDRESS = "0xE7F1725E7734CE288F8367E1BB143E90BB3F0512"
 L2_CONTRACT_ADDRESS = (
     "0x00285ddb7e5c777b310d806b9b2a0f7c7ba0a41f12b420219209d97a3b7f25b2"
 )
@@ -71,7 +71,7 @@ def test_send_message_to_l2_deploy_execute():
         {
             "l2_contract_address": deploy_info["address"],
             "entry_point_selector": ENTRY_POINT_SELECTOR,
-            "l1_contract_address": str(L1_CONTRACT_ADDRESS),
+            "l1_contract_address": L1_CONTRACT_ADDRESS,
             "payload": MESSAGE_TO_L2_PAYLOAD,
             "nonce": MESSAGE_TO_L2_NONCE,
         }
@@ -103,7 +103,7 @@ def test_send_message_to_l2_execute_without_data():
         }
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 500
     assert response.json().get("code") == str(StarkErrorCode.MALFORMED_REQUEST)
 
 
@@ -115,7 +115,7 @@ def test_send_message_to_l2_execute_without_deploy():
         {
             "l2_contract_address": L2_CONTRACT_ADDRESS,
             "entry_point_selector": ENTRY_POINT_SELECTOR,
-            "l1_contract_address": str(L1_CONTRACT_ADDRESS),
+            "l1_contract_address": L1_CONTRACT_ADDRESS,
             "payload": MESSAGE_TO_L2_PAYLOAD,
             "nonce": MESSAGE_TO_L2_NONCE,
         }
@@ -151,7 +151,7 @@ def test_consume_message_from_l2_deploy_execute():
     response = consume_message_from_l2(
         {
             "l2_contract_address": deploy_info["address"],
-            "l1_contract_address": str(L1_CONTRACT_ADDRESS),
+            "l1_contract_address": L1_CONTRACT_ADDRESS,
             "payload": CONSUME_PAYLOAD,
         }
     )
@@ -166,7 +166,7 @@ def test_consume_message_from_l2_deploy_execute_without_withdraw():
     response = consume_message_from_l2(
         {
             "l2_contract_address": deploy_info["address"],
-            "l1_contract_address": str(L1_CONTRACT_ADDRESS),
+            "l1_contract_address": L1_CONTRACT_ADDRESS,
             "payload": CONSUME_PAYLOAD,
         }
     )
@@ -188,7 +188,7 @@ def test_consume_message_from_l2_execute_without_data():
         }
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 500
     assert response.json().get("code") == str(StarkErrorCode.MALFORMED_REQUEST)
 
 
@@ -198,7 +198,7 @@ def test_consume_message_from_l2_execute_without_deploy():
     response = consume_message_from_l2(
         {
             "l2_contract_address": L2_CONTRACT_ADDRESS,
-            "l1_contract_address": str(L1_CONTRACT_ADDRESS),
+            "l1_contract_address": L1_CONTRACT_ADDRESS,
             "payload": CONSUME_PAYLOAD,
         }
     )

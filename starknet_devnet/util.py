@@ -15,16 +15,23 @@ from starkware.starknet.services.api.feeder_gateway.response_objects import (
     StorageEntry,
 )
 from starkware.starknet.testing.contract import StarknetContract
-from starkware.starkware_utils.error_handling import StarkException
+from starkware.starkware_utils.error_handling import StarkErrorCode, StarkException
 
 
-def custom_int(arg: str) -> int:
+def parse_hex_string(arg: str) -> int:
     """
-    Converts the argument to an integer.
-    Conversion base is 16 if `arg` starts with `0x`, otherwise `10`.
+    Converts the argument to an integer only if it starts with `0x`.
     """
-    base = 16 if arg.startswith("0x") else 10
-    return int(arg, base)
+    if arg.startswith("0x"):
+        try:
+            return int(arg, 16)
+        except ValueError:
+            pass
+
+    raise StarknetDevnetException(
+        code=StarkErrorCode.MALFORMED_REQUEST,
+        message=f"Hash should be a hexadecimal string starting with 0x, or 'null'; got: '{arg}'.",
+    )
 
 
 def fixed_length_hex(arg: int) -> str:
