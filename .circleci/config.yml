@@ -10,7 +10,7 @@ aliases:
 
   - &on_master_after_test_and_build
     <<: *on_master
-    requires:py_min
+    requires:
       - test_py_max
       - test_py_max_rust
       - image_build
