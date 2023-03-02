@@ -63,10 +63,10 @@ def load_compiled_class(artifact_path: str) -> CompiledClass:
         casm_dict: Dict = json.load(casm_file)
 
     entry_points_by_type = casm_dict["entry_points_by_type"]
-    builtins = []  # seems that all builtins need to be reported separately
+    builtins = []  # seems that all builtins need to be reported in a separate list too
     for _, entry_points in entry_points_by_type.items():
         for entry_point in entry_points:
-            # fix foramt of offset to hex
+            # fix format of offset to hex
             entry_point["offset"] = hex(entry_point["offset"])
             builtins.extend(entry_point["builtins"])
 
