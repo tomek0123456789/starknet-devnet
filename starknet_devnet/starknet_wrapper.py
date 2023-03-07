@@ -48,6 +48,7 @@ from starkware.starknet.services.api.feeder_gateway.response_objects import (
 )
 from starkware.starknet.services.api.gateway.transaction import (
     Declare,
+    DeprecatedDeclare,
     Deploy,
     DeployAccount,
     InvokeFunction,
@@ -310,7 +311,9 @@ class StarknetWrapper:
 
         self.transactions.store(transaction.transaction_hash, transaction)
 
-    async def declare(self, external_tx: Declare) -> Tuple[int, int]:
+    async def declare(
+        self, external_tx: Union[Declare, DeprecatedDeclare]
+    ) -> Tuple[int, int]:
         """
         Declares the class specified with `declare_transaction`
         Returns (class_hash, transaction_hash)
@@ -326,15 +329,29 @@ class StarknetWrapper:
             # calculate class hash here if execution fails
             class_hash = tx_handler.internal_tx.class_hash
 
+            # will default to class_hash for declare v1
+            compiled_class_hash = (
+                tx_handler.internal_tx.compiled_class_hash or class_hash
+            )
+
             tx_handler.execution_info = await state.execute_tx(tx_handler.internal_tx)
 
+            # TODO which class hash
             tx_handler.explicitly_declared.append(class_hash)
 
+            # TODO comment below might not be accurate as of starknet 0.11:
             # alpha-goerli allows multiple declarations of the same class.
             # Even though execute_tx is performed, class needs to be set explicitly
             state.state.contract_classes[
-                tx_handler.internal_tx.class_hash
+                compiled_class_hash
             ] = external_tx.contract_class
+
+            # check if Declare v2
+            if isinstance(external_tx, Declare):
+                # TODO assert correctness of the provided compiled class hash?
+                await state.state.set_compiled_class_hash(
+                    class_hash=class_hash, compiled_class_hash=compiled_class_hash
+                )
 
         return class_hash, tx_handler.internal_tx.hash_value
 
@@ -608,12 +625,13 @@ class StarknetWrapper:
     async def get_class_by_hash(self, class_hash: int) -> CompiledClassBase:
         """Return contract class given class hash"""
         cached_state = self.get_state().state
-        return cached_state.contract_classes[class_hash]
+        # TODO this is not good
+        return await cached_state.get_compiled_class_by_class_hash(class_hash)
 
     async def get_class_hash_at(
         self, contract_address: int, block_id: BlockId = DEFAULT_BLOCK_ID
     ) -> int:
-        """Return class hash give the contract address"""
+        """Return class hash given the contract address"""
         state = await self.__get_query_state(block_id)
         cached_state = state.state
         class_hash = await cached_state.get_class_hash_at(contract_address)

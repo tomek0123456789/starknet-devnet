@@ -9,13 +9,16 @@ from starkware.starknet.core.os.contract_class.compiled_class_hash import (
     compute_compiled_class_hash,
 )
 from starkware.starknet.core.os.transaction_hash.transaction_hash import (
+    compute_class_hash,
     calculate_declare_transaction_hash,
 )
 from starkware.starknet.definitions.general_config import StarknetChainId
+from starkware.starknet.services.api.gateway.transaction import Declare
 
 import contract_class_utils
 
-HOST = "https://external.integration.starknet.io"
+# HOST = "https://external.integration.starknet.io"
+HOST = "http://127.0.0.1:5050"
 
 
 def get_nonce(contract_address: str) -> int:
@@ -29,19 +32,19 @@ def get_nonce(contract_address: str) -> int:
 
 def get_account():
     """Extract (address, private_key)"""
-    home = os.path.expanduser("~")
-
-    with open(
-        f"{home}/.starknet_accounts/starknet_open_zeppelin_accounts.json",
-        encoding="utf-8",
-    ) as accounts_json:
-        accounts = json.load(accounts_json)
-
-    account = accounts["alpha-goerli"]["__default__"]
     return (
-        int(account["address"], 16),
-        int(account["private_key"], 16),
+        int(os.getenv("ACCOUNT_ADDRESS"), 16),
+        int(os.getenv("ACCOUNT_PRIVATE_KEY"), 16),
     )
+
+
+def _get_class_by_hash(class_hash: str):
+    get_class_resp = requests.get(
+        f"{HOST}/feeder_gateway/get_class_by_hash",
+        params={"classHash": hex(class_hash)},
+    )
+    print("Get class status_code:", get_class_resp.status_code)
+    print("Get class response:", str(get_class_resp.json())[:100])
 
 
 def main():
@@ -54,6 +57,9 @@ def main():
     compiled_class = contract_class_utils.load_casm(f"{artifacts_path}/contract.casm")
 
     compiled_class_hash = compute_compiled_class_hash(compiled_class)
+    print("DEBUG compiled class hash", compiled_class_hash, hex(compiled_class_hash))
+    class_hash = compute_class_hash(contract_class)
+    print("DEBUG class hash", class_hash, hex(class_hash))
 
     max_fee = int(1e18)  # should be enough
     version = 2
@@ -70,22 +76,28 @@ def main():
     )
     signature = list(sign(msg_hash=hash_value, priv_key=private_key))
 
-    declare_resp = requests.post(
-        f"{HOST}/gateway/add_transaction",
-        json={
-            "version": hex(version),
-            "max_fee": hex(max_fee),
-            "signature": [hex(s) for s in signature],
-            "nonce": hex(nonce),
-            "contract_class": contract_class.dump(),
-            "compiled_class_hash": hex(compiled_class_hash),
-            "sender_address": hex(sender_address),
-            "type": "DECLARE",
-        },
-    )
+    declaration_body = Declare(
+        contract_class=contract_class,
+        compiled_class_hash=compiled_class_hash,
+        sender_address=sender_address,
+        version=version,
+        max_fee=max_fee,
+        signature=signature,
+        nonce=nonce,
+    ).dump()
+    declaration_body["type"] = "DECLARE"
 
+    declare_resp = requests.post(
+        f"{HOST}/gateway/add_transaction", json=declaration_body
+    )
     print("Declare status code:", declare_resp.status_code)
     print("Declare response:", declare_resp.json())
+
+    print("Getting for class hash")
+    _get_class_by_hash(class_hash)
+
+    print("Getting for compiled class hash")
+    _get_class_by_hash(compiled_class_hash)
 
 
 if __name__ == "__main__":

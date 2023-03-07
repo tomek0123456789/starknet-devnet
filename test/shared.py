@@ -17,6 +17,12 @@ FAILING_CONTRACT_PATH = f"{ARTIFACTS_PATH}/always_fail.cairo/always_fail.json"
 DEPLOYER_CONTRACT_PATH = f"{ARTIFACTS_PATH}/deployer.cairo/deployer.json"
 DEPLOYER_ABI_PATH = f"{ARTIFACTS_PATH}/deployer.cairo/deployer_abi.json"
 
+# cairo 1.0
+ARTIFACTS_1_PATH = "test/artifacts/contracts/cairo1"
+CONTRACT_1_PATH = f"{ARTIFACTS_1_PATH}/contract.cairo/contract.json"
+CONTRACT_1_CASM_PATH = f"{ARTIFACTS_1_PATH}/contract.cairo/contract.casm"
+ABI_1_PATH = f"{ARTIFACTS_1_PATH}/contract.cairo/contract_abi.json"
+
 STARKNET_CLI_ACCOUNT_ABI_PATH = f"{ARTIFACTS_PATH}/starknet_cli_oz_account_abi.json"
 with open(STARKNET_CLI_ACCOUNT_ABI_PATH, "w", encoding="utf-8") as oz_account_abi_file:
     json.dump(oz_account_class.abi, oz_account_abi_file)
@@ -36,7 +42,7 @@ EXPECTED_SALTY_DEPLOY_HASH = (
 )
 
 EXPECTED_CLASS_HASH = (
-    "0x71df7c871d389943e24aaaf85d41594266d12f2f9b580a9f92ba4a0bf763d67"
+    "0x31566529b63c8f91a18985021f01ffce08f43dd024a91c24fb7bcf618b91857"
 )
 
 NONEXISTENT_TX_HASH = "0x99"

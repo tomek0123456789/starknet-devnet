@@ -134,8 +134,8 @@ def get_path(name: str, extension: str, dir_path: Optional[str]):
 
 
 def load_file(path: str) -> JsonObject:
-    with open(path, "r") as fp:
-        return json.load(fp)
+    with open(path, "r", encoding="utf-8") as file_pointer:
+        return json.load(file_pointer)
 
 
 def get_cairo_path(contract_name: str, dir_path: Optional[str] = None) -> str:

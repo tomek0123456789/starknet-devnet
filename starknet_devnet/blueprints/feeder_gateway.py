@@ -231,7 +231,7 @@ async def get_transaction_status():
     )
     return jsonify(tx_status)
 
-
+# TODO add compiled_class_hash to response?
 @feeder_gateway.route("/get_transaction", methods=["GET"])
 async def get_transaction():
     """
