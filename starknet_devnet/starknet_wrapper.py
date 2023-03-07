@@ -22,6 +22,9 @@ from starkware.starknet.business_logic.transaction.objects import (
 from starkware.starknet.core.os.contract_address.contract_address import (
     calculate_contract_address_from_hash,
 )
+from starkware.starknet.core.os.contract_class.compiled_class_hash import (
+    compute_compiled_class_hash,
+)
 from starkware.starknet.core.os.transaction_hash.transaction_hash import (
     calculate_deploy_transaction_hash,
 )
@@ -48,9 +51,9 @@ from starkware.starknet.services.api.feeder_gateway.response_objects import (
 )
 from starkware.starknet.services.api.gateway.transaction import (
     Declare,
-    DeprecatedDeclare,
     Deploy,
     DeployAccount,
+    DeprecatedDeclare,
     InvokeFunction,
 )
 from starkware.starknet.services.api.messages import StarknetMessageToL1
@@ -66,12 +69,13 @@ from .block_info_generator import BlockInfoGenerator
 from .blocks import DevnetBlocks
 from .blueprints.rpc.structures.types import BlockId, Felt
 from .chargeable_account import ChargeableAccount
+from .compile import compile_cairo
 from .constants import (
     DUMMY_STATE_ROOT,
     LEGACY_TX_VERSION,
     STARKNET_CLI_ACCOUNT_CLASS_HASH,
 )
-from .devnet_config import DevnetConfig
+from .devnet_config import CAIRO_COMPILER_MANIFEST_OPTION, DevnetConfig
 from .fee_token import FeeToken
 from .forked_state import get_forked_starknet
 from .general_config import build_devnet_general_config
@@ -329,29 +333,46 @@ class StarknetWrapper:
             # calculate class hash here if execution fails
             class_hash = tx_handler.internal_tx.class_hash
 
-            # will default to class_hash for declare v1
-            compiled_class_hash = (
-                tx_handler.internal_tx.compiled_class_hash or class_hash
-            )
-
-            tx_handler.execution_info = await state.execute_tx(tx_handler.internal_tx)
-
-            # TODO which class hash
-            tx_handler.explicitly_declared.append(class_hash)
-
             # TODO comment below might not be accurate as of starknet 0.11:
             # alpha-goerli allows multiple declarations of the same class.
             # Even though execute_tx is performed, class needs to be set explicitly
-            state.state.contract_classes[
-                compiled_class_hash
-            ] = external_tx.contract_class
+
+            tx_handler.execution_info = await state.execute_tx(tx_handler.internal_tx)
 
             # check if Declare v2
             if isinstance(external_tx, Declare):
-                # TODO assert correctness of the provided compiled class hash?
+                if not self.config.cairo_compiler_manifest:
+                    # TODO should this fail instantly? i.e. outside of tx_handler
+                    raise StarknetDevnetException(
+                        code=StarknetErrorCode.UNEXPECTED_FAILURE,
+                        message=f"Cairo compiler manifest not set. To enable Declare v2 transactions, specify {CAIRO_COMPILER_MANIFEST_OPTION}",
+                    )
+
+                compiled_class_hash = tx_handler.internal_tx.compiled_class_hash
+                compiled_class = compile_cairo(
+                    external_tx.contract_class, self.config.cairo_compiler_manifest
+                )
+                compiled_class_hash_computed = compute_compiled_class_hash(
+                    compiled_class
+                )
+                if compiled_class_hash_computed != compiled_class_hash:
+                    raise StarknetDevnetException(
+                        code=StarknetErrorCode.INVALID_COMPILED_CLASS_HASH,
+                        message=f"Compiled class hash not matching; received: {compiled_class_hash}, computed: {compiled_class_hash_computed}",
+                    )
+
                 await state.state.set_compiled_class_hash(
                     class_hash=class_hash, compiled_class_hash=compiled_class_hash
                 )
+
+            else:
+                compiled_class_hash = class_hash
+                compiled_class = external_tx.contract_class
+
+            state.state.contract_classes[compiled_class_hash] = compiled_class
+
+            # TODO which class hash
+            tx_handler.explicitly_declared.append(class_hash)
 
         return class_hash, tx_handler.internal_tx.hash_value
 

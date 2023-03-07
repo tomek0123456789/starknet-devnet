@@ -6,13 +6,13 @@ Latest changes based on https://github.com/OpenZeppelin/nile/pull/184
 from typing import List, Tuple
 
 import requests
-from starkware.starknet.cli.starknet_cli import get_salt
 from starkware.crypto.signature.signature import private_to_stark_key, sign
-from starkware.starknet.core.os.transaction_hash.transaction_hash import (
-    calculate_deprecated_declare_transaction_hash,
-)
+from starkware.starknet.cli.starknet_cli import get_salt
 from starkware.starknet.core.os.contract_address.contract_address import (
     calculate_contract_address_from_hash,
+)
+from starkware.starknet.core.os.transaction_hash.transaction_hash import (
+    calculate_deprecated_declare_transaction_hash,
 )
 from starkware.starknet.definitions.constants import QUERY_VERSION
 from starkware.starknet.definitions.general_config import StarknetChainId
@@ -21,8 +21,8 @@ from starknet_devnet.account_util import AccountCall, get_execute_args
 
 from .settings import APP_URL
 from .shared import EXPECTED_UDC_ADDRESS, SUPPORTED_TX_VERSION
+from .util import deploy as deploy_contract
 from .util import (
-    deploy as deploy_contract,
     estimate_fee,
     extract_class_hash,
     extract_tx_hash,
@@ -229,13 +229,14 @@ def declare(
             "--max_fee",
             str(max_fee),
             "--chain_id",
-            hex(chain_id.value), # TODO
+            hex(chain_id.value),  # TODO
         ]
     )
     return {
         "tx_hash": extract_tx_hash(output.stdout),
         "class_hash": extract_class_hash(output.stdout),
     }
+
 
 def deploy(
     class_hash: str,

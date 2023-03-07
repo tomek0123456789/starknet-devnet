@@ -51,11 +51,9 @@ class ForkedStateReader(StateReader):
         try:
             with contextlib.redirect_stderr(None):
                 hash_hex = hex(compiled_class_hash)
-                compiled_class_dict = (
-                    await self.__feeder_gateway_client.get_compiled_class_by_class_hash(
-                        # TODO which has should this be?
-                        hash_hex
-                    )
+                compiled_class_dict = await self.__feeder_gateway_client.get_compiled_class_by_class_hash(
+                    # TODO which has should this be?
+                    hash_hex
                 )
                 return CompiledClassBase.load(compiled_class_dict)
         except BadRequest as bad_request:

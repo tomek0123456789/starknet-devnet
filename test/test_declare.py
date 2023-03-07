@@ -5,18 +5,19 @@ Tests of contract class declaration and deploy syscall.
 import pytest
 import requests
 from starkware.crypto.signature.signature import sign
-from starkware.starknet.definitions.error_codes import StarknetErrorCode
 from starkware.starknet.core.os.contract_class.compiled_class_hash import (
     compute_compiled_class_hash,
 )
 from starkware.starknet.core.os.transaction_hash.transaction_hash import (
     calculate_declare_transaction_hash,
 )
-from starkware.starknet.services.api.gateway.transaction import Declare
+from starkware.starknet.definitions.error_codes import StarknetErrorCode
 from starkware.starknet.definitions.general_config import StarknetChainId
+from starkware.starknet.services.api.gateway.transaction import Declare
 
-from .account import declare, get_nonce, deploy
-from .contract_class_utils import load_casm, load_sierra
+from starknet_devnet.contract_class_utils import load_casm, load_sierra
+
+from .account import declare, deploy, get_nonce
 from .settings import APP_URL
 from .shared import (
     ABI_1_PATH,
@@ -116,7 +117,11 @@ def _declare_v2(
 
 
 @pytest.mark.declare
-@devnet_in_background(*PREDEPLOY_ACCOUNT_CLI_ARGS)
+@devnet_in_background(
+    *PREDEPLOY_ACCOUNT_CLI_ARGS,
+    "--cairo-compiler-manifest",
+    "/home/fabijanc/starkware-libs/cairo/Cargo.toml",
+)
 def test_declare_v2_happy_path():
     """Test declare v2"""
 
@@ -151,4 +156,4 @@ def test_declare_v2_happy_path():
         abi_path=ABI_1_PATH,
     )
 
-    assert int(fetched_balance, 10) == initial_balance
+    assert int(fetched_balance, base=10) == initial_balance
