@@ -102,10 +102,10 @@ def main():
     contract_class = load_sierra(f"{artifacts_path}/contract.json")
     compiled_class = load_casm(f"{artifacts_path}/contract.casm")
 
-    compiled_class_hash = compute_compiled_class_hash(compiled_class)
-    print("Compiled class hash:", compiled_class_hash, hex(compiled_class_hash))
     class_hash = compute_class_hash(contract_class)
-    print("Class hash:", class_hash, hex(class_hash))
+    print("Class hash:", hex(class_hash))
+    compiled_class_hash = compute_compiled_class_hash(compiled_class)
+    print("Compiled class hash:", hex(compiled_class_hash))
 
     max_fee = int(1e18)  # should be enough
     version = 2
