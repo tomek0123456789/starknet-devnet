@@ -33,7 +33,7 @@ def parse_casm_entry_point(entry_point: Dict[str, Any]) -> CompiledClassEntryPoi
     assert entry_point["builtins"] is not None, "Expecting not-None builitin list."
     return CompiledClassEntryPoint(
         selector=int(entry_point["selector"], 16),
-        # TODO(Yoni, 1/5/2023): consider changing the 'offset' field to be dumped as int.
+        # T O D O (Yoni, 1/5/2023): consider changing the 'offset' field to be dumped as int.
         offset=int(entry_point["offset"]),
         builtins=entry_point["builtins"],
     )

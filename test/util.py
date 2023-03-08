@@ -548,9 +548,9 @@ def assert_class_by_hash(
 ):
     """Assert the class at `class_hash` matches what is at `expected_path`."""
     resp = get_class_by_hash(class_hash, feeder_gateway_url=feeder_gateway_url)
+    assert resp.status_code == 200, resp.text
     class_by_hash = DeprecatedCompiledClass.loads(resp.text)
     assert_contract_class(class_by_hash, expected_class_path=expected_path)
-    assert resp.status_code == 200
 
 
 def assert_class_by_hash_not_present(class_hash: str, feeder_gateway_url=APP_URL):

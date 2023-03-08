@@ -352,7 +352,8 @@ class StarknetWrapper:
                     # TODO should this fail instantly? i.e. outside of tx_handler
                     raise StarknetDevnetException(
                         code=StarknetErrorCode.UNEXPECTED_FAILURE,
-                        message=f"Cairo compiler manifest not set. To enable Declare v2 transactions, specify {CAIRO_COMPILER_MANIFEST_OPTION}",
+                        message=f"""Cairo compiler manifest not set.
+To enable Declare v2 transactions, specify {CAIRO_COMPILER_MANIFEST_OPTION} on Devnet startup""",
                     )
 
                 compiled_class_hash = tx_handler.internal_tx.compiled_class_hash
@@ -658,8 +659,14 @@ class StarknetWrapper:
     ) -> Union[CompiledClassBase, DeprecatedCompiledClass]:
         """Return contract class given class hash"""
         if class_hash in self.__contract_classes:
+            # check if class v2 (sierra)
             return self.__contract_classes[class_hash]
 
+        compiled_class = await self.get_state().state.get_compiled_class(class_hash)
+        if isinstance(compiled_class, DeprecatedCompiledClass):
+            return compiled_class
+
+        # TODO default to origin depending on error code
         raise StarknetDevnetException(
             code=StarknetErrorCode.UNDECLARED_CLASS,
             message=f"Class with hash {class_hash:#x} is not declared.",
