@@ -1,6 +1,5 @@
 """Send a declare v2 tx"""
 
-import json
 import os
 
 import requests
@@ -9,13 +8,13 @@ from starkware.starknet.core.os.contract_class.compiled_class_hash import (
     compute_compiled_class_hash,
 )
 from starkware.starknet.core.os.transaction_hash.transaction_hash import (
-    compute_class_hash,
     calculate_declare_transaction_hash,
+    compute_class_hash,
 )
 from starkware.starknet.definitions.general_config import StarknetChainId
 from starkware.starknet.services.api.gateway.transaction import Declare
 
-import contract_class_utils
+from starknet_devnet.contract_class_utils import load_casm, load_sierra
 
 # HOST = "https://external.integration.starknet.io"
 HOST = "http://127.0.0.1:5050"
@@ -53,8 +52,8 @@ def main():
     sender_address, private_key = get_account()
 
     artifacts_path = "test/artifacts/contracts/cairo1/contract.cairo"
-    contract_class = contract_class_utils.load_sierra(f"{artifacts_path}/contract.json")
-    compiled_class = contract_class_utils.load_casm(f"{artifacts_path}/contract.casm")
+    contract_class = load_sierra(f"{artifacts_path}/contract.json")
+    compiled_class = load_casm(f"{artifacts_path}/contract.casm")
 
     compiled_class_hash = compute_compiled_class_hash(compiled_class)
     print("DEBUG compiled class hash", compiled_class_hash, hex(compiled_class_hash))
