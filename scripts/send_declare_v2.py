@@ -38,16 +38,39 @@ def get_account():
 
 
 def _get_class_by_hash(class_hash: str):
-    get_class_resp = requests.get(
+    resp = requests.get(
         f"{HOST}/feeder_gateway/get_class_by_hash",
         params={"classHash": hex(class_hash)},
     )
-    print("Get class status_code:", get_class_resp.status_code)
-    print("Get class response:", str(get_class_resp.json())[:100])
+    print("Get class status_code:", resp.status_code)
+    print(
+        "Get class response:",
+        str(resp.json())[:100] if resp.status_code == 200 else resp.json(),
+    )
+
+
+def _get_transaction(transaction_hash: str):
+    resp = requests.get(
+        f"{HOST}/feeder_gateway/get_transaction",
+        params={"transactionHash": transaction_hash},
+    )
+    print("Get transaction status_code:", resp.status_code)
+    print("Get transaction response:", resp.json())
+
+
+def _get_transaction_receipt(transaction_hash: str):
+    resp = requests.get(
+        f"{HOST}/feeder_gateway/get_transaction_receipt",
+        params={"transactionHash": transaction_hash},
+    )
+    print("Get transaction receipt status_code:", resp.status_code)
+    print("Get transaction receipt response:", resp.json())
 
 
 def main():
     """Main method"""
+
+    print("Sending request to:", HOST)
 
     sender_address, private_key = get_account()
 
@@ -97,6 +120,9 @@ def main():
 
     print("Getting for compiled class hash")
     _get_class_by_hash(compiled_class_hash)
+
+    _get_transaction(declare_resp.json()["transaction_hash"])
+    _get_transaction_receipt(declare_resp.json()["transaction_hash"])
 
 
 if __name__ == "__main__":
