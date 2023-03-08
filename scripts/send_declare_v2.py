@@ -16,8 +16,8 @@ from starkware.starknet.services.api.gateway.transaction import Declare
 
 from starknet_devnet.contract_class_utils import load_casm, load_sierra
 
-# HOST = "https://external.integration.starknet.io"
-HOST = "http://127.0.0.1:5050"
+HOST = "https://external.integration.starknet.io"
+# HOST = "http://127.0.0.1:5050"
 
 
 def get_nonce(contract_address: str) -> int:
@@ -37,9 +37,21 @@ def get_account():
     )
 
 
-def _get_class_by_hash(class_hash: str):
+def _get_class(class_hash: str):
     resp = requests.get(
         f"{HOST}/feeder_gateway/get_class_by_hash",
+        params={"classHash": hex(class_hash)},
+    )
+    print("Get class status_code:", resp.status_code)
+    print(
+        "Get class response:",
+        str(resp.json())[:100] if resp.status_code == 200 else resp.json(),
+    )
+
+
+def _get_compiled_class(class_hash: str):
+    resp = requests.get(
+        f"{HOST}/feeder_gateway/get_compiled_class_by_class_hash",
         params={"classHash": hex(class_hash)},
     )
     print("Get class status_code:", resp.status_code)
@@ -115,11 +127,17 @@ def main():
     print("Declare status code:", declare_resp.status_code)
     print("Declare response:", declare_resp.json())
 
-    print("Getting for class hash")
-    _get_class_by_hash(class_hash)
+    print("Getting class by class_hash")
+    _get_class(class_hash)
 
-    print("Getting for compiled class hash")
-    _get_class_by_hash(compiled_class_hash)
+    print("Getting class by compiled_class_hash")
+    _get_class(compiled_class_hash)
+
+    print("Getting compiled class by class_hash")
+    _get_compiled_class(class_hash)
+
+    print("Getting compiled class by compiled_class_hash")
+    _get_compiled_class(compiled_class_hash)
 
     _get_transaction(declare_resp.json()["transaction_hash"])
     _get_transaction_receipt(declare_resp.json()["transaction_hash"])
