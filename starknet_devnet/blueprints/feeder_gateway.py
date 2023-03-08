@@ -4,6 +4,9 @@ Feeder gateway routes.
 
 from flask import Blueprint, Response, jsonify, request
 from marshmallow import ValidationError
+from starkware.starknet.services.api.contract_class.contract_class import (
+    DeprecatedCompiledClass,
+)
 from starkware.starknet.services.api.feeder_gateway.request_objects import (
     CallFunction,
     CallL1Handler,
@@ -202,7 +205,10 @@ async def get_class_by_hash():
 
     class_hash = request.args.get("classHash", type=parse_hex_string)
     contract_class = await state.starknet_wrapper.get_class_by_hash(class_hash)
-    return jsonify(contract_class.remove_debug_info().dump())
+    if isinstance(contract_class, DeprecatedCompiledClass):
+        contract_class = contract_class.remove_debug_info()
+
+    return jsonify(contract_class.dump())
 
 
 @feeder_gateway.route("/get_storage_at", methods=["GET"])

@@ -1,6 +1,7 @@
 """Send a declare v2 tx"""
 
 import os
+import sys
 
 import requests
 from starkware.crypto.signature.signature import sign
@@ -16,8 +17,15 @@ from starkware.starknet.services.api.gateway.transaction import Declare
 
 from starknet_devnet.contract_class_utils import load_casm, load_sierra
 
-HOST = "https://external.integration.starknet.io"
-# HOST = "http://127.0.0.1:5050"
+
+def _get_env_var(var_name: str):
+    try:
+        return os.environ[var_name]
+    except KeyError:
+        sys.exit(f"Error: Please provide env var {var_name}")
+
+
+HOST = _get_env_var("HOST")
 
 
 def get_nonce(contract_address: str) -> int:
@@ -32,15 +40,17 @@ def get_nonce(contract_address: str) -> int:
 def get_account():
     """Extract (address, private_key)"""
     return (
-        int(os.getenv("ACCOUNT_ADDRESS"), 16),
-        int(os.getenv("ACCOUNT_PRIVATE_KEY"), 16),
+        int(_get_env_var("ACCOUNT_ADDRESS"), 16),
+        int(_get_env_var("ACCOUNT_PRIVATE_KEY"), 16),
     )
 
 
-def _get_class(class_hash: str):
+def _get_class(class_hash: int):
+    class_hash = hex(class_hash)
+    print("Getting class for", class_hash)
     resp = requests.get(
         f"{HOST}/feeder_gateway/get_class_by_hash",
-        params={"classHash": hex(class_hash)},
+        params={"classHash": class_hash},
     )
     print("Get class status_code:", resp.status_code)
     print(
@@ -49,10 +59,12 @@ def _get_class(class_hash: str):
     )
 
 
-def _get_compiled_class(class_hash: str):
+def _get_compiled_class(class_hash: int):
+    class_hash = hex(class_hash)
+    print("Getting compiled class for", class_hash)
     resp = requests.get(
         f"{HOST}/feeder_gateway/get_compiled_class_by_class_hash",
-        params={"classHash": hex(class_hash)},
+        params={"classHash": class_hash},
     )
     print("Get class status_code:", resp.status_code)
     print(
@@ -91,9 +103,9 @@ def main():
     compiled_class = load_casm(f"{artifacts_path}/contract.casm")
 
     compiled_class_hash = compute_compiled_class_hash(compiled_class)
-    print("DEBUG compiled class hash", compiled_class_hash, hex(compiled_class_hash))
+    print("Compiled class hash:", compiled_class_hash, hex(compiled_class_hash))
     class_hash = compute_class_hash(contract_class)
-    print("DEBUG class hash", class_hash, hex(class_hash))
+    print("Class hash:", class_hash, hex(class_hash))
 
     max_fee = int(1e18)  # should be enough
     version = 2
@@ -126,21 +138,17 @@ def main():
     )
     print("Declare status code:", declare_resp.status_code)
     print("Declare response:", declare_resp.json())
+    tx_hash = declare_resp.json()["transaction_hash"]
 
-    print("Getting class by class_hash")
     _get_class(class_hash)
-
-    print("Getting class by compiled_class_hash")
     _get_class(compiled_class_hash)
 
-    print("Getting compiled class by class_hash")
-    _get_compiled_class(class_hash)
+    print("Skipping getting compiled class")
+    # _get_compiled_class(class_hash)
+    # _get_compiled_class(compiled_class_hash)
 
-    print("Getting compiled class by compiled_class_hash")
-    _get_compiled_class(compiled_class_hash)
-
-    _get_transaction(declare_resp.json()["transaction_hash"])
-    _get_transaction_receipt(declare_resp.json()["transaction_hash"])
+    _get_transaction(tx_hash)
+    _get_transaction_receipt(tx_hash)
 
 
 if __name__ == "__main__":

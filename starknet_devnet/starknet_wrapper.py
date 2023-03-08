@@ -32,6 +32,8 @@ from starkware.starknet.definitions.error_codes import StarknetErrorCode
 from starkware.starknet.definitions.transaction_type import TransactionType
 from starkware.starknet.services.api.contract_class.contract_class import (
     CompiledClassBase,
+    ContractClass,
+    DeprecatedCompiledClass,
     EntryPointType,
 )
 from starkware.starknet.services.api.feeder_gateway.request_objects import (
@@ -133,6 +135,10 @@ class StarknetWrapper:
         self.__udc = UDC(self)
         self.pending_txs: List[DevnetTransaction] = []
         self.__latest_state = None
+        self.__contract_classes: Dict[
+            int, Union[DeprecatedCompiledClass, ContractClass]
+        ]
+        """If v2 - store sierra, otherwise store old class"""
 
         if config.start_time is not None:
             self.set_block_time(config.start_time)
@@ -158,6 +164,7 @@ class StarknetWrapper:
             await self.__deploy_chargeable_account()
             await self.__predeclare_starknet_cli_account()
             await self.__udc.deploy()
+            self.__contract_classes = {}
 
             await self.__preserve_current_state(starknet.state.state)
             await self.__create_genesis_block()
@@ -330,7 +337,7 @@ class StarknetWrapper:
             tx_handler.internal_tx = InternalDeclare.from_external(
                 external_tx, state.general_config
             )
-            # calculate class hash here if execution fails
+            # extract class hash here if execution later fails
             class_hash = tx_handler.internal_tx.class_hash
 
             # TODO comment below might not be accurate as of starknet 0.11:
@@ -360,7 +367,6 @@ class StarknetWrapper:
                         code=StarknetErrorCode.INVALID_COMPILED_CLASS_HASH,
                         message=f"Compiled class hash not matching; received: {compiled_class_hash}, computed: {compiled_class_hash_computed}",
                     )
-
                 await state.state.set_compiled_class_hash(
                     class_hash=class_hash, compiled_class_hash=compiled_class_hash
                 )
@@ -370,6 +376,7 @@ class StarknetWrapper:
                 compiled_class = external_tx.contract_class
 
             state.state.contract_classes[compiled_class_hash] = compiled_class
+            self.__contract_classes[class_hash] = external_tx.contract_class
 
             # TODO which class hash
             tx_handler.explicitly_declared.append(class_hash)
@@ -431,7 +438,10 @@ class StarknetWrapper:
                 tx_hash = self.internal_tx.hash_value
 
                 if exc_type:
-                    assert isinstance(exc, StarkException)
+                    if not isinstance(exc, StarkException):
+                        raise StarknetDevnetException(
+                            code=StarknetErrorCode.UNEXPECTED_FAILURE, message=str(exc)
+                        ) from exc
                     status = TransactionStatus.REJECTED
 
                     # restore block info
@@ -643,11 +653,17 @@ class StarknetWrapper:
                 internal_call.internal_calls, tx_hash, deployed_contracts
             )
 
-    async def get_class_by_hash(self, class_hash: int) -> CompiledClassBase:
+    async def get_class_by_hash(
+        self, class_hash: int
+    ) -> Union[CompiledClassBase, DeprecatedCompiledClass]:
         """Return contract class given class hash"""
-        cached_state = self.get_state().state
-        # TODO this is not good
-        return await cached_state.get_compiled_class_by_class_hash(class_hash)
+        if class_hash in self.__contract_classes:
+            return self.__contract_classes[class_hash]
+
+        raise StarknetDevnetException(
+            code=StarknetErrorCode.UNDECLARED_CLASS,
+            message=f"Class with hash {class_hash:#x} is not declared.",
+        )
 
     async def get_class_hash_at(
         self, contract_address: int, block_id: BlockId = DEFAULT_BLOCK_ID
