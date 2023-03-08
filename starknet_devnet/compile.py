@@ -48,10 +48,3 @@ def compile_cairo(
 
         compiled_class = load_casm(contract_casm)
         return compiled_class
-
-
-# TODO delete after testing
-if __name__ == "__main__":
-    sierra = load_sierra("test/artifacts/contracts/cairo1/contract.cairo/contract.json")
-    compiled = compile_cairo(sierra, "/home/fabijanc/starkware-libs/cairo/Cargo.toml")
-    print("Success!")
