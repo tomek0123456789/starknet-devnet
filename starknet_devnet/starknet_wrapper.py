@@ -442,7 +442,7 @@ class StarknetWrapper:
                     transaction = DevnetTransaction(
                         internal_tx=self.internal_tx,
                         status=status,
-                        execution_info=self.execution_info,
+                        execution_info=TransactionExecutionInfo.empty(),
                         transaction_hash=tx_hash,
                     )
                     self.starknet_wrapper._store_transaction(
