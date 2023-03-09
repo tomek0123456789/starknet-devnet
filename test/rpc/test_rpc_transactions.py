@@ -755,7 +755,7 @@ def test_add_deploy_account_transaction(deploy_account_details):
         contract_address=int(contract_address, 16),
         selector=get_selector_from_name("increase_balance"),
         calldata=[10, 20],
-        chain_id=DEFAULT_CHAIN_ID.value,
+        chain_id=DEFAULT_CHAIN_ID,
         max_fee=int(1e18),
         version=SUPPORTED_RPC_TX_VERSION,
         nonce=1,

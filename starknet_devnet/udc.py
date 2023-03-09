@@ -15,7 +15,7 @@ class UDC:
 
     # Precalculated
     # HASH = compute_class_hash(contract_class=UDC.get_contract_class())
-    HASH = 3484004124736344420122298338254154090450773688458934993781007232228755339881
+    HASH = 0x7B3E05F48F0C69E4A65CE5E076A66271A527AFF2C34CE1083EC6E1526997A69
 
     # Precalculated to fixed address
     # ADDRESS = calculate_contract_address_from_hash(salt=0, class_hash=HASH,

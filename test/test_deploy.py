@@ -6,7 +6,9 @@ import pytest
 from starkware.starknet.core.os.contract_address.contract_address import (
     calculate_contract_address,
 )
-from starkware.starknet.core.os.contract_class.class_hash import compute_class_hash
+from starkware.starknet.core.os.contract_class.deprecated_class_hash import (
+    compute_deprecated_class_hash,
+)
 from starkware.starknet.definitions.general_config import DEFAULT_CHAIN_ID
 from starkware.starknet.definitions.transaction_type import TransactionType
 from starkware.starknet.public.abi import get_selector_from_name
@@ -120,7 +122,7 @@ async def test_deploy(starknet_wrapper_args, expected_block_hash):
 
     assert_hex_equal(
         hex(tx_hash),
-        "0x29c0f6e2321da26dd143dc772740526416294e9300634ec646cb525c3eb9c5e",
+        "0xcd0a447a5b8891c1fd1d8ccdbe3b1e217eb7e5951af13d69ededc3083951b3",
     )
     assert contract_address == expected_contract_address
 
@@ -133,7 +135,7 @@ async def test_deploy(starknet_wrapper_args, expected_block_hash):
 
 def test_predeclared_oz_account():
     """Test that precomputed class matches"""
-    assert STARKNET_CLI_ACCOUNT_CLASS_HASH == compute_class_hash(oz_account_class)
+    assert STARKNET_CLI_ACCOUNT_CLASS_HASH == compute_deprecated_class_hash(oz_account_class)
 
 
 @devnet_in_background()
@@ -156,11 +158,11 @@ def deploy_account_test_body():
     account_address, deploy_account_tx = sign_deploy_account_tx(
         private_key=private_key,
         public_key=public_key,
-        class_hash=compute_class_hash(oz_account_class),
+        class_hash=compute_deprecated_class_hash(oz_account_class),
         salt=account_salt,
         max_fee=int(1e18),
         version=SUPPORTED_TX_VERSION,
-        chain_id=DEFAULT_CHAIN_ID.value,
+        chain_id=DEFAULT_CHAIN_ID,
         nonce=0,
     )
     deploy_account_tx = deploy_account_tx.dump()
@@ -196,7 +198,7 @@ def deploy_account_test_body():
         contract_address=int(contract_address, 16),
         selector=get_selector_from_name("increase_balance"),
         calldata=[10, 20],
-        chain_id=DEFAULT_CHAIN_ID.value,
+        chain_id=DEFAULT_CHAIN_ID,
         max_fee=int(1e18),
         version=SUPPORTED_TX_VERSION,
         nonce=1,

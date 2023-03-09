@@ -212,7 +212,7 @@ def prepare_deploy_account_tx(
         salt=account_salt,
         max_fee=int(1e18),
         version=SUPPORTED_RPC_TX_VERSION,
-        chain_id=DEFAULT_CHAIN_ID.value,
+        chain_id=DEFAULT_CHAIN_ID,
         nonce=0,
     )
 
