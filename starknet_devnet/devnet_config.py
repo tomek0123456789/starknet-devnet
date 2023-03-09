@@ -139,12 +139,12 @@ def _parse_account_class(class_path: str) -> CompiledClassWrapper:
     return CompiledClassWrapper(contract_class, class_hash)
 
 
-def _get_feeder_gateway_client(url: str, block_id: str):
+def _get_feeder_gateway_client(url: str, block_id: str, n_retries: int = 1):
     """Construct a feeder gateway client at url and block"""
 
     feeder_gateway_client = FeederGatewayClient(
         url=url,
-        retry_config=RetryConfig(n_retries=1),
+        retry_config=RetryConfig(n_retries=n_retries),
     )
 
     try:
@@ -159,7 +159,7 @@ def _get_feeder_gateway_client(url: str, block_id: str):
         )
     except BadRequest as bad_request:
         if bad_request.status_code == 404:
-            msg = f"Error: {url} is not a valid StarkNet sequencer"
+            msg = f"Error: {url} is not a valid Starknet sequencer"
         else:
             msg = f"Error: {bad_request}"
 
@@ -186,6 +186,9 @@ class NonNegativeAction(argparse.Action):
             parser.error(error_msg)
 
         setattr(namespace, self.dest, value)
+
+
+CAIRO_COMPILER_MANIFEST_OPTION = "--cairo-compiler-manifest"
 
 
 class AssertCairoCompiler(argparse.Action):
@@ -217,7 +220,24 @@ class AssertCairoCompiler(argparse.Action):
         setattr(namespace, self.dest, manifest_path)
 
 
-CAIRO_COMPILER_MANIFEST_OPTION = "--cairo-compiler-manifest"
+class PositiveAction(argparse.Action):
+    """
+    Action for parsing positive int argument;
+    """
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        error_msg = (
+            f"argument {option_string} must be a positive integer; got: {values}."
+        )
+        try:
+            value = int(values)
+        except ValueError:
+            parser.error(error_msg)
+
+        if value <= 0:
+            parser.error(error_msg)
+
+        setattr(namespace, self.dest, value)
 
 
 def parse_args(raw_args: List[str]):
@@ -225,7 +245,7 @@ def parse_args(raw_args: List[str]):
     Parses CLI arguments.
     """
     parser = argparse.ArgumentParser(
-        description="Run a local instance of StarkNet Devnet"
+        description="Run a local instance of Starknet Devnet"
     )
     parser.add_argument(
         "-v",
@@ -335,6 +355,13 @@ def parse_args(raw_args: List[str]):
         help="Specify the block number where the --fork-network is forked; defaults to latest",
     )
     parser.add_argument(
+        "--fork-retries",
+        type=int,
+        default=1,
+        action=PositiveAction,
+        help="Specify the number of retries of failed HTTP requests sent to the network before giving up, defaults to 1",
+    )
+    parser.add_argument(
         "--chain-id",
         type=_chain_id,
         default=StarknetChainId.TESTNET,
@@ -366,7 +393,7 @@ def parse_args(raw_args: List[str]):
     if parsed_args.fork_network:
         parsed_args.fork_block = parsed_args.fork_block or "latest"
         parsed_args.fork_network, parsed_args.fork_block = _get_feeder_gateway_client(
-            parsed_args.fork_network, parsed_args.fork_block
+            parsed_args.fork_network, parsed_args.fork_block, parsed_args.fork_retries
         )
 
     return parsed_args

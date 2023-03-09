@@ -31,6 +31,8 @@ from .util import (
     deploy,
     devnet_in_background,
     get_block,
+    increase_time,
+    set_time,
 )
 
 
@@ -362,3 +364,47 @@ def test_endpoint_if_some_pending():
     deploy(CONTRACT_PATH, inputs=["10"])
     resp = demand_block_creation()
     _assert_correct_block_creation_response(resp)
+
+
+@devnet_in_background("--blocks-on-demand")
+def test_increase_time_in_block_on_demand_mode():
+    """Test block creation with increase_time and pending txs"""
+    deploy_info = deploy(CONTRACT_PATH, inputs=["0"])
+    assert_tx_status(deploy_info["tx_hash"], "PENDING")
+    latest_block_timestamp = get_block(block_number="latest", parse=True)["timestamp"]
+
+    # increase time should fail when there are pending transactions
+    increase_time_response = increase_time(10000)
+    assert increase_time_response.status_code == 400
+
+    # increase time should succeed with no pending transactions
+    resp = demand_block_creation()
+    assert resp.status_code == 200
+    increase_time_response = increase_time(10000)
+    assert increase_time_response.status_code == 200
+    latest_block = get_block(block_number="latest", parse=True)
+    assert latest_block["timestamp"] >= latest_block_timestamp + 10000
+    assert latest_block["block_hash"] == increase_time_response.json()["block_hash"]
+    assert_tx_status(deploy_info["tx_hash"], "ACCEPTED_ON_L2")
+
+
+@devnet_in_background("--blocks-on-demand")
+def test_set_time_in_block_on_demand_mode():
+    """Test block creation with set_time and pending txs"""
+    deploy_info = deploy(CONTRACT_PATH, inputs=["0"])
+    assert_tx_status(deploy_info["tx_hash"], "PENDING")
+    latest_block_timestamp = get_block(block_number="latest", parse=True)["timestamp"]
+
+    # set time should fail when there are pending transactions
+    set_time_response = set_time(latest_block_timestamp + 10000)
+    assert set_time_response.status_code == 400
+
+    # set time should succeed with no pending transactions
+    resp = demand_block_creation()
+    assert resp.status_code == 200
+    set_time_response = set_time(latest_block_timestamp + 10000)
+    assert set_time_response.status_code == 200
+    latest_block = get_block(block_number="latest", parse=True)
+    assert latest_block["timestamp"] == latest_block_timestamp + 10000
+    assert latest_block["block_hash"] == set_time_response.json()["block_hash"]
+    assert_tx_status(deploy_info["tx_hash"], "ACCEPTED_ON_L2")

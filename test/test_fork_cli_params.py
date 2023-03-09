@@ -28,7 +28,7 @@ def test_invalid_fork_network():
 
 
 def test_url_not_sequencer():
-    """Pass a valid url but not of a StarkNet sequencer"""
+    """Pass a valid url but not of a Starknet sequencer"""
     invalid_url = "http://google.com"
     proc = ACTIVE_DEVNET.start(
         "--fork-network",
@@ -37,7 +37,7 @@ def test_url_not_sequencer():
         stdout=subprocess.PIPE,
     )
     assert read_stream(proc.stdout) == ""
-    assert f"Error: {invalid_url} is not a valid StarkNet sequencer\n" in read_stream(
+    assert f"Error: {invalid_url} is not a valid Starknet sequencer\n" in read_stream(
         proc.stderr
     )
     assert proc.returncode == 1
@@ -132,6 +132,68 @@ def test_valid_block_ids(fork_block: str):
         "alpha-goerli2",
         "--fork-block",
         fork_block,
+        stdout=subprocess.PIPE,
+    )
+    terminate_and_wait(proc)
+    assert f"Forking {ALPHA_GOERLI2_URL}" in read_stream(proc.stdout)
+    assert proc.returncode == 0
+
+
+@pytest.mark.parametrize("fork_retries", ["-1", "0"])
+def test_out_of_range_fork_retries(fork_retries: str):
+    """Should exit if provided with a negative block number"""
+    proc = ACTIVE_DEVNET.start(
+        "--fork-network",
+        "alpha-goerli",
+        "--fork-retries",
+        fork_retries,
+        stderr=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+    )
+    assert read_stream(proc.stdout) == ""
+    assert (
+        f"error: argument --fork-retries must be a positive integer; got: {fork_retries}.\n"
+        in read_stream(proc.stderr)
+    )
+
+    assert proc.returncode == 2
+
+
+def test_invalid_fork_retries():
+    """Should exit if provided with non integer"""
+    fork_retries = "invalid"
+
+    proc = ACTIVE_DEVNET.start(
+        "--fork-network",
+        "alpha-goerli",
+        "--fork-retries",
+        fork_retries,
+        stderr=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+    )
+    assert read_stream(proc.stdout) == ""
+    assert (
+        f"error: argument --fork-retries: invalid int value: '{fork_retries}'\n"
+        in read_stream(proc.stderr)
+    )
+
+    assert proc.returncode == 2
+
+
+@pytest.mark.parametrize(
+    "fork_retries",
+    [
+        "1",
+        "3",
+    ],
+)
+def test_valid_fork_retries(fork_retries: str):
+    """Test some happy path fork retries values"""
+    proc = ACTIVE_DEVNET.start(
+        "--fork-network",
+        "alpha-goerli2",
+        "--fork-retries",
+        fork_retries,
         stdout=subprocess.PIPE,
     )
     terminate_and_wait(proc)

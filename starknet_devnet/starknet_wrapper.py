@@ -215,7 +215,7 @@ class StarknetWrapper:
 
         self._update_block_number()
         state = self.get_state()
-        state_update = await self._update_pending_state()
+        state_update = await self.update_pending_state()
         await self.blocks.generate_pending(transactions, state, state_update)
         block = await self.generate_latest_block(block_hash=0)
 
@@ -226,7 +226,7 @@ class StarknetWrapper:
     async def create_empty_block(self) -> StarknetBlock:
         """Create empty block."""
         self._update_block_number()
-        state_update = await self._update_pending_state()
+        state_update = await self.update_pending_state()
         self.__latest_state = self.get_state().copy()
         return await self.blocks.generate_empty_block(self.get_state(), state_update)
 
@@ -265,13 +265,16 @@ class StarknetWrapper:
         """
         return self.starknet.state
 
-    async def _update_pending_state(
+    async def update_pending_state(
         self,
         deployed_contracts: List[ContractAddressHashPair] = None,
         explicitly_declared_contracts: List[int] = None,
         visited_storage_entries: Set[StorageEntry] = None,
         nonces: Dict[int, int] = None,
     ):
+        """
+        Update pending state.
+        """
         # defaulting
         deployed_contracts = deployed_contracts or []
         explicitly_declared_contracts = explicitly_declared_contracts or []
@@ -472,7 +475,7 @@ To enable Declare v2 transactions, specify {CAIRO_COMPILER_MANIFEST_OPTION} on D
                             self.deployed_contracts,
                         )
 
-                    state_update = await self.starknet_wrapper._update_pending_state(
+                    state_update = await self.starknet_wrapper.update_pending_state(
                         deployed_contracts=self.deployed_contracts,
                         visited_storage_entries=self.visited_storage_entries,
                         explicitly_declared_contracts=self.explicitly_declared,

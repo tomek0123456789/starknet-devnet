@@ -49,7 +49,7 @@ def format_fee_info(gas_price: int, overall_fee: int) -> FeeEstimationInfo:
 @dataclasses.dataclass(frozen=True)  # type: ignore[misc]
 class InternalAccountTransactionForSimulate(InternalAccountTransaction):
     """
-    Represents an internal transaction in the StarkNet network for the simulate transaction API.
+    Represents an internal transaction in the Starknet network for the simulate transaction API.
     """
 
     # Simulation flags; should be replaced with actual values after construction.
@@ -143,7 +143,7 @@ class InternalInvokeFunctionForSimulate(
     InternalAccountTransactionForSimulate, InternalInvokeFunction
 ):
     """
-    Represents an internal invoke function in the StarkNet network for the simulate transaction API.
+    Represents an internal invoke function in the Starknet network for the simulate transaction API.
     """
 
 
@@ -152,7 +152,7 @@ class InternalDeclareForSimulate(
     InternalAccountTransactionForSimulate, InternalDeclare
 ):
     """
-    Represents an internal declare in the StarkNet network for the simulate transaction API.
+    Represents an internal declare in the Starknet network for the simulate transaction API.
     """
 
 
@@ -161,7 +161,7 @@ class InternalDeployAccountForSimulate(
     InternalAccountTransactionForSimulate, InternalDeployAccount
 ):
     """
-    Represents an internal deploy account in the StarkNet network for the simulate transaction API.
+    Represents an internal deploy account in the Starknet network for the simulate transaction API.
     """
 
     def verify_version(self):
