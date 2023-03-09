@@ -91,7 +91,7 @@ def _get_transaction_receipt(transaction_hash: str):
     print("Get transaction receipt response:", resp.json())
 
 
-def main():
+def main():  # pylint: disable=too-many-locals
     """Main method"""
 
     print("Sending request to:", HOST)

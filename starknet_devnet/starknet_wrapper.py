@@ -31,6 +31,7 @@ from starkware.starknet.core.os.transaction_hash.transaction_hash import (
 from starkware.starknet.definitions.error_codes import StarknetErrorCode
 from starkware.starknet.definitions.transaction_type import TransactionType
 from starkware.starknet.services.api.contract_class.contract_class import (
+    CompiledClass,
     CompiledClassBase,
     ContractClass,
     DeprecatedCompiledClass,
@@ -94,6 +95,7 @@ from .transactions import (
 from .udc import UDC
 from .util import (
     StarknetDevnetException,
+    UndeclaredClassDevnetException,
     enable_pickling,
     get_all_declared_classes,
     get_fee_estimation_info,
@@ -667,10 +669,20 @@ To enable Declare v2 transactions, specify {CAIRO_COMPILER_MANIFEST_OPTION} on D
             return compiled_class
 
         # TODO default to origin depending on error code
-        raise StarknetDevnetException(
-            code=StarknetErrorCode.UNDECLARED_CLASS,
-            message=f"Class with hash {class_hash:#x} is not declared.",
-        )
+        raise UndeclaredClassDevnetException(class_hash)
+
+    async def get_compiled_class_by_class_hash(self, class_hash: int) -> CompiledClass:
+        """
+        Return compiled class given the class hash (sierra hash).
+        Should report an undeclared class if given the hash of a deprecated class
+        """
+
+        state = self.get_state().state
+        compiled_class = await state.get_compiled_class_by_class_hash(class_hash)
+        if isinstance(compiled_class, CompiledClass):
+            return compiled_class
+
+        raise UndeclaredClassDevnetException(class_hash)
 
     async def get_class_hash_at(
         self, contract_address: int, block_id: BlockId = DEFAULT_BLOCK_ID

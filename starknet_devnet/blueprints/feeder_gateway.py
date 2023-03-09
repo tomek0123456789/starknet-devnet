@@ -211,6 +211,16 @@ async def get_class_by_hash():
     return jsonify(contract_class.dump())
 
 
+@feeder_gateway.route("/get_compiled_class_by_class_hash", methods=["GET"])
+async def get_compiled_class_by_hash():
+    """Get compiled class by class hash (sierra hash)"""
+    class_hash = request.args.get("classHash", type=parse_hex_string)
+    compiled_class = await state.starknet_wrapper.get_compiled_class_by_class_hash(
+        class_hash
+    )
+    return jsonify(compiled_class.dump())
+
+
 @feeder_gateway.route("/get_storage_at", methods=["GET"])
 async def get_storage_at():
     """Endpoint for returning the storage identified by `key` from the contract at"""

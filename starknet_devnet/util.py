@@ -74,6 +74,16 @@ class StarknetDevnetException(StarkException):
         self.status_code = status_code
 
 
+class UndeclaredClassDevnetException(StarknetDevnetException):
+    """Exception raised when Devnet has to return an undeclared class"""
+
+    def __init__(self, class_hash: int):
+        super().__init__(
+            code=StarknetErrorCode.UNDECLARED_CLASS,
+            message=f"Class with hash {class_hash:#x} is not declared.",
+        )
+
+
 def enable_pickling():
     """
     Extends the `StarknetContract` class to enable pickling.

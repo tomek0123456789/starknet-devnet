@@ -11,7 +11,7 @@ from starkware.starknet.services.api.contract_class.contract_class import (
     ContractClass,
 )
 
-from starknet_devnet.contract_class_utils import load_casm, load_sierra
+from starknet_devnet.contract_class_utils import load_casm
 from starknet_devnet.util import StarknetDevnetException
 
 
