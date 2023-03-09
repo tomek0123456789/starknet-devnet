@@ -18,7 +18,9 @@ from typing import Tuple, cast
 
 import pytest
 from starkware.starknet.business_logic.transaction.objects import InternalDeployAccount
-from starkware.starknet.core.os.contract_class.class_hash import compute_class_hash
+from starkware.starknet.core.os.contract_class.deprecated_class_hash import (
+    compute_deprecated_class_hash,
+)
 from starkware.starknet.definitions.general_config import DEFAULT_CHAIN_ID
 from starkware.starknet.services.api.contract_class.contract_class import (
     CompiledClassBase,
@@ -208,7 +210,7 @@ def prepare_deploy_account_tx(
     account_address, deploy_account_tx = sign_deploy_account_tx(
         private_key=private_key,
         public_key=public_key,
-        class_hash=compute_class_hash(contract_class),
+        class_hash=compute_deprecated_class_hash(contract_class),
         salt=account_salt,
         max_fee=int(1e18),
         version=SUPPORTED_RPC_TX_VERSION,

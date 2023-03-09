@@ -25,7 +25,7 @@ class FeeToken:
     CONTRACT_CLASS: CompiledClassBase = None  # loaded lazily
 
     # Precalculated
-    # HASH = compute_class_hash(contract_class=FeeToken.get_contract_class())
+    # HASH = compute_deprecated_class_hash(contract_class=FeeToken.get_contract_class())
     HASH = 0x6A22BF63C7BC07EFFA39A25DFBD21523D211DB0100A0AFD054D172B81840EAF
 
     # Taken from

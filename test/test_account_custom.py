@@ -4,7 +4,9 @@ import os
 import subprocess
 
 import pytest
-from starkware.starknet.core.os.contract_class.class_hash import compute_class_hash
+from starkware.starknet.core.os.contract_class.deprecated_class_hash import (
+    compute_deprecated_class_hash,
+)
 from starkware.starknet.services.api.contract_class.contract_class import (
     DeprecatedCompiledClass,
 )
@@ -72,7 +74,7 @@ def test_providing_correct_account_class():
     expected_contract_class = DeprecatedCompiledClass.loads(
         load_file_content("custom_account.json")
     )
-    assert fetched_class_hash == compute_class_hash(expected_contract_class)
+    assert fetched_class_hash == compute_deprecated_class_hash(expected_contract_class)
 
     deploy_info = deploy(CONTRACT_PATH, inputs=["0"])
     invoke(

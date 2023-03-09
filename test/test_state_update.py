@@ -6,7 +6,9 @@ import re
 
 import pytest
 import requests
-from starkware.starknet.core.os.contract_class.class_hash import compute_class_hash
+from starkware.starknet.core.os.contract_class.deprecated_class_hash import (
+    compute_deprecated_class_hash,
+)
 from starkware.starknet.public.abi import get_selector_from_name
 
 from .account import declare, invoke
@@ -67,7 +69,7 @@ def deploy_empty_contract():
 def get_class_hash_at_path(contract_path: str):
     """Get contract hash of the sample contract"""
     contract_class = load_contract_class(contract_path)
-    return compute_class_hash(contract_class)
+    return compute_deprecated_class_hash(contract_class)
 
 
 @pytest.mark.state_update

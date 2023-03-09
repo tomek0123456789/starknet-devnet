@@ -14,7 +14,7 @@ class UDC:
     CONTRACT_CLASS: CompiledClassBase = None  # loaded lazily
 
     # Precalculated
-    # HASH = compute_class_hash(contract_class=UDC.get_contract_class())
+    # HASH = compute_deprecated_class_hash(contract_class=UDC.get_contract_class())
     HASH = 0x7B3E05F48F0C69E4A65CE5E076A66271A527AFF2C34CE1083EC6E1526997A69
 
     # Precalculated to fixed address

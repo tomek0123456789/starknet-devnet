@@ -2,7 +2,9 @@
 
 import pytest
 import requests
-from starkware.starknet.core.os.contract_class.class_hash import compute_class_hash
+from starkware.starknet.core.os.contract_class.deprecated_class_hash import (
+    compute_deprecated_class_hash,
+)
 
 from starknet_devnet.chargeable_account import ChargeableAccount
 from starknet_devnet.contract_class_wrapper import (
@@ -31,7 +33,7 @@ def test_precomputed_account_hash():
     """Test if the precomputed hash of the account contract is correct."""
 
     contract_class = load_contract_class(DEFAULT_ACCOUNT_PATH)
-    recalculated_hash = compute_class_hash(contract_class=contract_class)
+    recalculated_hash = compute_deprecated_class_hash(contract_class=contract_class)
     assert_equal(recalculated_hash, DEFAULT_ACCOUNT_HASH)
 
 

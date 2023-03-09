@@ -13,7 +13,9 @@ from typing import List
 from aiohttp.client_exceptions import ClientConnectorError, InvalidURL
 from marshmallow.exceptions import ValidationError
 from services.external_api.client import BadRequest, RetryConfig
-from starkware.starknet.core.os.contract_class.class_hash import compute_class_hash
+from starkware.starknet.core.os.contract_class.deprecated_class_hash import (
+    compute_deprecated_class_hash,
+)
 from starkware.starknet.definitions.general_config import StarknetChainId
 from starkware.starknet.services.api.contract_class.contract_class import (
     DeprecatedCompiledClass,
@@ -134,7 +136,7 @@ def _parse_account_class(class_path: str) -> CompiledClassWrapper:
             sys.exit(
                 f"Error: {class_path} is missing account methods: {', '.join(missing_methods)}"
             )
-        class_hash = compute_class_hash(contract_class)
+        class_hash = compute_deprecated_class_hash(contract_class)
 
     return CompiledClassWrapper(contract_class, class_hash)
 
