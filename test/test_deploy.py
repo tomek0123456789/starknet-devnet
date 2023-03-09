@@ -135,7 +135,9 @@ async def test_deploy(starknet_wrapper_args, expected_block_hash):
 
 def test_predeclared_oz_account():
     """Test that precomputed class matches"""
-    assert STARKNET_CLI_ACCOUNT_CLASS_HASH == compute_deprecated_class_hash(oz_account_class)
+    assert STARKNET_CLI_ACCOUNT_CLASS_HASH == compute_deprecated_class_hash(
+        oz_account_class
+    )
 
 
 @devnet_in_background()
