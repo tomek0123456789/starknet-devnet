@@ -26,7 +26,7 @@ from starkware.starknet.services.api.feeder_gateway.response_objects import (
     TransactionType,
 )
 from starkware.starknet.services.api.gateway.transaction import (
-    Declare,
+    DeprecatedDeclare,
     Deploy,
     DeployAccount,
     InvokeFunction,
@@ -431,9 +431,9 @@ def make_invoke_function(invoke_transaction: RpcBroadcastedInvokeTxn) -> InvokeF
     return invoke_function
 
 
-def make_declare(declare_transaction: RpcBroadcastedDeclareTxn) -> Declare:
+def make_declare(declare_transaction: RpcBroadcastedDeclareTxn) -> DeprecatedDeclare:
     """
-    Convert RpcBroadcastedDeclareTxn to Declare
+    Convert RpcBroadcastedDeclareTxn to DeprecatedDeclare
     """
     contract_class = declare_transaction["contract_class"]
     if "abi" not in contract_class:
@@ -446,14 +446,13 @@ def make_declare(declare_transaction: RpcBroadcastedDeclareTxn) -> Declare:
         raise RpcError(code=50, message="Invalid contract class") from ex
 
     nonce = declare_transaction.get("nonce")
-    declare_tx = Declare(
+    declare_tx = DeprecatedDeclare(
         contract_class=contract_class,
         sender_address=int(declare_transaction["sender_address"], 16),
         nonce=int(nonce, 16) if nonce is not None else 0,
         version=int(declare_transaction["version"], 16),
         max_fee=int(declare_transaction["max_fee"], 16),
         signature=[int(sig, 16) for sig in declare_transaction["signature"]],
-        compiled_class_hash=int(declare_transaction["compiled_class_hash"], 16),
     )
     return declare_tx
 

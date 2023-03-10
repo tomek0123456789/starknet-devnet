@@ -149,14 +149,16 @@ def invoke(
         nonce = get_nonce(account_address, feeder_gateway_url=gateway_url)
 
     if max_fee is None:
-        max_fee = get_estimated_fee(
-            calls=calls,
-            account_address=account_address,
-            private_key=private_key,
-            nonce=nonce,
-            feeder_gateway_url=gateway_url,
-            chain_id=chain_id,
-        )
+        max_fee = int(1e18)
+        # TODO
+        # max_fee = get_estimated_fee(
+        #     calls=calls,
+        #     account_address=account_address,
+        #     private_key=private_key,
+        #     nonce=nonce,
+        #     feeder_gateway_url=gateway_url,
+        #     chain_id=chain_id,
+        # )
 
     signature, execute_calldata = get_execute_args(
         calls=calls,
