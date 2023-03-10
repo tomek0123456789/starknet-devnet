@@ -17,6 +17,9 @@ from starkware.starknet.services.api.feeder_gateway.feeder_gateway_client import
 from starkware.starknet.testing.starknet import Starknet
 from starkware.starknet.testing.state import StarknetState
 from starkware.starkware_utils.error_handling import StarkException
+from starkware.starknet.core.os.contract_class.compiled_class_hash import (
+    compute_compiled_class_hash,
+)
 
 from .block_info_generator import now
 from .general_config import build_devnet_general_config
@@ -47,22 +50,32 @@ class ForkedStateReader(StateReader):
         self.__feeder_gateway_client = feeder_gateway_client
         self.__block_number = block_number
 
+    async def get_compiled_class_by_class_hash(
+        self, class_hash: int
+    ) -> CompiledClassBase:
+        # TODO wrap?
+        return await self.__feeder_gateway_client.get_compiled_class_by_class_hash(
+            class_hash
+        )
+
     async def get_compiled_class(self, compiled_class_hash: int) -> CompiledClassBase:
-        try:
-            with contextlib.redirect_stderr(None):
-                hash_hex = hex(compiled_class_hash)
-                compiled_class_dict = await self.__feeder_gateway_client.get_compiled_class_by_class_hash(
-                    # TODO which has should this be?
-                    hash_hex
-                )
-                return CompiledClassBase.load(compiled_class_dict)
-        except BadRequest as bad_request:
-            original_error = StarkException(**json.loads(bad_request.text))
-            raise original_error from bad_request
+        # try:
+        #     with contextlib.redirect_stderr(None):
+        #         hash_hex = hex(compiled_class_hash)
+        #         compiled_class_dict = await self.__feeder_gateway_client.get_compiled_class_by_class_hash(
+        #             # TODO which hash should this be?
+        #             hash_hex
+        #         )
+        #         return CompiledClassBase.load(compiled_class_dict)
+        # except BadRequest as bad_request:
+        #     original_error = StarkException(**json.loads(bad_request.text))
+        #     raise original_error from bad_request
+        raise NotImplementedError
 
     async def get_compiled_class_hash(self, class_hash: int) -> int:
-        # TODO
-        raise NotImplementedError
+        compiled_class = await self.get_compiled_class_by_class_hash(class_hash)
+        # TODO cache?
+        return compute_compiled_class_hash(compiled_class)
 
     async def get_class_hash_at(self, contract_address: int) -> int:
         try:
@@ -74,7 +87,7 @@ class ForkedStateReader(StateReader):
             return int(class_hash_hex, 16)
         except BadRequest as bad_request:
             if is_originally_starknet_exception(bad_request):
-                return UNINITIALIZED_CLASS_HASH
+                return int.from_bytes(UNINITIALIZED_CLASS_HASH, "big")
             raise
 
     async def get_nonce_at(self, contract_address: int) -> int:
