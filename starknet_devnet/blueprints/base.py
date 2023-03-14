@@ -11,6 +11,9 @@ from starknet_devnet.util import (
     check_valid_dump_path,
     parse_hex_string,
 )
+from starkware.starknet.services.api.feeder_gateway.response_objects import (
+    BlockStatus,
+)
 
 base = Blueprint("base", __name__)
 
@@ -203,3 +206,22 @@ async def fork_status():
     if config.fork_network:
         return jsonify({"url": config.fork_network.url, "block": config.fork_block})
     return jsonify({})
+
+@base.route("/abort_blocks_after", methods=["POST"])
+async def abort_blocks_after():
+    """TODO: """
+    request_json = request.json or {}
+    block_hash = hex_converter(request_json, "blockHash")
+    
+    # TODO: abort blocks and transactions
+    block = await state.starknet_wrapper.blocks.get_by_hash(hex(block_hash))
+    print("block")
+    print(block.status)
+
+    response = await state.starknet_wrapper.blocks.abort_block_by_hash(hex(block_hash))
+    print(response)
+    # block = await state.starknet_wrapper.blocks.get_by_hash(hex(block_hash))
+    # print("block")
+    # print(block.status)
+
+    return jsonify({"block_hash": hex(block_hash)})

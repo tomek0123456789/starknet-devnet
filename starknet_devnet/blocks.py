@@ -306,3 +306,17 @@ class DevnetBlocks:
     def get_state(self, block_number: int) -> StarknetState:
         """Return state at block with `number`"""
         return self.__state_archive.get(block_number)
+
+    async def abort_block_by_hash(self, block_hash: str) -> str:
+        """
+        Set status of the block with the given block hash.
+        """
+        numeric_hash = _parse_block_hash(block_hash)
+
+        if numeric_hash in self.__hash2num:
+            block_number = self.__hash2num[int(block_hash, 16)]
+            block = await self.get_by_number(block_number)
+            block.status = BlockStatus.ABORTED
+            return block.block_hash
+
+        return block_hash
