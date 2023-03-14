@@ -5,10 +5,11 @@ from starkware.starknet.services.api.contract_class.contract_class import (
     CompiledClassBase,
     DeprecatedCompiledClass,
 )
-from starkware.starknet.testing.starknet import Starknet
+
+from starknet_devnet.predeployed_contract_wrapper import PredeployedContractWrapper
 
 
-class UDC:
+class UDC(PredeployedContractWrapper):
     """Universal deployer contract wrapper class"""
 
     CONTRACT_CLASS: CompiledClassBase = None  # loaded lazily
@@ -24,9 +25,11 @@ class UDC:
 
     def __init__(self, starknet_wrapper):
         self.starknet_wrapper = starknet_wrapper
+        self.address = self.ADDRESS
+        self.class_hash = self.HASH
 
     @classmethod
-    def get_contract_class(cls):
+    def get_contract_class(cls) -> CompiledClassBase:
         """Returns contract class via lazy loading."""
         if not cls.CONTRACT_CLASS:
             cls.CONTRACT_CLASS = DeprecatedCompiledClass.load(
@@ -34,14 +37,10 @@ class UDC:
             )
         return cls.CONTRACT_CLASS
 
-    async def deploy(self):
-        """Deploy token contract for charging fees."""
-        starknet: Starknet = self.starknet_wrapper.starknet
-        contract_class = UDC.get_contract_class()
+    @property
+    def contract_class(self) -> CompiledClassBase:
+        """Same as `get_contract_class`, used by `PredeployedContractWrapper` parent"""
+        return self.get_contract_class()
 
-        starknet.state.state.contract_classes[UDC.HASH] = contract_class
-
-        # pylint: disable=protected-access
-        starknet.state.state.cache._class_hash_writes[UDC.ADDRESS] = UDC.HASH
-        # replace with await starknet.state.state.deploy_contract
-        # TODO apply comment above
+    async def _mimic_constructor(self):
+        pass

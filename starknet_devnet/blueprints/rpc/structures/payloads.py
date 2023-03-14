@@ -26,9 +26,9 @@ from starkware.starknet.services.api.feeder_gateway.response_objects import (
     TransactionType,
 )
 from starkware.starknet.services.api.gateway.transaction import (
-    DeprecatedDeclare,
     Deploy,
     DeployAccount,
+    DeprecatedDeclare,
     InvokeFunction,
 )
 from starkware.starknet.services.api.gateway.transaction_utils import (

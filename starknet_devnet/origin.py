@@ -175,7 +175,7 @@ class ForkedOrigin(Origin):
                 ) from bad_request
             raise
 
-    async def get_block_by_hash(self, block_hash: str):
+    async def get_block_by_hash(self, block_hash: str) -> StarknetBlock:
         custom_exception = StarknetDevnetException(
             code=StarknetErrorCode.BLOCK_NOT_FOUND,
             message=f"Block hash {block_hash} does not exist.",
@@ -184,9 +184,11 @@ class ForkedOrigin(Origin):
             block = await self.__feeder_gateway_client.get_block(block_hash=block_hash)
             if block.block_number > self.get_number_of_blocks():
                 raise custom_exception
+            return block
         except BadRequest as bad_request:
             if is_originally_starknet_exception(bad_request):
                 raise custom_exception from bad_request
+            raise
 
     async def get_block_by_number(self, block_number: int):
         return await self.__feeder_gateway_client.get_block(block_number=block_number)
