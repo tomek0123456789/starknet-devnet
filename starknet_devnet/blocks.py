@@ -320,11 +320,8 @@ class DevnetBlocks:
             block_dict = block.dump()
             block_dict["status"] = BlockStatus.ABORTED.name
             block_dict["transaction_receipts"] = None
+            self.__num2block[block_number] = StarknetBlock.load(block_dict)
 
-            import json
-            block = StarknetBlock.loads(json.dumps(block_dict))
-
-            self.__num2block[block_number] = block
             return block.block_hash
 
         return block_hash

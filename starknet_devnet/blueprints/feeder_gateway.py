@@ -147,9 +147,11 @@ async def get_block():
     """Endpoint for retrieving a block identified by its hash or number."""
 
     block = await _get_block_object(request.args)
+    print("Here transaction_receipts=None")
+    print(block)
 
     hack_block = block.dump()
-    print("block from _get_block_object and jsonify")
+    print("Why there is no transaction_receipts?")
     print(hack_block)
 
     hack_block["transaction_receipts"] = None
