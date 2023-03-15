@@ -316,7 +316,15 @@ class DevnetBlocks:
         if numeric_hash in self.__hash2num:
             block_number = self.__hash2num[int(block_hash, 16)]
             block = await self.get_by_number(block_number)
-            block.status = BlockStatus.ABORTED
+
+            block_dict = block.dump()
+            block_dict["status"] = BlockStatus.ABORTED.name
+            block_dict["transaction_receipts"] = None
+
+            import json
+            block = StarknetBlock.loads(json.dumps(block_dict))
+
+            self.__num2block[block_number] = block
             return block.block_hash
 
         return block_hash

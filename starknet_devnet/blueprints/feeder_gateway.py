@@ -147,7 +147,16 @@ async def get_block():
     """Endpoint for retrieving a block identified by its hash or number."""
 
     block = await _get_block_object(request.args)
-    return jsonify(block.dump())
+
+    hack_block = block.dump()
+    print("block from _get_block_object and jsonify")
+    print(hack_block)
+
+    hack_block["transaction_receipts"] = None
+    print("hack_block with transaction_receipts")
+    print(hack_block)
+
+    return jsonify(hack_block)
 
 
 @feeder_gateway.route("/get_block_traces", methods=["GET"])

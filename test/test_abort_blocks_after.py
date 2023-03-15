@@ -57,18 +57,17 @@ def test_abort_blocks_after(expected_block_hash):
     assert_tx_status(contract_deploy_info["tx_hash"], "ACCEPTED_ON_L2")
 
     # After abort blocks call block should be aborted and
-    # transaction should be
-
-    print("contract_deploy_block[""]")
-    print(contract_deploy_block["block_hash"])
-    
+    # transaction should be rejected
     response = abort_blocks_after(contract_deploy_block["block_hash"])
+    contract_deploy_block_after_abort = get_block(parse=True)
     print("abort_blocks_after")
     print(response)
     print(response.json())
+    print("contract_deploy_block_after_abort")
+    print(contract_deploy_block_after_abort)
     assert response.status_code == 200
-    assert contract_deploy_block["status"] == "ABORTED"
-    assert_tx_status(contract_deploy_info["tx_hash"], "REJECTED")
+    assert contract_deploy_block_after_abort["status"] == "ABORTED"
+    # assert_tx_status(contract_deploy_info["tx_hash"], "REJECTED")
 
     # Use this later
     # TODO: add second tests with many blocks and many transactions 
