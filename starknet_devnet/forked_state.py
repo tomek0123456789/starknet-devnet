@@ -2,8 +2,8 @@
 
 import contextlib
 import json
-from typing import Callable
-import sys
+
+from marshmallow.exceptions import ValidationError
 
 from services.external_api.client import BadRequest
 from starkware.starkware_utils.error_handling import StarkException
@@ -45,6 +45,17 @@ def is_originally_starknet_exception(exc: BadRequest):
         return False
 
 
+def _extract_original_stark_exception(exc: BadRequest):
+    return StarkException(**json.loads(exc.text))
+
+
+def _load_compiled_class(class_dict: dict) -> CompiledClassBase:
+    try:
+        return CompiledClass.load(class_dict)
+    except ValidationError:
+        return DeprecatedCompiledClass.load(class_dict)
+
+
 class ForkedStateReader(StateReader):
     """State with a fallback to a forked origin"""
 
@@ -62,12 +73,10 @@ class ForkedStateReader(StateReader):
                 class_dict = await self.__feeder_gateway_client.get_class_by_hash(
                     class_hash=hex(class_hash), block_number=self.__block_number
                 )
-            return DeprecatedCompiledClass.load(
-                class_dict
-            )  # TODO load using which clas
+            return _load_compiled_class(class_dict)
         except BadRequest as bad_request:
             if is_originally_starknet_exception(bad_request):
-                original_error = StarkException(**json.loads(bad_request.text))
+                original_error = _extract_original_stark_exception(bad_request)
                 raise original_error from bad_request
             raise
 
@@ -83,7 +92,7 @@ class ForkedStateReader(StateReader):
             return CompiledClassBase.load(compiled_class_dict)
         except BadRequest as bad_request:
             if is_originally_starknet_exception(bad_request):
-                original_error = StarkException(**json.loads(bad_request.text))
+                original_error = _extract_original_stark_exception(bad_request)
                 if original_error.code == str(StarknetErrorCode.UNDECLARED_CLASS):
                     return await self._get_class_by_hash(compiled_class_hash)
                 raise original_error from bad_request
@@ -101,10 +110,12 @@ class ForkedStateReader(StateReader):
             compiled_class = CompiledClassBase.load(compiled_class_dict)
         except BadRequest as bad_request:
             if is_originally_starknet_exception(bad_request):
-                return 0
+                original_error = _extract_original_stark_exception(bad_request)
+                if original_error.code == str(StarknetErrorCode.UNDECLARED_CLASS):
+                    return 0
+                raise original_error from bad_request
             raise
 
-        # TODO cache?
         if isinstance(compiled_class, CompiledClass):
             return compute_compiled_class_hash(compiled_class)
 
