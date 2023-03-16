@@ -377,7 +377,7 @@ To enable Declare v2 transactions, specify {CAIRO_COMPILER_MANIFEST_OPTION} on D
                     class_hash=class_hash, compiled_class_hash=compiled_class_hash
                 )
 
-            else:
+            else:  # Cairo 0.x class
                 compiled_class_hash = class_hash
                 compiled_class = external_tx.contract_class
 

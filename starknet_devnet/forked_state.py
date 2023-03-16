@@ -46,7 +46,8 @@ def is_originally_starknet_exception(exc: BadRequest):
 
 
 def _extract_original_stark_exception(exc: BadRequest):
-    return StarkException(**json.loads(exc.text))
+    exc_dict = json.loads(exc.text)
+    return StarkException(code=exc_dict["code"], message=exc_dict["message"])
 
 
 def _load_compiled_class(class_dict: dict) -> CompiledClassBase:
