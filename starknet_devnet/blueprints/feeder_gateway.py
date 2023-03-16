@@ -147,18 +147,13 @@ async def get_block():
     """Endpoint for retrieving a block identified by its hash or number."""
 
     block = await _get_block_object(request.args)
-    print("Here transaction_receipts=None")
-    print(block)
+    block_dump = block.dump()
 
-    hack_block = block.dump()
-    print("Why there is no transaction_receipts?")
-    print(hack_block)
+    # This is a hack to fix StarknetBlock.loads(data=raw_response)
+    if "transaction_receipts" not in block_dump:
+        block_dump["transaction_receipts"] = None
 
-    hack_block["transaction_receipts"] = None
-    print("hack_block with transaction_receipts")
-    print(hack_block)
-
-    return jsonify(hack_block)
+    return jsonify(block_dump)
 
 
 @feeder_gateway.route("/get_block_traces", methods=["GET"])
