@@ -1,5 +1,5 @@
 """
-Tests the abort block of the devnet.
+Tests the abort block functionality.
 """
 
 import pytest
@@ -11,10 +11,7 @@ from .util import deploy, get_block
 from .account import invoke
 from .shared import (
     CONTRACT_PATH,
-    GENESIS_BLOCK_NUMBER,
     PREDEPLOY_ACCOUNT_CLI_ARGS,
-    PREDEPLOYED_ACCOUNT_ADDRESS,
-    PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
 )
 from .util import (
     assert_transaction,
@@ -42,8 +39,8 @@ def abort_blocks_after(block_hash):
     ],
     indirect=True,
 )
-def test_abort_blocks_after(expected_block_hash):
-    """Test abort blocks after"""
+def test_abort_single_block_single_transaction(expected_block_hash):
+    """Test abort of single block and single transaction."""
 
     # Genesis block should be accepted on L2
     genesis_block = get_block(parse=True)
@@ -64,16 +61,7 @@ def test_abort_blocks_after(expected_block_hash):
     print(response)
     print(response.json())
     print("contract_deploy_block_after_abort")
-    print(contract_deploy_block_after_abort)
+    print(contract_deploy_block_after_abort["transactions"][0])
     assert response.status_code == 200
     assert contract_deploy_block_after_abort["status"] == "ABORTED"
-    # assert_tx_status(contract_deploy_info["tx_hash"], "REJECTED")
-
-    # Use this later
-    # TODO: add second tests with many blocks and many transactions 
-    # increase and assert balance
-    # invoke_tx_hash = invoke(
-    #     calls=[(deploy_info["address"], "increase_balance", [1, 1])],
-    #     account_address=PREDEPLOYED_ACCOUNT_ADDRESS,
-    #     private_key=PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
-    # )
+    assert_transaction(contract_deploy_info["tx_hash"], "REJECTED")

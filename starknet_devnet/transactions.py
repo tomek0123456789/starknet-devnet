@@ -285,6 +285,18 @@ class DevnetTransactions:
 
         return status_response
 
+    async def reject_transaction(self, tx_hash: int):
+        """
+        Reject a transaction used in abort block functionality.
+        """
+        self.__instances[tx_hash].status = TransactionStatus.REJECTED
+        self.__instances[tx_hash].transaction_index = 0
+        self.__instances[tx_hash].block = None
+        #TODO: check error_message in pathfinder node
+        self.__instances[tx_hash].transaction_failure_reason = TransactionFailureReason(
+            code=StarknetErrorCode.TRANSACTION_FAILED.name, error_message="Block aborted."
+        )
+
 
 def create_empty_internal_declare(tx_hash, class_hash) -> InternalDeclare:
     "Create InternalDeclare used in the genesis block"

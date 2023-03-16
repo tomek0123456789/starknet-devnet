@@ -213,15 +213,11 @@ async def abort_blocks_after():
     request_json = request.json or {}
     block_hash = hex_converter(request_json, "blockHash")
     
-    # TODO: abort blocks and transactions
+    # TODO: add abort blocks not one block and same for transactions 
     block = await state.starknet_wrapper.blocks.get_by_hash(hex(block_hash))
-    print("block")
-    print(block.status)
+    await state.starknet_wrapper.blocks.abort_block_by_hash(hex(block_hash))
 
-    response = await state.starknet_wrapper.blocks.abort_block_by_hash(hex(block_hash))
-    print(response)
-    # block = await state.starknet_wrapper.blocks.get_by_hash(hex(block_hash))
-    # print("block")
-    # print(block.status)
+    for transaction in block.transactions:
+        await state.starknet_wrapper.transactions.reject_transaction(tx_hash=transaction.transaction_hash)
 
     return jsonify({"block_hash": hex(block_hash)})
