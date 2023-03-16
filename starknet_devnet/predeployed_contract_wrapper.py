@@ -2,7 +2,7 @@
 from abc import ABC
 
 from starkware.starknet.services.api.contract_class.contract_class import (
-    CompiledClassBase,
+    DeprecatedCompiledClass,
 )
 from starkware.starknet.testing.contract import StarknetContract
 from starkware.starknet.testing.starknet import Starknet
@@ -16,7 +16,7 @@ class PredeployedContractWrapper(ABC):
 
     starknet_wrapper: "StarknetWrapper"
     address: int
-    contract_class: CompiledClassBase
+    contract_class: DeprecatedCompiledClass
     class_hash: int
 
     # Value will be set by deploy
@@ -32,7 +32,6 @@ class PredeployedContractWrapper(ABC):
         starknet.state.state.contract_classes[self.class_hash] = self.contract_class
 
         # pylint: disable=protected-access
-        starknet: Starknet = self.starknet_wrapper.starknet
         starknet.state.state.cache._class_hash_writes[
             self.address
         ] = self.class_hash

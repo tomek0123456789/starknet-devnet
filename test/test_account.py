@@ -66,7 +66,7 @@ def deploy_events_contract():
 def get_account_balance(address: str, server_url=APP_URL) -> int:
     """Get balance (wei) of account with `address` (hex)."""
     resp = requests.get(f"{server_url}/account_balance?address={address}")
-    assert resp.status_code == 200
+    assert resp.status_code == 200, resp.json()
     return int(resp.json()["amount"])
 
 

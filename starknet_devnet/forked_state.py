@@ -2,8 +2,12 @@
 
 import contextlib
 import json
+from typing import Callable
+import sys
 
 from services.external_api.client import BadRequest
+from starkware.starkware_utils.error_handling import StarkException
+from starkware.starknet.definitions.error_codes import StarknetErrorCode
 from starkware.starknet.business_logic.state.state import BlockInfo, CachedState
 from starkware.starknet.business_logic.state.state_api import StateReader
 from starkware.starknet.core.os.contract_class.compiled_class_hash import (
@@ -13,6 +17,8 @@ from starkware.starknet.definitions.constants import UNINITIALIZED_CLASS_HASH
 from starkware.starknet.definitions.general_config import StarknetChainId
 from starkware.starknet.services.api.contract_class.contract_class import (
     CompiledClassBase,
+    CompiledClass,
+    DeprecatedCompiledClass,
 )
 from starkware.starknet.services.api.feeder_gateway.feeder_gateway_client import (
     FeederGatewayClient,
@@ -22,6 +28,7 @@ from starkware.starknet.testing.state import StarknetState
 
 from .block_info_generator import now
 from .general_config import build_devnet_general_config
+from .util import StarknetDevnetException
 
 
 def is_originally_starknet_exception(exc: BadRequest):
@@ -49,32 +56,62 @@ class ForkedStateReader(StateReader):
         self.__feeder_gateway_client = feeder_gateway_client
         self.__block_number = block_number
 
-    async def get_compiled_class_by_class_hash(
-        self, class_hash: int
-    ) -> CompiledClassBase:
-        # TODO wrap?
-        return await self.__feeder_gateway_client.get_compiled_class_by_class_hash(
-            class_hash
-        )
+    async def _get_class_by_hash(self, class_hash: int) -> CompiledClassBase:
+        try:
+            with contextlib.redirect_stderr(None):
+                class_dict = await self.__feeder_gateway_client.get_class_by_hash(
+                    class_hash=hex(class_hash), block_number=self.__block_number
+                )
+            return DeprecatedCompiledClass.load(
+                class_dict
+            )  # TODO load using which clas
+        except BadRequest as bad_request:
+            if is_originally_starknet_exception(bad_request):
+                original_error = StarkException(**json.loads(bad_request.text))
+                raise original_error from bad_request
+            raise
 
     async def get_compiled_class(self, compiled_class_hash: int) -> CompiledClassBase:
-        # try:
-        #     with contextlib.redirect_stderr(None):
-        #         hash_hex = hex(compiled_class_hash)
-        #         compiled_class_dict = await self.__feeder_gateway_client.get_compiled_class_by_class_hash(
-        #             # TODO which hash should this be?
-        #             hash_hex
-        #         )
-        #         return CompiledClassBase.load(compiled_class_dict)
-        # except BadRequest as bad_request:
-        #     original_error = StarkException(**json.loads(bad_request.text))
-        #     raise original_error from bad_request
-        raise NotImplementedError
+        try:
+            with contextlib.redirect_stderr(None):
+                compiled_class_dict = (
+                    await self.__feeder_gateway_client.get_compiled_class_by_class_hash(
+                        hex(compiled_class_hash),
+                        block_number=self.__block_number,
+                    )
+                )
+            return CompiledClassBase.load(compiled_class_dict)
+        except BadRequest as bad_request:
+            if is_originally_starknet_exception(bad_request):
+                original_error = StarkException(**json.loads(bad_request.text))
+                if original_error.code == str(StarknetErrorCode.UNDECLARED_CLASS):
+                    return await self._get_class_by_hash(compiled_class_hash)
+                raise original_error from bad_request
+            raise
 
     async def get_compiled_class_hash(self, class_hash: int) -> int:
-        compiled_class = await self.get_compiled_class_by_class_hash(class_hash)
+        try:
+            with contextlib.redirect_stderr(None):
+                compiled_class_dict = (
+                    await self.__feeder_gateway_client.get_compiled_class_by_class_hash(
+                        hex(class_hash),
+                        block_number=self.__block_number,
+                    )
+                )
+            compiled_class = CompiledClassBase.load(compiled_class_dict)
+        except BadRequest as bad_request:
+            if is_originally_starknet_exception(bad_request):
+                return 0
+            raise
+
         # TODO cache?
-        return compute_compiled_class_hash(compiled_class)
+        if isinstance(compiled_class, CompiledClass):
+            return compute_compiled_class_hash(compiled_class)
+
+        raise StarknetDevnetException(
+            code=StarknetErrorCode.INVALID_CONTRACT_CLASS,
+            message=f"Cannot get compiled class hash for class of type {type(compiled_class)}",
+        )
 
     async def get_class_hash_at(self, contract_address: int) -> int:
         try:
