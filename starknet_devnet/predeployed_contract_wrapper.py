@@ -32,9 +32,7 @@ class PredeployedContractWrapper(ABC):
         starknet.state.state.contract_classes[self.class_hash] = self.contract_class
 
         # pylint: disable=protected-access
-        starknet.state.state.cache._class_hash_writes[
-            self.address
-        ] = self.class_hash
+        starknet.state.state.cache._class_hash_writes[self.address] = self.class_hash
         # replace with await starknet.state.state.deploy_contract
         # await starknet.state.state.deploy_contract(self.address, self.class_hash)
         # For now, it fails for fee token since the address is the same as the

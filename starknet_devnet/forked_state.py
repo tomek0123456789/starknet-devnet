@@ -4,20 +4,18 @@ import contextlib
 import json
 
 from marshmallow.exceptions import ValidationError
-
 from services.external_api.client import BadRequest
-from starkware.starkware_utils.error_handling import StarkException
-from starkware.starknet.definitions.error_codes import StarknetErrorCode
 from starkware.starknet.business_logic.state.state import BlockInfo, CachedState
 from starkware.starknet.business_logic.state.state_api import StateReader
 from starkware.starknet.core.os.contract_class.compiled_class_hash import (
     compute_compiled_class_hash,
 )
 from starkware.starknet.definitions.constants import UNINITIALIZED_CLASS_HASH
+from starkware.starknet.definitions.error_codes import StarknetErrorCode
 from starkware.starknet.definitions.general_config import StarknetChainId
 from starkware.starknet.services.api.contract_class.contract_class import (
-    CompiledClassBase,
     CompiledClass,
+    CompiledClassBase,
     DeprecatedCompiledClass,
 )
 from starkware.starknet.services.api.feeder_gateway.feeder_gateway_client import (
@@ -25,6 +23,7 @@ from starkware.starknet.services.api.feeder_gateway.feeder_gateway_client import
 )
 from starkware.starknet.testing.starknet import Starknet
 from starkware.starknet.testing.state import StarknetState
+from starkware.starkware_utils.error_handling import StarkException
 
 from .block_info_generator import now
 from .general_config import build_devnet_general_config
