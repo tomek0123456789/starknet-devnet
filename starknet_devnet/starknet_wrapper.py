@@ -770,7 +770,7 @@ To enable Declare v2 transactions, specify {CAIRO_COMPILER_MANIFEST_OPTION} on D
         """Handles L1 to L2 message mock endpoint"""
 
         state = self.get_state()
-
+        # TODO fee? tests?
         # Execute transactions inside StarknetWrapper
         async with self.__get_transaction_handler() as tx_handler:
             tx_handler.internal_tx = transaction
@@ -789,7 +789,9 @@ To enable Declare v2 transactions, specify {CAIRO_COMPILER_MANIFEST_OPTION} on D
         parsed_l1_l2_messages, transactions_to_execute = await self.l1l2.flush(state)
 
         # Execute transactions inside StarknetWrapper
+        tx_hashes = []
         for transaction in transactions_to_execute:
+            tx_hashes.append(hex(transaction.hash_value))
             async with self.__get_transaction_handler() as tx_handler:
                 tx_handler.internal_tx = transaction
                 tx_handler.execution_info = await state.execute_tx(
@@ -799,6 +801,7 @@ To enable Declare v2 transactions, specify {CAIRO_COMPILER_MANIFEST_OPTION} on D
                     tx_handler.execution_info.call_info.internal_calls
                 )
 
+        parsed_l1_l2_messages["generated_l2_transactions"] = tx_hashes
         return parsed_l1_l2_messages
 
     async def update_pending_block(self, state_update: BlockStateUpdate = None):

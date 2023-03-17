@@ -22,7 +22,7 @@ def parse_hex_string(arg: str) -> int:
     """
     Converts the argument to an integer only if it starts with `0x`.
     """
-    if arg.startswith("0x"):
+    if isinstance(arg, str) and arg.startswith("0x"):
         try:
             return int(arg, 16)
         except ValueError:

@@ -199,6 +199,9 @@ def test_declare_and_get_class_by_hash():
     )
 
 
+# TODO test new endpoint
+
+
 def _assert_transaction_trace_not_present(tx_hash: str, feeder_gateway_url=APP_URL):
     resp = get_transaction_trace_response(tx_hash, server_url=feeder_gateway_url)
     assert resp.json()["code"] == str(StarknetErrorCode.INVALID_TRANSACTION_HASH)

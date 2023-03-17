@@ -2,7 +2,7 @@
 
 from .shared import ALPHA_GOERLI2_URL, PREDEPLOY_ACCOUNT_CLI_ARGS
 
-TESTNET_URL = ALPHA_GOERLI2_URL
+TESTNET_URL = "https://external.integration.starknet.io"
 TESTNET_CONTRACT_ADDRESS = (
     "0x32320dbdff79639db4ac0ff1f9f8b7450d31fee8ca1bccea7cfa0d7765fe0b2"
 )
@@ -13,4 +13,4 @@ TESTNET_CONTRACT_CLASS_HASH = (
     "0x028c7d54caa154d29953a26857c200623fd185bffa178a185d0ff247d22127a9"
 )
 TESTNET_DEPLOYMENT_BLOCK = 8827  # this is when the contract was deployed
-TESTNET_FORK_PARAMS = [*PREDEPLOY_ACCOUNT_CLI_ARGS, "--fork-network", "alpha-goerli2"]
+TESTNET_FORK_PARAMS = [*PREDEPLOY_ACCOUNT_CLI_ARGS, "--fork-network", TESTNET_URL]

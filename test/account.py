@@ -150,7 +150,7 @@ def invoke(
 
     if max_fee is None:
         max_fee = int(1e18)
-        # TODO
+        # TODO this should be uncommented when version 2 of 0.11.0 is pre-released
         # max_fee = get_estimated_fee(
         #     calls=calls,
         #     account_address=account_address,
