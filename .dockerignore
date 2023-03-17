@@ -15,6 +15,8 @@ Dockerfile
 test/
 .pylintrc
 page/
+cairo-compiler
+.cairo-compiler-manifest-location
 
 # Hardhat specific
 node_modules/

@@ -274,7 +274,7 @@ def _l1_l2_message_exchange(web3, l1l2_example_contract, l2_contract_address):
             USER_ID,
             600,
         ],
-        value=int(1),
+        value=1,  # for now any message fee >0 is ok
     )
 
     balance = web3_call("userBalances", l1l2_example_contract, USER_ID)

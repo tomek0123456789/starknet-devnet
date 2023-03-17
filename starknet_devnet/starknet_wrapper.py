@@ -770,7 +770,6 @@ To enable Declare v2 transactions, specify {CAIRO_COMPILER_MANIFEST_OPTION} on D
         """Handles L1 to L2 message mock endpoint"""
 
         state = self.get_state()
-        # TODO fee? tests?
         # Execute transactions inside StarknetWrapper
         async with self.__get_transaction_handler() as tx_handler:
             tx_handler.internal_tx = transaction

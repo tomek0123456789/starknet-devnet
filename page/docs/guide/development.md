@@ -6,6 +6,8 @@ sidebar_position: 18
 
 If you're a developer willing to contribute, be sure to have installed [**Poetry**](https://pypi.org/project/poetry/) and all the dependency packages by running the installation script. Prerequisites for running the script: `gcc`, `g++`, `gmp`, `npm`.
 
+To use an existing Cairo 1 compiler repository, set the environment variable `CAIRO_1_COMPILER_MANIFEST` to the path of the `Cargo.toml` of the compiler. If this variable is not set, a new compiler repository will be downloaded as a subdirectory of your starknet-devnet directory.
+
 ```bash
 ./scripts/install_dev_tools.sh
 ```

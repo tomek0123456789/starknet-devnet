@@ -21,6 +21,7 @@ from .account import declare, deploy, get_nonce
 from .settings import APP_URL
 from .shared import (
     ABI_1_PATH,
+    CAIRO_1_COMPILER_MANIFEST,
     CONTRACT_1_CASM_PATH,
     CONTRACT_1_PATH,
     CONTRACT_PATH,
@@ -120,7 +121,7 @@ def _declare_v2(
 @devnet_in_background(
     *PREDEPLOY_ACCOUNT_CLI_ARGS,
     "--cairo-compiler-manifest",
-    "/home/fabijanc/starkware-libs/cairo/Cargo.toml",
+    CAIRO_1_COMPILER_MANIFEST,
 )
 def test_declare_v2_happy_path():
     """Test declare v2"""
