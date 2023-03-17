@@ -209,15 +209,21 @@ async def fork_status():
 
 @base.route("/abort_blocks_after", methods=["POST"])
 async def abort_blocks_after():
-    """TODO: """
+    """Abort blocks and transactions from given block hash to last block."""
     request_json = request.json or {}
-    block_hash = hex_converter(request_json, "blockHash")
-    
-    # TODO: add abort blocks not one block and same for transactions 
-    block = await state.starknet_wrapper.blocks.get_by_hash(hex(block_hash))
-    await state.starknet_wrapper.blocks.abort_block_by_hash(hex(block_hash))
+    current_block = await state.starknet_wrapper.blocks.get_by_hash(hex(hex_converter(request_json, "blockHash")))
+    last_block = await state.starknet_wrapper.blocks.get_last_block()
+    block_hashes = []
 
-    for transaction in block.transactions:
-        await state.starknet_wrapper.transactions.reject_transaction(tx_hash=transaction.transaction_hash)
+    # Abort blocks
+    for block_number in range(current_block.block_number, last_block.block_number + 1):
+        block = await state.starknet_wrapper.blocks.get_by_number(block_number)
+        await state.starknet_wrapper.blocks.abort_block_by_hash(hex(block.block_hash))
 
-    return jsonify({"block_hash": hex(block_hash)})
+        # Reject transactions
+        for transaction in block.transactions:
+            await state.starknet_wrapper.transactions.reject_transaction(tx_hash=transaction.transaction_hash)
+
+        block_hashes.append(hex(block.block_hash))
+
+    return jsonify({"aborted": block_hashes})
