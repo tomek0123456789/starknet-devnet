@@ -35,6 +35,9 @@ def compile_cairo(
             "starknet-sierra-compile",
             "--manifest-path",
             compiler_manifest,
+            "--",
+            "--allowed-libfuncs-list-name",
+            "experimental_v0.1.0",
             contract_json,
             contract_casm,
         ]

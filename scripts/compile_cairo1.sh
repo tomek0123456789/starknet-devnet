@@ -35,11 +35,20 @@ for contract in "test/contracts/cairo1"/*.cairo; do
     abi_output="$directory/${without_extension}_abi.json"
 
     # compile to sierra
-    cargo run --bin starknet-compile --manifest-path "$CAIRO_1_COMPILER_MANIFEST" -- "$contract" "$sierra_output"
+    cargo run --bin starknet-compile \
+        --manifest-path "$CAIRO_1_COMPILER_MANIFEST" \
+        -- \
+        --allowed-libfuncs-list-name experimental_v0.1.0 \
+        "$contract" "$sierra_output"
+
     jq ".abi" "$sierra_output" >"$abi_output"
 
     # compile to casm
-    cargo run --bin starknet-sierra-compile --manifest-path "$CAIRO_1_COMPILER_MANIFEST" -- "$sierra_output" "$casm_output"
+    cargo run --bin starknet-sierra-compile \
+        --manifest-path "$CAIRO_1_COMPILER_MANIFEST" \
+        -- \
+        --allowed-libfuncs-list-name experimental_v0.1.0 \
+        "$sierra_output" "$casm_output"
 
     number_of_contracts=$((number_of_contracts + 1))
 done
