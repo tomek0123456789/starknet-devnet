@@ -13,9 +13,11 @@ from starkware.starknet.core.os.transaction_hash.transaction_hash import (
     compute_class_hash,
 )
 from starkware.starknet.definitions.general_config import StarknetChainId
+from starkware.starknet.services.api.contract_class.contract_class import CompiledClass
+from starkware.starknet.services.api.contract_class.contract_class_utils import (
+    load_sierra,
+)
 from starkware.starknet.services.api.gateway.transaction import Declare
-
-from starknet_devnet.contract_class_utils import load_casm, load_sierra
 
 
 def _get_env_var(var_name: str):
@@ -100,7 +102,8 @@ def main():  # pylint: disable=too-many-locals
 
     artifacts_path = "test/artifacts/contracts/cairo1/contract.cairo"
     contract_class = load_sierra(f"{artifacts_path}/contract.json")
-    compiled_class = load_casm(f"{artifacts_path}/contract.casm")
+    with open(f"{artifacts_path}/contract.casm") as casm_file:
+        compiled_class = CompiledClass.loads(casm_file.read())
 
     class_hash = compute_class_hash(contract_class)
     print("Class hash:", hex(class_hash))

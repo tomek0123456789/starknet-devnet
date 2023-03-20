@@ -13,9 +13,11 @@ from starkware.starknet.core.os.transaction_hash.transaction_hash import (
 )
 from starkware.starknet.definitions.error_codes import StarknetErrorCode
 from starkware.starknet.definitions.general_config import StarknetChainId
+from starkware.starknet.services.api.contract_class.contract_class import CompiledClass
+from starkware.starknet.services.api.contract_class.contract_class_utils import (
+    load_sierra,
+)
 from starkware.starknet.services.api.gateway.transaction import Declare
-
-from starknet_devnet.contract_class_utils import load_casm, load_sierra
 
 from .account import declare, deploy, get_nonce
 from .settings import APP_URL
@@ -82,7 +84,8 @@ def _declare_v2(
     contract_class_path: str, compiled_class_path: str, sender_address: str
 ):
     contract_class = load_sierra(contract_class_path)
-    compiled_class = load_casm(compiled_class_path)
+    with open(compiled_class_path, encoding="utf-8") as casm_file:
+        compiled_class = CompiledClass.loads(casm_file.read())
 
     compiled_class_hash = compute_compiled_class_hash(compiled_class)
 

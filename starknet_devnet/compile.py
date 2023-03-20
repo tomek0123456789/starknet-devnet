@@ -11,7 +11,6 @@ from starkware.starknet.services.api.contract_class.contract_class import (
     ContractClass,
 )
 
-from starknet_devnet.contract_class_utils import load_casm
 from starknet_devnet.util import StarknetDevnetException
 
 
@@ -38,6 +37,7 @@ def compile_cairo(
             "--",
             "--allowed-libfuncs-list-name",
             "experimental_v0.1.0",
+            "--add-pythonic-hints",
             contract_json,
             contract_casm,
         ]
@@ -49,5 +49,6 @@ def compile_cairo(
                 message=f"Failed compilation to casm! {stderr}",
             )
 
-        compiled_class = load_casm(contract_casm)
+        with open(contract_casm, encoding="utf-8") as casm_file:
+            compiled_class = CompiledClass.loads(casm_file.read())
         return compiled_class
