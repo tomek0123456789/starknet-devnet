@@ -22,7 +22,8 @@ from .util import (
     get_block,
 )
 
-EXPECTED_SALTY_DEPLOY_BLOCK_HASH_LITE_MODE = "0x1"
+EXPECTED_ABORT_HASHES = ["0x1", "0x2"]
+NOT_EXISTING_BLOCK = "0x9"
 
 
 def abort_blocks_after(block_hash):
@@ -30,6 +31,12 @@ def abort_blocks_after(block_hash):
     return requests.post(
         f"{APP_URL}/abort_blocks_after", json={"blockHash": block_hash}
     )
+
+
+@devnet_in_background()
+def test_abort_not_existing_block():
+    response = abort_blocks_after(NOT_EXISTING_BLOCK)
+    assert response.status_code == 500
 
 
 @devnet_in_background()
@@ -56,8 +63,22 @@ def test_abort_single_block_single_transaction():
     assert_transaction(contract_deploy_info["tx_hash"], "REJECTED")
 
 
-@devnet_in_background(*PREDEPLOY_ACCOUNT_CLI_ARGS)
-def test_abort_many_blocks_many_transactions():
+@pytest.mark.usefixtures("run_devnet_in_background")
+@pytest.mark.parametrize(
+    "run_devnet_in_background, expected_block_hash",
+    [
+        (
+            [*PREDEPLOY_ACCOUNT_CLI_ARGS],
+            "",
+        ),
+        (
+            [*PREDEPLOY_ACCOUNT_CLI_ARGS, "--lite-mode"],
+            EXPECTED_ABORT_HASHES,
+        ),
+    ],
+    indirect=True,
+)
+def test_abort_many_blocks_many_transactions(expected_block_hash):
     """Test abort of single block and single transaction."""
 
     # Genesis block should be accepted on L2
@@ -86,8 +107,9 @@ def test_abort_many_blocks_many_transactions():
     # transactions should be rejected
     response = abort_blocks_after(contract_deploy_block["block_hash"])
     assert response.status_code == 200
-    print
-    # TODO: assert 2 block hashes
+    # check if in lite mode expected block hash is 0x1 and 0x2
+    if expected_block_hash == EXPECTED_ABORT_HASHES:
+        assert response.json()["aborted"] == EXPECTED_ABORT_HASHES
     contract_deploy_block_after_abort = get_block(block_number=1, parse=True)
     assert contract_deploy_block_after_abort["status"] == "ABORTED"
     assert_transaction(contract_deploy_info["tx_hash"], "REJECTED")
@@ -95,5 +117,8 @@ def test_abort_many_blocks_many_transactions():
     assert invoke_block_after_abort["status"] == "ABORTED"
     assert_transaction(invoke_tx_hash, "REJECTED")
 
-    # TODO: new block here and should be ACCEPTED_ON_L2
-    # Add tet with missing block -> no block hash
+    # Newly deployed contract after abort should be accepted on L2
+    contract_deploy_info = deploy(CONTRACT_PATH, inputs=["0"])
+    contract_deploy_block = get_block(parse=True)
+    assert contract_deploy_block["status"] == "ACCEPTED_ON_L2"
+    assert_tx_status(contract_deploy_info["tx_hash"], "ACCEPTED_ON_L2")
