@@ -68,15 +68,21 @@ consider running `export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES` in your shell.
 ./scripts/check_versions.sh
 ```
 
-## Development - Working with an archive of cairo-lang
+## Development - Adapting to a new version of cairo-lang
 
-If you know the URL of the archive (e.g. ZIP) of a new cairo-lang version, you can install it with
+Install the exact version with `poetry add cairo-lang@<VERSION>`.
+
+If you only know the URL of the archive (e.g. ZIP) of a new cairo-lang version, you can install it with
 
 ```
 poetry add <URL>
 ```
 
 After adding a new cairo-lang version, you will probably want to recompile contract artifacts.
+
+Why are we installing the exact version? We depend on Starknet's internal code, and any minor change might make Devnet unusable.
+
+When adapting to a new cairo-lang version, to make the tests pass, some hashes will need to be replaced (at least a different version string is stored in the compilation artifacts, leading to a different hash). This is the main argument for keeping the hardcoded hash values in tests: they are only expected to change if a new version cairo-lang version is being added or there is a change with the smart contracts themselves, otherwise a change in the expected hash values probably indicates a bug.
 
 ## Development - Updating accounts
 
