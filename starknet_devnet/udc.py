@@ -3,10 +3,11 @@
 from starkware.python.utils import to_bytes
 from starkware.solidity.utils import load_nearby_contract
 from starkware.starknet.services.api.contract_class import ContractClass
-from starkware.starknet.testing.starknet import Starknet
+
+from starknet_devnet.predeployed_contract_wrapper import PredeployedContractWrapper
 
 
-class UDC:
+class UDC(PredeployedContractWrapper):
     """Universal deployer contract wrapper class"""
 
     CONTRACT_CLASS: ContractClass = None  # loaded lazily
@@ -23,6 +24,8 @@ class UDC:
 
     def __init__(self, starknet_wrapper):
         self.starknet_wrapper = starknet_wrapper
+        self.address = self.ADDRESS
+        self.class_hash_bytes = self.HASH_BYTES
 
     @classmethod
     def get_contract_class(cls):
@@ -33,13 +36,10 @@ class UDC:
             )
         return cls.CONTRACT_CLASS
 
-    async def deploy(self):
-        """Deploy token contract for charging fees."""
-        starknet: Starknet = self.starknet_wrapper.starknet
-        contract_class = UDC.get_contract_class()
+    @property
+    def contract_class(self) -> ContractClass:
+        """Same as `get_contract_class`, used by `PredeployedContractWrapper` parent"""
+        return self.get_contract_class()
 
-        await starknet.state.state.set_contract_class(UDC.HASH_BYTES, contract_class)
-
-        # pylint: disable=protected-access
-        starknet.state.state.cache._class_hash_writes[UDC.ADDRESS] = UDC.HASH_BYTES
-        # replace with await starknet.state.state.deploy_contract
+    async def _mimic_constructor(self):
+        pass

@@ -6,14 +6,14 @@ from starkware.starknet.core.os.contract_address.contract_address import (
     calculate_contract_address_from_hash,
 )
 from starkware.starknet.public.abi import get_selector_from_name
-from starkware.starknet.testing.contract import StarknetContract
 from starkware.starknet.testing.starknet import Starknet
 
 from starknet_devnet.account_util import set_balance
 from starknet_devnet.contract_class_wrapper import ContractClassWrapper
+from starknet_devnet.predeployed_contract_wrapper import PredeployedContractWrapper
 
 
-class Account:
+class Account(PredeployedContractWrapper):
     """Account contract wrapper."""
 
     # pylint: disable=too-many-arguments
@@ -50,14 +50,8 @@ class Account:
             "address": hex(self.address),
         }
 
-    async def deploy(self) -> StarknetContract:
-        """Deploy this account and set its balance."""
+    async def _mimic_constructor(self):
         starknet: Starknet = self.starknet_wrapper.starknet
-        contract_class = self.contract_class
-        await starknet.state.state.set_contract_class(
-            self.class_hash_bytes, contract_class
-        )
-        await starknet.state.state.deploy_contract(self.address, self.class_hash_bytes)
 
         await starknet.state.state.set_storage_at(
             self.address, get_selector_from_name("Account_public_key"), self.public_key
