@@ -41,7 +41,7 @@ def validate_request(data: bytes, cls, many=False):
     """Ensure `data` is valid Starknet function call. Returns an object of type specified with `cls`."""
     try:
         return cls.Schema().loads(data, many=many)
-    except (TypeError, ValidationError) as err:
+    except (AttributeError, KeyError, TypeError, ValidationError) as err:
         raise StarknetDevnetException(
             code=StarkErrorCode.MALFORMED_REQUEST,
             message=f"Invalid {cls.__name__}: {err}",
@@ -121,6 +121,7 @@ def _get_block_id(args: MultiDict) -> BlockId:
 
 
 def _get_skip_validate(args: MultiDict) -> bool:
+    # TODO test this feature
     skip_validate = args.get("skipValidate")
 
     if skip_validate == "true":
@@ -154,11 +155,11 @@ async def call_contract():
     block_id = _get_block_id(request.args)
 
     try:
-        call_specifications = validate_request(request.data, CallFunction)  # version 1
+        # version 1
+        call_specifications = validate_request(request.data, CallFunction)
     except StarknetDevnetException:
-        call_specifications = validate_request(
-            request.data, InvokeFunction
-        )  # version 0
+        # version 0
+        call_specifications = validate_request(request.data, InvokeFunction)
 
     result_dict = await state.starknet_wrapper.call(call_specifications, block_id)
     return jsonify(result_dict)
@@ -340,9 +341,10 @@ async def estimate_fee():
         transaction = validate_request(request.data, InvokeFunction)  # version 0
 
     block_id = _get_block_id(request.args)
+    skip_validate = _get_skip_validate(request.args)
 
     _, fee_response = await state.starknet_wrapper.calculate_trace_and_fee(
-        transaction, block_id
+        transaction, skip_validate=skip_validate, block_id=block_id
     )
     return jsonify(fee_response)
 
