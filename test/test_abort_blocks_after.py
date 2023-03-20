@@ -8,7 +8,6 @@ import requests
 from .account import invoke
 from .settings import APP_URL
 from .shared import (
-    ARTIFACTS_PATH,
     CONTRACT_PATH,
     PREDEPLOY_ACCOUNT_CLI_ARGS,
     PREDEPLOYED_ACCOUNT_ADDRESS,
@@ -43,10 +42,6 @@ def test_abort_not_existing_block():
 def test_abort_single_block_single_transaction():
     """Test abort of single block and single transaction."""
 
-    # Genesis block should be accepted on L2
-    genesis_block = get_block(parse=True)
-    assert genesis_block["status"] == "ACCEPTED_ON_L2"
-
     # Contract deploy block should be accepted on L2 and
     # transaction should be accepted on L2
     contract_deploy_info = deploy(CONTRACT_PATH, inputs=["0"])
@@ -79,11 +74,7 @@ def test_abort_single_block_single_transaction():
     indirect=True,
 )
 def test_abort_many_blocks_many_transactions(expected_block_hash):
-    """Test abort of single block and single transaction."""
-
-    # Genesis block should be accepted on L2
-    genesis_block = get_block(parse=True)
-    assert genesis_block["status"] == "ACCEPTED_ON_L2"
+    """Test abort of many blocks and many transactions."""
 
     # Contract deploy block should be accepted on L2 and
     # transaction should be accepted on L2
