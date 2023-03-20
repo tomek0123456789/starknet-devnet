@@ -102,7 +102,7 @@ def main():  # pylint: disable=too-many-locals
 
     artifacts_path = "test/artifacts/contracts/cairo1/contract.cairo"
     contract_class = load_sierra(f"{artifacts_path}/contract.json")
-    with open(f"{artifacts_path}/contract.casm") as casm_file:
+    with open(f"{artifacts_path}/contract.casm", encoding="utf-8") as casm_file:
         compiled_class = CompiledClass.loads(casm_file.read())
 
     class_hash = compute_class_hash(contract_class)

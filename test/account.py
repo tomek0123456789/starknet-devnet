@@ -82,7 +82,7 @@ def get_estimate_fee_request_dict(
         private_key=private_key,
         nonce=nonce,
         max_fee=max_fee,
-        version=QUERY_VERSION,
+        version=QUERY_VERSION,  # TODO
     )
 
     return {
@@ -149,16 +149,14 @@ def invoke(
         nonce = get_nonce(account_address, feeder_gateway_url=gateway_url)
 
     if max_fee is None:
-        max_fee = int(1e18)
-        # TODO this should be uncommented when version 2 of 0.11.0 is pre-released
-        # max_fee = get_estimated_fee(
-        #     calls=calls,
-        #     account_address=account_address,
-        #     private_key=private_key,
-        #     nonce=nonce,
-        #     feeder_gateway_url=gateway_url,
-        #     chain_id=chain_id,
-        # )
+        max_fee = get_estimated_fee(
+            calls=calls,
+            account_address=account_address,
+            private_key=private_key,
+            nonce=nonce,
+            feeder_gateway_url=gateway_url,
+            chain_id=chain_id,
+        )
 
     signature, execute_calldata = get_execute_args(
         calls=calls,
@@ -222,6 +220,7 @@ def declare(
     output = run_starknet(
         [
             "declare",
+            "--deprecated",
             "--contract",
             contract_path,
             "--signature",

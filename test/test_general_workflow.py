@@ -96,8 +96,6 @@ def test_general_workflow(expected_block_hash):
         calls=[(deploy_info["address"], "increase_balance", [10, 20])],
         account_address=PREDEPLOYED_ACCOUNT_ADDRESS,
         private_key=PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
-        # TODO if max_fee not provided, implicitly estimates fee - which is done with wrong tx version (query)
-        max_fee=int(1e18),
     )
     assert_transaction(invoke_tx_hash, "ACCEPTED_ON_L2")
     value = call(
@@ -134,7 +132,6 @@ def test_general_workflow(expected_block_hash):
         calls=[(EXPECTED_SALTY_DEPLOY_ADDRESS, "increase_balance", [10])],
         account_address=PREDEPLOYED_ACCOUNT_ADDRESS,
         private_key=PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
-        max_fee=int(1e18),  # TODO to prevent implicit fee estimation
     )
 
     assert_events(salty_invoke_tx_hash, "test/expected/invoke_receipt_event.json")

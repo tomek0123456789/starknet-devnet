@@ -120,6 +120,25 @@ def _get_block_id(args: MultiDict) -> BlockId:
     return {"block_number": block_number}
 
 
+def _get_skip_validate(args: MultiDict) -> bool:
+    skip_validate = args.get("skipValidate")
+
+    if skip_validate == "true":
+        return True
+
+    if skip_validate == "false":
+        return False
+
+    # default case (user did not specify)
+    if skip_validate is None:
+        return False
+
+    raise StarknetDevnetException(
+        code=StarkErrorCode.MALFORMED_REQUEST,
+        message=f"Invalid value for skipValidate: {skip_validate}. Should be true or false.",
+    )
+
+
 @feeder_gateway.route("/get_contract_addresses", methods=["GET"])
 def get_contract_addresses():
     """Endpoint that returns an object containing the addresses of key system components."""
@@ -340,9 +359,12 @@ async def estimate_fee_bulk():
         transactions = validate_request(request.data, InvokeFunction, many=True)
 
     block_id = _get_block_id(request.args)
+    skip_validate = _get_skip_validate(request.args)
 
     _, fee_responses = await state.starknet_wrapper.calculate_traces_and_fees(
-        transactions, block_id
+        transactions,
+        block_id=block_id,
+        skip_validate=skip_validate,
     )
     return jsonify(fee_responses)
 
@@ -352,9 +374,12 @@ async def simulate_transaction():
     """Returns the estimated fee for a transaction."""
     transaction = validate_request(request.data, AccountTransaction)
     block_id = _get_block_id(request.args)
+    skip_validate = _get_skip_validate(request.args)
 
     trace, fee_response = await state.starknet_wrapper.calculate_trace_and_fee(
-        transaction, block_id
+        transaction,
+        block_id=block_id,
+        skip_validate=skip_validate,
     )
 
     simulation_info = TransactionSimulationInfo(

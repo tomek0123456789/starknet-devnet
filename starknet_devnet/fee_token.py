@@ -3,6 +3,7 @@ Fee token and its predefined constants.
 """
 
 from starkware.solidity.utils import load_nearby_contract
+from starkware.starknet.business_logic.transaction.objects import InternalInvokeFunction
 from starkware.starknet.compiler.compile import get_selector_from_name
 from starkware.starknet.services.api.contract_class.contract_class import (
     CompiledClassBase,
@@ -15,7 +16,6 @@ from starknet_devnet.account_util import get_execute_args
 from starknet_devnet.chargeable_account import ChargeableAccount
 from starknet_devnet.constants import SUPPORTED_TX_VERSION
 from starknet_devnet.predeployed_contract_wrapper import PredeployedContractWrapper
-from starknet_devnet.sequencer_api_utils import InternalInvokeFunction
 from starknet_devnet.util import Uint256, str_to_felt
 
 

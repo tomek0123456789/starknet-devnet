@@ -60,6 +60,9 @@ from starkware.starknet.services.api.gateway.transaction import (
     InvokeFunction,
 )
 from starkware.starknet.services.api.messages import StarknetMessageToL1
+from starkware.starknet.services.utils.sequencer_api_utils import (
+    InternalInvokeFunctionForSimulate,
+)
 from starkware.starknet.testing.objects import FunctionInvocation
 from starkware.starknet.testing.starknet import Starknet
 from starkware.starknet.third_party.open_zeppelin.starknet_contracts import (
@@ -84,7 +87,6 @@ from .forked_state import get_forked_starknet
 from .general_config import build_devnet_general_config
 from .origin import ForkedOrigin, NullOrigin
 from .postman_wrapper import DevnetL1L2
-from .sequencer_api_utils import InternalInvokeFunctionForSimulate
 from .transactions import (
     DevnetTransaction,
     DevnetTransactions,
@@ -838,16 +840,22 @@ To enable Declare v2 transactions, specify {CAIRO_COMPILER_MANIFEST_OPTION} on D
         return block
 
     async def calculate_trace_and_fee(
-        self, external_tx: InvokeFunction, block_id: BlockId = DEFAULT_BLOCK_ID
+        self,
+        external_tx: InvokeFunction,
+        skip_validate: bool,
+        block_id: BlockId = DEFAULT_BLOCK_ID,
     ):
         """Calculates trace and fee by simulating tx on state copy."""
-        traces, fees = await self.calculate_traces_and_fees([external_tx], block_id)
+        traces, fees = await self.calculate_traces_and_fees(
+            [external_tx], skip_validate=skip_validate, block_id=block_id
+        )
         assert len(traces) == len(fees) == 1
         return traces[0], fees[0]
 
     async def calculate_traces_and_fees(
         self,
         external_txs: List[InvokeFunction],
+        skip_validate: bool,
         block_id: BlockId = DEFAULT_BLOCK_ID,
     ):
         """Calculates traces and fees by simulating tx on state copy.
@@ -862,8 +870,10 @@ To enable Declare v2 transactions, specify {CAIRO_COMPILER_MANIFEST_OPTION} on D
             # pylint: disable=protected-access
             cached_state_copy = cached_state_copy._copy()
             try:
-                internal_tx = InternalInvokeFunctionForSimulate.from_external(
-                    external_tx, state.general_config
+                internal_tx = InternalInvokeFunctionForSimulate.create_for_simulate(
+                    external_tx,
+                    state.general_config,
+                    skip_validate=skip_validate,
                 )
             except AssertionError as error:
                 raise StarknetDevnetException(
