@@ -309,7 +309,7 @@ class DevnetBlocks:
 
     async def abort_block_by_hash(self, block_hash: str) -> str:
         """
-        Set status of the block with the given block hash.
+        Abort block by given block hash.
         """
         numeric_hash = _parse_block_hash(block_hash)
 
@@ -324,4 +324,4 @@ class DevnetBlocks:
 
             return block.block_hash
 
-        return block_hash
+        return ""

@@ -287,14 +287,15 @@ class DevnetTransactions:
 
     async def reject_transaction(self, tx_hash: int):
         """
-        Reject a transaction used in abort block functionality.
+        Reject transaction in aborted block.
         """
         self.__instances[tx_hash].status = TransactionStatus.REJECTED
         self.__instances[tx_hash].transaction_index = 0
         self.__instances[tx_hash].block = None
-        #TODO: check error_message in pathfinder node
+        # TODO: check error_message in pathfinder node
         self.__instances[tx_hash].transaction_failure_reason = TransactionFailureReason(
-            code=StarknetErrorCode.TRANSACTION_FAILED.name, error_message="Block aborted."
+            code=StarknetErrorCode.TRANSACTION_FAILED.name,
+            error_message="Block aborted.",
         )
 
 

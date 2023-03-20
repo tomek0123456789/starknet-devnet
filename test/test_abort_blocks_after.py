@@ -5,11 +5,10 @@ Tests the abort block functionality.
 import pytest
 import requests
 
-from .settings import APP_URL
-from .shared import ARTIFACTS_PATH
-from .util import deploy, get_block, devnet_in_background
 from .account import invoke
+from .settings import APP_URL
 from .shared import (
+    ARTIFACTS_PATH,
     CONTRACT_PATH,
     PREDEPLOY_ACCOUNT_CLI_ARGS,
     PREDEPLOYED_ACCOUNT_ADDRESS,
@@ -19,16 +18,19 @@ from .util import (
     assert_transaction,
     assert_tx_status,
     deploy,
+    devnet_in_background,
     get_block,
 )
 
 EXPECTED_SALTY_DEPLOY_BLOCK_HASH_LITE_MODE = "0x1"
+
 
 def abort_blocks_after(block_hash):
     """Abort blocks after certain block hash"""
     return requests.post(
         f"{APP_URL}/abort_blocks_after", json={"blockHash": block_hash}
     )
+
 
 @devnet_in_background()
 def test_abort_single_block_single_transaction():
@@ -84,6 +86,8 @@ def test_abort_many_blocks_many_transactions():
     # transactions should be rejected
     response = abort_blocks_after(contract_deploy_block["block_hash"])
     assert response.status_code == 200
+    print
+    # TODO: assert 2 block hashes
     contract_deploy_block_after_abort = get_block(block_number=1, parse=True)
     assert contract_deploy_block_after_abort["status"] == "ABORTED"
     assert_transaction(contract_deploy_info["tx_hash"], "REJECTED")
@@ -92,3 +96,4 @@ def test_abort_many_blocks_many_transactions():
     assert_transaction(invoke_tx_hash, "REJECTED")
 
     # TODO: new block here and should be ACCEPTED_ON_L2
+    # Add tet with missing block -> no block hash
