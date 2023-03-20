@@ -99,7 +99,7 @@ def test_abort_many_blocks_many_transactions(expected_block_hash):
     # transactions should be rejected
     response = abort_blocks_after(contract_deploy_block["block_hash"])
     assert response.status_code == 200
-    # check if in lite mode expected block hash is 0x1 and 0x2
+    # check if in lite mode expected block hashes are 0x1 and 0x2
     if expected_block_hash == EXPECTED_ABORT_HASHES:
         assert response.json()["aborted"] == EXPECTED_ABORT_HASHES
     contract_deploy_block_after_abort = get_block(block_number=1, parse=True)
