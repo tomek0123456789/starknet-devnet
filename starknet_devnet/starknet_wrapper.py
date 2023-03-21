@@ -7,6 +7,9 @@ from types import TracebackType
 from typing import Dict, List, Optional, Set, Tuple, Type, Union
 
 import cloudpickle as pickle
+from starkware.starknet.services.api.feeder_gateway.response_objects import (
+    ClassHashPair,
+)
 from starkware.starknet.business_logic.state.state import BlockInfo, CachedState
 from starkware.starknet.business_logic.transaction.fee import calculate_tx_fee
 from starkware.starknet.business_logic.transaction.objects import (
@@ -270,7 +273,8 @@ class StarknetWrapper:
     async def update_pending_state(
         self,
         deployed_contracts: List[ContractAddressHashPair] = None,
-        explicitly_declared_contracts: List[int] = None,
+        explicitly_declared_old: List[int] = None,
+        explicitly_declared: List[ClassHashPair] = None,
         visited_storage_entries: Set[StorageEntry] = None,
         nonces: Dict[int, int] = None,
     ):
@@ -279,7 +283,8 @@ class StarknetWrapper:
         """
         # defaulting
         deployed_contracts = deployed_contracts or []
-        explicitly_declared_contracts = explicitly_declared_contracts or []
+        explicitly_declared_old = explicitly_declared_old or []
+        explicitly_declared = explicitly_declared or []
         visited_storage_entries = visited_storage_entries or set()
 
         # state update and preservation
@@ -294,7 +299,7 @@ class StarknetWrapper:
 
         # calculating diffs
         old_declared_contracts = await get_all_declared_classes(
-            previous_state, explicitly_declared_contracts, deployed_contracts
+            previous_state, explicitly_declared_old, deployed_contracts
         )
         storage_diffs = await get_storage_diffs(
             previous_state, current_state, visited_storage_entries
@@ -378,16 +383,15 @@ To enable Declare v2 transactions, specify {CAIRO_COMPILER_MANIFEST_OPTION} on D
                 await state.state.set_compiled_class_hash(
                     class_hash=class_hash, compiled_class_hash=compiled_class_hash
                 )
+                tx_handler.explicitly_declared.append(class_hash)
 
             else:  # Cairo 0.x class
                 compiled_class_hash = class_hash
                 compiled_class = external_tx.contract_class
+                tx_handler.explicitly_declared_old.append(class_hash)
 
             state.state.contract_classes[compiled_class_hash] = compiled_class
             self.__contract_classes[class_hash] = external_tx.contract_class
-
-            # TODO which class hash
-            tx_handler.explicitly_declared.append(class_hash)
 
         return class_hash, tx_handler.internal_tx.hash_value
 
@@ -412,7 +416,8 @@ To enable Declare v2 transactions, specify {CAIRO_COMPILER_MANIFEST_OPTION} on D
             execution_info: TransactionExecutionInfo = TransactionExecutionInfo.empty()
             internal_calls: List[CallInfo] = []
             deployed_contracts: List[ContractAddressHashPair] = []
-            explicitly_declared: List[int] = []
+            explicitly_declared_old: List[int] = []
+            explicitly_declared: List[ClassHashPair] = []
             visited_storage_entries: Set[StorageEntry] = set()
 
             def __init__(self, starknet_wrapper: StarknetWrapper):
@@ -480,7 +485,7 @@ To enable Declare v2 transactions, specify {CAIRO_COMPILER_MANIFEST_OPTION} on D
                     state_update = await self.starknet_wrapper.update_pending_state(
                         deployed_contracts=self.deployed_contracts,
                         visited_storage_entries=self.visited_storage_entries,
-                        explicitly_declared_contracts=self.explicitly_declared,
+                        explicitly_declared_old=self.explicitly_declared,
                     )
 
                     transaction = DevnetTransaction(

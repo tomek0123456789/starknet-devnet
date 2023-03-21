@@ -440,7 +440,7 @@ def make_declare(declare_transaction: RpcBroadcastedDeclareTxn) -> DeprecatedDec
         contract_class["abi"] = []
 
     try:
-        contract_class = decompress_program(declare_transaction)["contract_class"]
+        contract_class = decompress_program(contract_class["program"])
         contract_class = DeprecatedCompiledClass.load(contract_class)
     except (StarkException, TypeError, MarshmallowError) as ex:
         raise RpcError(code=50, message="Invalid contract class") from ex
@@ -466,7 +466,7 @@ def make_deploy(deploy_transaction: RpcBroadcastedDeployTxn) -> Deploy:
         contract_class["abi"] = []
 
     try:
-        contract_class = decompress_program(deploy_transaction)["contract_class"]
+        contract_class = decompress_program(contract_class["program"])
         contract_class = DeprecatedCompiledClass.load(contract_class)
     except (StarkException, TypeError, MarshmallowError) as ex:
         raise RpcError(code=50, message="Invalid contract class") from ex
@@ -738,7 +738,7 @@ def rpc_state_update(state_update: BlockStateUpdate) -> RpcStateUpdate:
     def declared_contract_hashes() -> List[Felt]:
         return [
             rpc_felt(contract)
-            for contract in state_update.state_diff.declared_contracts
+            for contract in state_update.state_diff.declared_classes  # TODO
         ]
 
     def deployed_contracts() -> List[RpcDeployedContractDiff]:

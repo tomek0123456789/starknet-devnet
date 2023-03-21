@@ -82,7 +82,7 @@ def get_estimate_fee_request_dict(
         private_key=private_key,
         nonce=nonce,
         max_fee=max_fee,
-        version=QUERY_VERSION,  # TODO
+        version=QUERY_VERSION,
     )
 
     return {
