@@ -1,6 +1,7 @@
 """
 Tests the abort block functionality.
 """
+from test.rpc.rpc_utils import rpc_call
 
 import pytest
 import requests
@@ -58,6 +59,10 @@ def test_abort_single_block_single_transaction():
     assert contract_deploy_block_after_abort["status"] == "ABORTED"
     assert_transaction(contract_deploy_info["tx_hash"], "REJECTED")
 
+    # Test RPC get block status
+    rpc_response = rpc_call("starknet_getBlockWithTxs", params={"block_id": "latest"})
+    assert rpc_response["result"]["status"] == "REJECTED"
+
 
 @pytest.mark.usefixtures("run_devnet_in_background")
 @pytest.mark.parametrize(
@@ -108,6 +113,10 @@ def test_abort_many_blocks_many_transactions(expected_block_hash):
     invoke_block_after_abort = get_block(block_number=2, parse=True)
     assert invoke_block_after_abort["status"] == "ABORTED"
     assert_transaction(invoke_tx_hash, "REJECTED")
+
+    # Test RPC get block status
+    rpc_response = rpc_call("starknet_getBlockWithTxs", params={"block_id": "latest"})
+    assert rpc_response["result"]["status"] == "REJECTED"
 
     # Newly deployed contract after abort should be accepted on L2
     contract_deploy_info = deploy(CONTRACT_PATH, inputs=["0"])
