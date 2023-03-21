@@ -52,7 +52,7 @@ def _extract_original_stark_exception(exc: BadRequest):
 def _load_compiled_class(class_dict: dict) -> CompiledClassBase:
     try:
         return CompiledClass.load(class_dict)
-    except ValidationError:
+    except StarkException:
         return DeprecatedCompiledClass.load(class_dict)
 
 
@@ -89,7 +89,7 @@ class ForkedStateReader(StateReader):
                         block_number=self.__block_number,
                     )
                 )
-            return CompiledClassBase.load(compiled_class_dict)
+            return CompiledClass.load(compiled_class_dict)
         except BadRequest as bad_request:
             if is_originally_starknet_exception(bad_request):
                 original_error = _extract_original_stark_exception(bad_request)

@@ -185,7 +185,7 @@ def invoke(
             "--max_fee",
             str(max_fee),
             "--chain_id",
-            hex(chain_id.value),  # TODO
+            hex(chain_id.value),
         ],
         gateway_url=gateway_url,
     )
@@ -230,7 +230,7 @@ def declare(
             "--max_fee",
             str(max_fee),
             "--chain_id",
-            hex(chain_id.value),  # TODO
+            hex(chain_id.value),
         ]
     )
     return {

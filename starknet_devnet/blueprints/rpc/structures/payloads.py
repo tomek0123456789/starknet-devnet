@@ -292,13 +292,13 @@ def rpc_invoke_transaction(
 
     if transaction.version == LEGACY_RPC_TX_VERSION:
         txn: RpcInvokeTransactionV0 = {
-            "contract_address": rpc_felt(transaction.contract_address),
+            "contract_address": rpc_felt(transaction.sender_address),
             "entry_point_selector": rpc_felt(transaction.entry_point_selector),
             **common_data,
         }
     else:
         txn: RpcInvokeTransactionV1 = {
-            "sender_address": rpc_felt(transaction.contract_address),
+            "sender_address": rpc_felt(transaction.sender_address),
             **common_data,
         }
     return txn
@@ -440,7 +440,7 @@ def make_declare(declare_transaction: RpcBroadcastedDeclareTxn) -> DeprecatedDec
         contract_class["abi"] = []
 
     try:
-        contract_class = decompress_program(contract_class["program"])
+        contract_class["program"] = decompress_program(contract_class["program"])
         contract_class = DeprecatedCompiledClass.load(contract_class)
     except (StarkException, TypeError, MarshmallowError) as ex:
         raise RpcError(code=50, message="Invalid contract class") from ex
@@ -466,7 +466,7 @@ def make_deploy(deploy_transaction: RpcBroadcastedDeployTxn) -> Deploy:
         contract_class["abi"] = []
 
     try:
-        contract_class = decompress_program(contract_class["program"])
+        contract_class["program"] = decompress_program(contract_class["program"])
         contract_class = DeprecatedCompiledClass.load(contract_class)
     except (StarkException, TypeError, MarshmallowError) as ex:
         raise RpcError(code=50, message="Invalid contract class") from ex

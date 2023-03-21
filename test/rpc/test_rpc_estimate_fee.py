@@ -166,7 +166,6 @@ def test_estimate_fee_declare(declare_content):
         abi=contract_class["abi"],
     )
 
-    # TODO
     contract_class["program"] = decompress_program(contract_class["program"])
     contract_class = DeprecatedCompiledClass.load(contract_class)
 
