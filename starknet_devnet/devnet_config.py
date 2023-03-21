@@ -190,38 +190,6 @@ class NonNegativeAction(argparse.Action):
         setattr(namespace, self.dest, value)
 
 
-CAIRO_COMPILER_MANIFEST_OPTION = "--cairo-compiler-manifest"
-
-
-class AssertCairoCompiler(argparse.Action):
-    """Assert user machine can compile with cairo 1"""
-
-    def __call__(self, parser, namespace, values, option_string=None):
-        manifest_path = values
-        check = subprocess.run(
-            [
-                "cargo",
-                "run",
-                "--bin",
-                "starknet-compile",
-                "--manifest-path",
-                manifest_path,
-                "--",
-                "--version",
-            ],
-            check=False,
-            capture_output=True,
-        )
-
-        if check.returncode:
-            parser.error(message=check.stderr.decode("utf-8"))
-
-        version_used = check.stdout.decode("utf-8")
-        print(f"Using {version_used}")
-
-        setattr(namespace, self.dest, manifest_path)
-
-
 class PositiveAction(argparse.Action):
     """
     Action for parsing positive int argument;
@@ -379,11 +347,6 @@ def parse_args(raw_args: List[str]):
         action="store_true",
         help="Disable RPC schema validation for devnet responses",
     )
-    parser.add_argument(
-        CAIRO_COMPILER_MANIFEST_OPTION,
-        action=AssertCairoCompiler,
-        help="Specify path to Cairo 1.0 compiler manifest (Cargo.toml)",
-    )
 
     parsed_args = parser.parse_args(raw_args)
     if parsed_args.dump_on and not parsed_args.dump_path:
@@ -424,4 +387,3 @@ class DevnetConfig:
         self.chain_id = self.args.chain_id
         self.validate_rpc_requests = not self.args.disable_rpc_request_validation
         self.validate_rpc_responses = not self.args.disable_rpc_response_validation
-        self.cairo_compiler_manifest = self.args.cairo_compiler_manifest

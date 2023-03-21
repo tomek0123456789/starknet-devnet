@@ -2,8 +2,6 @@
 
 set -eu
 
-CAIRO_1_COMPILER_MANIFEST=$(<.cairo-compiler-manifest-location)
-
 ARTIFACTS_DIRECTORY="test/artifacts/contracts/cairo1"
 
 # recreate artifacts directory

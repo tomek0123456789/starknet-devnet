@@ -17,7 +17,7 @@ from test.test_account import deploy_empty_contract
 
 import pytest
 from starkware.starknet.core.os.transaction_hash.transaction_hash import (
-    calculate_deprecated_declare_transaction_hash
+    calculate_deprecated_declare_transaction_hash,
 )
 from starkware.starknet.definitions.general_config import StarknetChainId
 from starkware.starknet.public.abi import get_selector_from_name

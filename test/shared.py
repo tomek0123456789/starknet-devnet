@@ -22,10 +22,6 @@ ARTIFACTS_1_PATH = "test/artifacts/contracts/cairo1"
 CONTRACT_1_PATH = f"{ARTIFACTS_1_PATH}/contract.cairo/contract.json"
 CONTRACT_1_CASM_PATH = f"{ARTIFACTS_1_PATH}/contract.cairo/contract.casm"
 ABI_1_PATH = f"{ARTIFACTS_1_PATH}/contract.cairo/contract_abi.json"
-with open(
-    ".cairo-compiler-manifest-location", encoding="utf-8"
-) as compiler_location_file:
-    CAIRO_1_COMPILER_MANIFEST = compiler_location_file.read().strip()
 
 STARKNET_CLI_ACCOUNT_ABI_PATH = f"{ARTIFACTS_PATH}/starknet_cli_oz_account_abi.json"
 with open(STARKNET_CLI_ACCOUNT_ABI_PATH, "w", encoding="utf-8") as oz_account_abi_file:

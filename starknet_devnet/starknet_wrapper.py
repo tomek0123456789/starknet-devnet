@@ -7,9 +7,6 @@ from types import TracebackType
 from typing import Dict, List, Optional, Set, Tuple, Type, Union
 
 import cloudpickle as pickle
-from starkware.starknet.services.api.feeder_gateway.response_objects import (
-    ClassHashPair,
-)
 from starkware.starknet.business_logic.state.state import BlockInfo, CachedState
 from starkware.starknet.business_logic.transaction.fee import calculate_tx_fee
 from starkware.starknet.business_logic.transaction.objects import (
@@ -40,6 +37,9 @@ from starkware.starknet.services.api.contract_class.contract_class import (
     DeprecatedCompiledClass,
     EntryPointType,
 )
+from starkware.starknet.services.api.contract_class.contract_class_utils import (
+    compile_contract_class,
+)
 from starkware.starknet.services.api.feeder_gateway.request_objects import (
     CallFunction,
     CallL1Handler,
@@ -48,6 +48,7 @@ from starkware.starknet.services.api.feeder_gateway.response_objects import (
     LATEST_BLOCK_ID,
     PENDING_BLOCK_ID,
     BlockStateUpdate,
+    ClassHashPair,
     ContractAddressHashPair,
     StarknetBlock,
     StateDiff,
@@ -78,13 +79,12 @@ from .block_info_generator import BlockInfoGenerator
 from .blocks import DevnetBlocks
 from .blueprints.rpc.structures.types import BlockId, Felt
 from .chargeable_account import ChargeableAccount
-from .compile import compile_cairo
 from .constants import (
     DUMMY_STATE_ROOT,
     LEGACY_TX_VERSION,
     STARKNET_CLI_ACCOUNT_CLASS_HASH,
 )
-from .devnet_config import CAIRO_COMPILER_MANIFEST_OPTION, DevnetConfig
+from .devnet_config import DevnetConfig
 from .fee_token import FeeToken
 from .forked_state import get_forked_starknet
 from .general_config import build_devnet_general_config
@@ -360,18 +360,8 @@ class StarknetWrapper:
 
             # check if Declare v2
             if isinstance(external_tx, Declare):
-                if not self.config.cairo_compiler_manifest:
-                    # TODO should this fail instantly? i.e. outside of tx_handler
-                    raise StarknetDevnetException(
-                        code=StarknetErrorCode.UNEXPECTED_FAILURE,
-                        message=f"""Cairo compiler manifest not set.
-To enable Declare v2 transactions, specify {CAIRO_COMPILER_MANIFEST_OPTION} on Devnet startup""",
-                    )
-
                 compiled_class_hash = tx_handler.internal_tx.compiled_class_hash
-                compiled_class = compile_cairo(
-                    external_tx.contract_class, self.config.cairo_compiler_manifest
-                )
+                compiled_class = compile_contract_class(external_tx.contract_class)
                 compiled_class_hash_computed = compute_compiled_class_hash(
                     compiled_class
                 )
@@ -484,8 +474,9 @@ To enable Declare v2 transactions, specify {CAIRO_COMPILER_MANIFEST_OPTION} on D
 
                     state_update = await self.starknet_wrapper.update_pending_state(
                         deployed_contracts=self.deployed_contracts,
+                        explicitly_declared=self.explicitly_declared,  # TODO is this ever modified?
+                        explicitly_declared_old=self.explicitly_declared_old,
                         visited_storage_entries=self.visited_storage_entries,
-                        explicitly_declared_old=self.explicitly_declared,
                     )
 
                     transaction = DevnetTransaction(
