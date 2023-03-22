@@ -13,13 +13,16 @@ from starkware.starknet.core.os.transaction_hash.transaction_hash import (
 )
 from starkware.starknet.definitions.error_codes import StarknetErrorCode
 from starkware.starknet.definitions.general_config import StarknetChainId
-from starkware.starknet.services.api.contract_class.contract_class import CompiledClass
+from starkware.starknet.services.api.contract_class.contract_class import (
+    CompiledClass,
+    ContractClass,
+)
 from starkware.starknet.services.api.contract_class.contract_class_utils import (
     load_sierra,
 )
 from starkware.starknet.services.api.gateway.transaction import Declare
 
-from .account import declare, deploy, get_nonce
+from .account import declare, deploy, get_nonce, invoke
 from .settings import APP_URL
 from .shared import (
     ABI_1_PATH,
@@ -37,6 +40,8 @@ from .util import (
     assert_tx_status,
     call,
     devnet_in_background,
+    get_class_by_hash,
+    get_compiled_class_by_class_hash,
 )
 
 
@@ -78,9 +83,54 @@ def test_declare_happy_path():
     assert_tx_status(declare_info["tx_hash"], "ACCEPTED_ON_L2")
     assert_class_by_hash(class_hash, CONTRACT_PATH)
 
+    _assert_undeclared_class(
+        resp=get_compiled_class_by_class_hash(class_hash)
+    )
+
+
+def _assert_undeclared_class(resp=requests.Response):
+    assert resp.status_code == 500, resp.json()
+    resp_body = resp.json()
+    assert "code" in resp_body
+    assert resp_body["code"] == str(StarknetErrorCode.UNDECLARED_CLASS)
+
+
+def _assert_declare_v2(
+    resp: requests.Response,
+    contract_class: ContractClass,
+    compiled_class: CompiledClass,
+    compiled_class_hash: int,
+):
+    assert resp.status_code == 200
+
+    class_hash = resp.json()["class_hash"]
+    declare_tx_hash = resp.json()["transaction_hash"]
+    assert_tx_status(tx_hash=declare_tx_hash, expected_tx_status="ACCEPTED_ON_L2")
+
+    # assert class present only by class hash
+    assert ContractClass.load(get_class_by_hash(class_hash).json()) == contract_class
+    _assert_undeclared_class(
+        resp=get_class_by_hash(class_hash=hex(compiled_class_hash))
+    )
+
+    # assert compiled class present only by class hash
+    assert (
+        CompiledClass.load(get_compiled_class_by_class_hash(class_hash).json())
+        == compiled_class
+    )
+    _assert_undeclared_class(
+        resp=get_compiled_class_by_class_hash(hex(compiled_class_hash))
+    )
+
+    # assert class present in state update
+    # TODO in another test assert only old contract classes populated (not declared classes)
+
 
 def _declare_v2(
-    contract_class_path: str, compiled_class_path: str, sender_address: str
+    contract_class_path: str,
+    compiled_class_path: str,
+    sender_address: str,
+    sender_key: int,
 ):
     contract_class = load_sierra(contract_class_path)
     with open(compiled_class_path, encoding="utf-8") as casm_file:
@@ -101,9 +151,6 @@ def _declare_v2(
         nonce=nonce,
         chain_id=chain_id,
     )
-    signature = list(
-        sign(msg_hash=hash_value, priv_key=PREDEPLOYED_ACCOUNT_PRIVATE_KEY)
-    )
 
     declaration_body = Declare(
         contract_class=contract_class,
@@ -111,12 +158,28 @@ def _declare_v2(
         sender_address=int(sender_address, 16),
         version=version,
         max_fee=max_fee,
-        signature=signature,
+        signature=list(sign(msg_hash=hash_value, priv_key=sender_key)),
         nonce=nonce,
     ).dump()
     declaration_body["type"] = "DECLARE"
 
-    return requests.post(f"{APP_URL}/gateway/add_transaction", json=declaration_body)
+    resp = requests.post(f"{APP_URL}/gateway/add_transaction", json=declaration_body)
+    _assert_declare_v2(
+        resp=resp,
+        contract_class=contract_class,
+        compiled_class=compiled_class,
+        compiled_class_hash=compiled_class_hash,
+    )
+    return resp.json()["class_hash"]
+
+
+def _call_get_balance(address: str) -> int:
+    balance = call(
+        function="get_balance",
+        address=address,
+        abi_path=ABI_1_PATH,
+    )
+    return int(balance, base=10)
 
 
 @pytest.mark.declare
@@ -124,18 +187,15 @@ def _declare_v2(
 def test_declare_v2_happy_path():
     """Test declare v2"""
 
-    resp = _declare_v2(
+    # declare
+    class_hash = _declare_v2(
         contract_class_path=CONTRACT_1_PATH,
         compiled_class_path=CONTRACT_1_CASM_PATH,
         sender_address=PREDEPLOYED_ACCOUNT_ADDRESS,
+        sender_key=PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
     )
 
-    assert resp.status_code == 200
-    class_hash = resp.json()["class_hash"]
-    declare_tx_hash = resp.json()["transaction_hash"]
-    assert_tx_status(tx_hash=declare_tx_hash, expected_tx_status="ACCEPTED_ON_L2")
-
-    # TODO alternatively just assert class can be fetched by hash
+    # deploy
     initial_balance = 10
     deploy_info = deploy(
         class_hash=class_hash,
@@ -144,15 +204,23 @@ def test_declare_v2_happy_path():
         inputs=[str(initial_balance)],
         max_fee=int(1e18),
     )
-
     assert_tx_status(
         tx_hash=deploy_info["tx_hash"], expected_tx_status="ACCEPTED_ON_L2"
     )
 
-    fetched_balance = call(
-        function="get_balance",
-        address=deploy_info["address"],
-        abi_path=ABI_1_PATH,
-    )
+    # call after deployment
+    initial_fetched_balance = _call_get_balance(deploy_info["address"])
+    assert initial_fetched_balance == initial_balance
 
-    assert int(fetched_balance, base=10) == initial_balance
+    # invoke
+    increment_value = 15
+    invoke_tx_hash = invoke(
+        calls=[(deploy_info["address"], "increase_balance", [increment_value, 0])],
+        account_address=PREDEPLOYED_ACCOUNT_ADDRESS,
+        private_key=PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
+    )
+    assert_tx_status(tx_hash=invoke_tx_hash, expected_tx_status="ACCEPTED_ON_L2")
+
+    # call after invoke
+    fetched_balance_after_invoke = _call_get_balance(deploy_info["address"])
+    assert fetched_balance_after_invoke == initial_balance + increment_value

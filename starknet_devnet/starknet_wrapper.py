@@ -343,9 +343,7 @@ class StarknetWrapper:
         """
 
         state = self.get_state()
-        async with self.__get_transaction_handler(
-            external_tx=external_tx
-        ) as tx_handler:
+        async with self.__get_transaction_handler(external_tx) as tx_handler:
             tx_handler.internal_tx = InternalDeclare.from_external(
                 external_tx, state.general_config
             )
@@ -380,6 +378,7 @@ class StarknetWrapper:
                 compiled_class = external_tx.contract_class
                 tx_handler.explicitly_declared_old.append(class_hash)
 
+            print("DEBUG storing compiled_class", hex(compiled_class_hash))
             state.state.contract_classes[compiled_class_hash] = compiled_class
             self.__contract_classes[class_hash] = external_tx.contract_class
 
@@ -474,7 +473,7 @@ class StarknetWrapper:
 
                     state_update = await self.starknet_wrapper.update_pending_state(
                         deployed_contracts=self.deployed_contracts,
-                        explicitly_declared=self.explicitly_declared,  # TODO is this ever modified?
+                        explicitly_declared=self.explicitly_declared,
                         explicitly_declared_old=self.explicitly_declared_old,
                         visited_storage_entries=self.visited_storage_entries,
                     )
@@ -679,11 +678,18 @@ class StarknetWrapper:
         """
 
         state = self.get_state().state
-        compiled_class = await state.get_compiled_class_by_class_hash(class_hash)
-        if isinstance(compiled_class, CompiledClass):
-            return compiled_class
 
+        try:
+            compiled_class = await state.get_compiled_class_by_class_hash(class_hash)
+            if isinstance(compiled_class, CompiledClass):
+                return compiled_class
+        except AssertionError:
+            # the received hash is compiled_class_hash of a cairo1 class
+            pass
+
+        # TODO origin?
         raise UndeclaredClassDevnetException(class_hash)
+
 
     async def get_class_hash_at(
         self, contract_address: int, block_id: BlockId = DEFAULT_BLOCK_ID

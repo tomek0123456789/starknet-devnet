@@ -542,6 +542,13 @@ def get_class_by_hash(class_hash: str, feeder_gateway_url=APP_URL):
         {"classHash": class_hash},
     )
 
+def get_compiled_class_by_class_hash(class_hash: str, feeder_gateway_url=APP_URL):
+    """Gets compiled class by sierra hash"""
+    return requests.get(
+        f"{feeder_gateway_url}/feeder_gateway/get_compiled_class_by_class_hash",
+        {"classHash": class_hash}
+    )
+
 
 def assert_class_by_hash(
     class_hash: str, expected_path: str, feeder_gateway_url=APP_URL

@@ -123,7 +123,6 @@ def main():  # pylint: disable=too-many-locals
         nonce=nonce,
         chain_id=chain_id,
     )
-    signature = list(sign(msg_hash=hash_value, priv_key=private_key))
 
     declaration_body = Declare(
         contract_class=contract_class,
@@ -131,25 +130,28 @@ def main():  # pylint: disable=too-many-locals
         sender_address=sender_address,
         version=version,
         max_fee=max_fee,
-        signature=signature,
+        signature=list(sign(msg_hash=hash_value, priv_key=private_key)),
         nonce=nonce,
     ).dump()
+    declaration_body["signature"] = [str(int(s, 16)) for s in declaration_body["signature"]]
     declaration_body["type"] = "DECLARE"
 
     declare_resp = requests.post(
         f"{HOST}/gateway/add_transaction", json=declaration_body
     )
-    print("Declare status code:", declare_resp.status_code)
+    assert declare_resp.status_code == 200, declare_resp.json()
     print("Declare response:", declare_resp.json())
     tx_hash = declare_resp.json()["transaction_hash"]
 
+    print("\nGetting class")
     _get_class(class_hash)
     _get_class(compiled_class_hash)
 
-    print("Skipping getting compiled class")
-    # _get_compiled_class(class_hash)
-    # _get_compiled_class(compiled_class_hash)
+    print("\nGetting compiled class")
+    _get_compiled_class(class_hash)
+    _get_compiled_class(compiled_class_hash)
 
+    print("\nGetting tx info")
     _get_transaction(tx_hash)
     _get_transaction_receipt(tx_hash)
 
