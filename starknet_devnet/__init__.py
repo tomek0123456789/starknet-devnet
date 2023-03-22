@@ -74,13 +74,16 @@ _patch_copy()
 
 def _patch_cairo_vm():
     """Apply cairo-rs-py monkey patch"""
-    from starknet_devnet.cairo_rs_py_patch import cairo_rs_py_monkeypatch
+    # TMP: rust vm
+    # from starknet_devnet.cairo_rs_py_patch import cairo_rs_py_monkeypatch
 
-    cairo_rs_py_monkeypatch()
+    # cairo_rs_py_monkeypatch()
 
-    from .util import warn
+    # from .util import warn
 
-    warn("Using Cairo VM: Rust")
+    # warn("Using Cairo VM: Rust")
+
+    sys.exit("Rust Cairo VM is temporarily not available")
 
 
 _VM_VAR = "STARKNET_DEVNET_CAIRO_VM"
