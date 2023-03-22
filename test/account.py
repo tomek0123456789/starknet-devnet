@@ -12,15 +12,12 @@ from starkware.starknet.core.os.contract_address.contract_address import (
     calculate_contract_address_from_hash,
 )
 from starkware.starknet.core.os.transaction_hash.transaction_hash import (
-    calculate_deprecated_declare_transaction_hash,
     calculate_declare_transaction_hash,
+    calculate_deprecated_declare_transaction_hash,
 )
-
-
-from starkware.starknet.definitions.general_config import StarknetChainId
-from starkware.starknet.services.api.gateway.transaction import Declare, ContractClass
 from starkware.starknet.definitions.constants import QUERY_VERSION
 from starkware.starknet.definitions.general_config import StarknetChainId
+from starkware.starknet.services.api.gateway.transaction import ContractClass, Declare
 
 from starknet_devnet.account_util import AccountCall, get_execute_args
 
@@ -291,6 +288,7 @@ def deploy(
         "tx_hash": invoke_tx_hash,
         "address": contract_address,
     }
+
 
 def send_declare_v2(
     contract_class: ContractClass,

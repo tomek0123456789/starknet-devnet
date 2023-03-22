@@ -771,3 +771,10 @@ def set_time(time_s):
         assert set_time_response.json().get("block_timestamp") == time_s
 
     return set_time_response
+
+
+def assert_undeclared_class(resp=requests.Response):
+    assert resp.status_code == 500, resp.json()
+    resp_body = resp.json()
+    assert "code" in resp_body
+    assert resp_body["code"] == str(StarknetErrorCode.UNDECLARED_CLASS)
