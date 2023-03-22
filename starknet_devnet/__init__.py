@@ -55,7 +55,7 @@ def _patch_copy():
 
     from starkware.starknet.services.api.contract_class.contract_class import (
         ContractClass,
-        DeprecatedCompiledClass,
+        CompiledClassBase,
     )
 
     def simpler_copy(self, memo):  # pylint: disable=unused-argument
@@ -65,8 +65,7 @@ def _patch_copy():
         return copy(self)
 
     setattr(ContractClass, "__deepcopy__", simpler_copy)
-    setattr(DeprecatedCompiledClass, "__deepcopy__", simpler_copy)
-    # TODO just override CompiledClassBase? or also override CompiledClass?
+    setattr(CompiledClassBase, "__deepcopy__", simpler_copy)
 
 
 _patch_copy()

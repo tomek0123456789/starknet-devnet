@@ -120,22 +120,15 @@ def _assert_declare_v2(
         resp=get_compiled_class_by_class_hash(hex(compiled_class_hash))
     )
 
-    # assert class present in state update
-    # TODO in another test assert only old contract classes populated (not declared classes)
+    # TODO assert class present in state update
 
 
-def _declare_v2(
-    contract_class_path: str,
-    compiled_class_path: str,
+def _send_declare_v2(
+    contract_class: ContractClass,
+    compiled_class_hash: int,
     sender_address: str,
     sender_key: int,
 ):
-    contract_class = load_sierra(contract_class_path)
-    with open(compiled_class_path, encoding="utf-8") as casm_file:
-        compiled_class = CompiledClass.loads(casm_file.read())
-
-    compiled_class_hash = compute_compiled_class_hash(compiled_class)
-
     max_fee = int(1e18)  # should be enough
     version = 2
     nonce = get_nonce(sender_address)
@@ -161,14 +154,26 @@ def _declare_v2(
     ).dump()
     declaration_body["type"] = "DECLARE"
 
-    resp = requests.post(f"{APP_URL}/gateway/add_transaction", json=declaration_body)
-    _assert_declare_v2(
-        resp=resp,
-        contract_class=contract_class,
-        compiled_class=compiled_class,
-        compiled_class_hash=compiled_class_hash,
+    return requests.post(f"{APP_URL}/gateway/add_transaction", json=declaration_body)
+
+
+def _assert_already_declared(declaration_resp: requests.Response):
+    assert declaration_resp.status_code == 200, declaration_resp.json()
+
+    declare_tx_hash = declaration_resp.json()["transaction_hash"]
+
+    tx_resp = requests.get(
+        f"{APP_URL}/feeder_gateway/get_transaction",
+        params={"transactionHash": declare_tx_hash},
     )
-    return resp.json()["class_hash"]
+    assert tx_resp.status_code == 200, tx_resp.json()
+    tx_resp_body = tx_resp.json()
+
+    assert tx_resp_body.get("status") == "REJECTED", tx_resp_body
+    assert (
+        "already declared"
+        in tx_resp_body["transaction_failure_reason"]["error_message"]
+    )
 
 
 def _call_get_balance(address: str) -> int:
@@ -185,13 +190,27 @@ def _call_get_balance(address: str) -> int:
 def test_declare_v2_happy_path():
     """Test declare v2"""
 
+    # load
+    contract_class = load_sierra(CONTRACT_1_PATH)
+    with open(CONTRACT_1_CASM_PATH, encoding="utf-8") as casm_file:
+        compiled_class = CompiledClass.loads(casm_file.read())
+    compiled_class_hash = compute_compiled_class_hash(compiled_class)
+
     # declare
-    class_hash = _declare_v2(
-        contract_class_path=CONTRACT_1_PATH,
-        compiled_class_path=CONTRACT_1_CASM_PATH,
+    declaration_resp = _send_declare_v2(
+        contract_class=contract_class,
+        compiled_class_hash=compiled_class_hash,
         sender_address=PREDEPLOYED_ACCOUNT_ADDRESS,
         sender_key=PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
     )
+
+    _assert_declare_v2(
+        resp=declaration_resp,
+        contract_class=contract_class,
+        compiled_class=compiled_class,
+        compiled_class_hash=compiled_class_hash,
+    )
+    class_hash = declaration_resp.json()["class_hash"]
 
     # deploy
     initial_balance = 10
@@ -222,3 +241,12 @@ def test_declare_v2_happy_path():
     # call after invoke
     fetched_balance_after_invoke = _call_get_balance(deploy_info["address"])
     assert fetched_balance_after_invoke == initial_balance + increment_value
+
+    _assert_already_declared(
+        declaration_resp=_send_declare_v2(
+            contract_class=contract_class,
+            compiled_class_hash=compiled_class_hash,
+            sender_address=PREDEPLOYED_ACCOUNT_ADDRESS,
+            sender_key=PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
+        )
+    )

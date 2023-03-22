@@ -350,24 +350,23 @@ class StarknetWrapper:
             # extract class hash here if execution later fails
             class_hash = tx_handler.internal_tx.class_hash
 
-            # TODO comment below might not be accurate as of starknet 0.11:
-            # alpha-goerli allows multiple declarations of the same class.
-            # Even though execute_tx is performed, class needs to be set explicitly
+            # this is done now (before excute_tx) so that later we can assert it hasn't been deployed
+            compiled_class_hash = await state.state.get_compiled_class_hash(class_hash)
 
+            # Even though execute_tx is performed, class needs to be set explicitly
             tx_handler.execution_info = await state.execute_tx(tx_handler.internal_tx)
 
             # check if Declare v2
             if isinstance(external_tx, Declare):
+                await self._assert_not_declared(class_hash, compiled_class_hash)
                 compiled_class_hash = tx_handler.internal_tx.compiled_class_hash
                 compiled_class = compile_contract_class(external_tx.contract_class)
                 compiled_class_hash_computed = compute_compiled_class_hash(
                     compiled_class
                 )
-                if compiled_class_hash_computed != compiled_class_hash:
-                    raise StarknetDevnetException(
-                        code=StarknetErrorCode.INVALID_COMPILED_CLASS_HASH,
-                        message=f"Compiled class hash not matching; received: {compiled_class_hash}, computed: {compiled_class_hash_computed}",
-                    )
+                self._assert_recompiled_class_hash(
+                    compiled_class_hash_computed, compiled_class_hash
+                )
                 await state.state.set_compiled_class_hash(
                     class_hash=class_hash, compiled_class_hash=compiled_class_hash
                 )
@@ -378,7 +377,6 @@ class StarknetWrapper:
                 compiled_class = external_tx.contract_class
                 tx_handler.explicitly_declared_old.append(class_hash)
 
-            print("DEBUG storing compiled_class", hex(compiled_class_hash))
             state.state.contract_classes[compiled_class_hash] = compiled_class
             self.__contract_classes[class_hash] = external_tx.contract_class
 
@@ -974,3 +972,17 @@ class StarknetWrapper:
         cached_state = self.get_state().state
         class_hash = await cached_state.get_class_hash_at(address)
         return bool(class_hash)
+
+    async def _assert_not_declared(self, class_hash: int, compiled_class_hash: int):
+        if compiled_class_hash != 0:
+            raise StarknetDevnetException(
+                code=StarknetErrorCode.CLASS_ALREADY_DECLARED,
+                message=f"Class with hash {hex(class_hash)} is already declared.\n {hex(compiled_class_hash)} != 0",
+            )
+
+    def _assert_recompiled_class_hash(self, recompiled: int, expected: int):
+        if recompiled != expected:
+            raise StarknetDevnetException(
+                code=StarknetErrorCode.INVALID_COMPILED_CLASS_HASH,
+                message=f"Compiled class hash not matching; received: {hex(expected)}, computed: {hex(recompiled)}",
+            )

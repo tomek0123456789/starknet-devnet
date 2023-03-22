@@ -251,7 +251,7 @@ def deploy(
 ):
     """Wrapper around starknet deploy"""
 
-    ctor_args = [int(val, 0) for val in inputs or []]  # TODO int(val) instead
+    ctor_args = [int(val, 0) for val in inputs or []]
     salt = get_salt(salt)
 
     invoke_tx_hash = invoke(
