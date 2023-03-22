@@ -4,7 +4,6 @@ Tests of contract class declaration and deploy syscall.
 
 import pytest
 import requests
-from starkware.starknet.definitions.error_codes import StarknetErrorCode
 
 from .account import declare
 from .settings import APP_URL
@@ -40,11 +39,11 @@ def test_declare_max_fee_too_low():
     assert_hex_equal(class_hash, EXPECTED_CLASS_HASH)
     assert_tx_status(declare_info["tx_hash"], "REJECTED")
 
-    resp = requests.get(
-        f"{APP_URL}/feeder_gateway/get_class_by_hash?classHash={class_hash}"
+    assert_undeclared_class(
+        resp=requests.get(
+            f"{APP_URL}/feeder_gateway/get_class_by_hash?classHash={class_hash}"
+        )
     )
-    assert resp.json()["code"] == str(StarknetErrorCode.UNDECLARED_CLASS)
-    assert resp.status_code == 500
 
 
 @pytest.mark.declare

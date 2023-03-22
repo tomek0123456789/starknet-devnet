@@ -7,7 +7,6 @@ import requests
 from starkware.starknet.core.os.contract_class.compiled_class_hash import (
     compute_compiled_class_hash,
 )
-from starkware.starknet.definitions.error_codes import StarknetErrorCode
 from starkware.starknet.services.api.contract_class.contract_class import (
     CompiledClass,
     ContractClass,
