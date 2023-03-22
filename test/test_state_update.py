@@ -220,6 +220,7 @@ def test_declaration_and_deployment():
 
     diff_after_declare = get_state_update()["state_diff"]
     assert diff_after_declare["old_declared_contracts"] == [contract_class_hash]
+    assert diff_after_declare["declared_classes"] == []
 
     # Deploy the deployer - also deploys a contract of the declared class using the deploy syscall
     initial_balance_in_constructor = "5"

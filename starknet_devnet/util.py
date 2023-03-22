@@ -5,11 +5,12 @@ Utility functions used across the project.
 import os
 import sys
 from dataclasses import dataclass
-from typing import Dict, List, Set
+from typing import Dict, List, Set, Tuple
 
 from starkware.starknet.business_logic.state.state import CachedState
 from starkware.starknet.definitions.error_codes import StarknetErrorCode
 from starkware.starknet.services.api.feeder_gateway.response_objects import (
+    ClassHashPair,
     ContractAddressHashPair,
     FeeEstimationInfo,
     StorageEntry,
@@ -117,14 +118,30 @@ def str_to_felt(text: str) -> int:
     return int.from_bytes(bytes(text, "ascii"), "big")
 
 
-async def get_all_declared_classes(
+async def group_classes_by_version(
+    contracts: List[ContractAddressHashPair], state: CachedState
+) -> Tuple[List[int], List[ContractAddressHashPair]]:
+    """Group into two lists: cairo0 contracts and  cairo1 contracts"""
+    cairo0_classes: List[int] = []
+    cairo1_classes: List[ContractAddressHashPair] = []
+    for contract in contracts:
+        compiled_class_hash = await state.get_compiled_class_hash(contract.class_hash)
+        if 0 == compiled_class_hash:
+            cairo0_classes.append(contract.class_hash)
+        else:
+            class_hash_pair = ClassHashPair(contract.class_hash, compiled_class_hash)
+            cairo1_classes.append(class_hash_pair)
+    return cairo0_classes, cairo1_classes
+
+
+async def get_all_declared_cairo0_classes(
     previous_state: CachedState,
     explicitly_declared_contracts: List[int],
-    deployed_contracts: List[ContractAddressHashPair],
-):
-    """Returns a tuple of explicitly and implicitly declared classes"""
+    deployed_cairo0_contracts: List[ContractAddressHashPair],
+) -> Tuple[int]:
+    """Returns a tuple of explicitly and implicitly declared cairo0 classes"""
     declared_contracts_set = set(explicitly_declared_contracts)
-    for deployed_contract in deployed_contracts:
+    for deployed_contract in deployed_cairo0_contracts:
         try:
             await previous_state.get_compiled_class_by_class_hash(
                 deployed_contract.class_hash
@@ -132,6 +149,23 @@ async def get_all_declared_classes(
         except StarkException:
             declared_contracts_set.add(deployed_contract.class_hash)
     return tuple(declared_contracts_set)
+
+
+async def get_all_declared_cairo1_classes(
+    previous_state: CachedState,
+    explicitly_declared_classes: List[ClassHashPair],
+    deployed_cairo1_contracts: List[ContractAddressHashPair],
+) -> List[ClassHashPair]:
+    """Returns a list of explicitly and implicitly declared cairo1 classes"""
+    declared_classes_set = set(explicitly_declared_classes)
+    for deployed_contract in deployed_cairo1_contracts:
+        try:
+            await previous_state.get_compiled_class_by_class_hash(
+                deployed_contract.class_hash
+            )
+        except StarkException:
+            declared_classes_set.add(deployed_contract.class_hash)
+    return list(declared_classes_set)
 
 
 async def get_storage_diffs(

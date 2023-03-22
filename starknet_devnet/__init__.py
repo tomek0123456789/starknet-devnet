@@ -54,8 +54,8 @@ def _patch_copy():
     from copy import copy
 
     from starkware.starknet.services.api.contract_class.contract_class import (
-        ContractClass,
         CompiledClassBase,
+        ContractClass,
     )
 
     def simpler_copy(self, memo):  # pylint: disable=unused-argument

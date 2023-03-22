@@ -102,9 +102,11 @@ from .util import (
     StarknetDevnetException,
     UndeclaredClassDevnetException,
     enable_pickling,
-    get_all_declared_classes,
+    get_all_declared_cairo0_classes,
+    get_all_declared_cairo1_classes,
     get_fee_estimation_info,
     get_storage_diffs,
+    group_classes_by_version,
     warn,
 )
 
@@ -297,9 +299,17 @@ class StarknetWrapper:
         )
         await self.__preserve_current_state(current_state)
 
+        (
+            deployed_cairo0_contracts,
+            deployed_cairo1_contracts,
+        ) = await group_classes_by_version(deployed_contracts, current_state)
+
         # calculating diffs
-        old_declared_contracts = await get_all_declared_classes(
-            previous_state, explicitly_declared_old, deployed_contracts
+        old_declared_contracts = await get_all_declared_cairo0_classes(
+            previous_state, explicitly_declared_old, deployed_cairo0_contracts
+        )
+        declared_classes = await get_all_declared_cairo1_classes(
+            previous_state, explicitly_declared, deployed_cairo1_contracts
         )
         storage_diffs = await get_storage_diffs(
             previous_state, current_state, visited_storage_entries
@@ -307,7 +317,7 @@ class StarknetWrapper:
         state_diff = StateDiff(
             deployed_contracts=deployed_contracts,
             old_declared_contracts=old_declared_contracts,
-            declared_classes=[],
+            declared_classes=declared_classes,
             replaced_classes=[],  # TODO
             storage_diffs=storage_diffs,
             nonces=nonces or {},
@@ -353,9 +363,6 @@ class StarknetWrapper:
             # this is done now (before excute_tx) so that later we can assert it hasn't been deployed
             compiled_class_hash = await state.state.get_compiled_class_hash(class_hash)
 
-            # Even though execute_tx is performed, class needs to be set explicitly
-            tx_handler.execution_info = await state.execute_tx(tx_handler.internal_tx)
-
             # check if Declare v2
             if isinstance(external_tx, Declare):
                 await self._assert_not_declared(class_hash, compiled_class_hash)
@@ -367,12 +374,23 @@ class StarknetWrapper:
                 self._assert_recompiled_class_hash(
                     compiled_class_hash_computed, compiled_class_hash
                 )
+
+                # Even though execute_tx is performed, class needs to be set explicitly
+                tx_handler.execution_info = await state.execute_tx(
+                    tx_handler.internal_tx
+                )
+
                 await state.state.set_compiled_class_hash(
                     class_hash=class_hash, compiled_class_hash=compiled_class_hash
                 )
-                tx_handler.explicitly_declared.append(class_hash)
+                tx_handler.explicitly_declared.append(
+                    ClassHashPair(class_hash, compiled_class_hash)
+                )
 
             else:  # Cairo 0.x class
+                tx_handler.execution_info = await state.execute_tx(
+                    tx_handler.internal_tx
+                )
                 compiled_class_hash = class_hash
                 compiled_class = external_tx.contract_class
                 tx_handler.explicitly_declared_old.append(class_hash)
