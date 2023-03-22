@@ -219,7 +219,7 @@ def test_declaration_and_deployment():
     assert_hex_equal(contract_class_hash, EXPECTED_CLASS_HASH)
 
     diff_after_declare = get_state_update()["state_diff"]
-    assert diff_after_declare["declared_contracts"] == [contract_class_hash]
+    assert diff_after_declare["old_declared_contracts"] == [contract_class_hash]
 
     # Deploy the deployer - also deploys a contract of the declared class using the deploy syscall
     initial_balance_in_constructor = "5"
@@ -240,4 +240,4 @@ def test_declaration_and_deployment():
     # deployed_contract_diff["address"] is a random value
 
     # deployer expected to be declared
-    assert diff_after_deploy["declared_contracts"] == [deployer_class_hash]
+    assert diff_after_deploy["old_declared_contracts"] == [deployer_class_hash]

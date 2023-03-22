@@ -13,7 +13,7 @@
     "events": [],
     "calldata": [
         "0x1",
-        "0xe20f3d015d503da8355105587376a419c7c04d37cf9590c93c350f0137a0c",
+        "0x5caf4871de65a07774c74533bd2a80706c91c750f0371818ef33053aeb1f03a",
         "0x362398bec32bc0ebb411203221a35a0301193a96f317ebe5e40be9f60d15320",
         "0x0",
         "0x2",
@@ -34,7 +34,7 @@
             },
             "messages": [],
             "call_type": "CALL",
-            "class_hash": "0x750413c9bb676b500b29c1fb871c6f6609cb79f00feea9846f988089c4088d3",
+            "class_hash": "0x21b8cd49a9845bab8d9e3645a87ddb70a39ca9027c09d5dee8328efbb5ff8b6",
             "result": [],
             "events": [],
             "calldata": [
@@ -44,7 +44,7 @@
             "caller_address": "0x347be35996a21f6bf0623e75dbce52baba918ad5ae8d83b6f416045ab22961a",
             "entry_point_type": "EXTERNAL",
             "selector": "0x362398bec32bc0ebb411203221a35a0301193a96f317ebe5e40be9f60d15320",
-            "contract_address": "0xe20f3d015d503da8355105587376a419c7c04d37cf9590c93c350f0137a0c",
+            "contract_address": "0x5caf4871de65a07774c74533bd2a80706c91c750f0371818ef33053aeb1f03a",
             "internal_calls": []
         }
     ]

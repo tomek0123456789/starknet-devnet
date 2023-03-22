@@ -738,7 +738,10 @@ def rpc_state_update(state_update: BlockStateUpdate) -> RpcStateUpdate:
     def declared_contract_hashes() -> List[Felt]:
         return [
             rpc_felt(contract)
-            for contract in state_update.state_diff.declared_classes  # TODO
+            for contract in state_update.state_diff.old_declared_contracts
+        ] + [
+            rpc_felt(class_hash_pair.compiled_class_hash)
+            for class_hash_pair in state_update.state_diff.declared_classes
         ]
 
     def deployed_contracts() -> List[RpcDeployedContractDiff]:
