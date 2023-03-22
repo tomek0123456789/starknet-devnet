@@ -690,7 +690,6 @@ class StarknetWrapper:
         # TODO origin?
         raise UndeclaredClassDevnetException(class_hash)
 
-
     async def get_class_hash_at(
         self, contract_address: int, block_id: BlockId = DEFAULT_BLOCK_ID
     ) -> int:

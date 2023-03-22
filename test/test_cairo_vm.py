@@ -38,6 +38,7 @@ def test_valid_cairo_vm(cairo_vm, assert_rust_vm_logged):
 
     assert proc.returncode == 0
 
+
 # TMP: rust vm
 def test_rust_vm_temporarily_unavailable():
     """

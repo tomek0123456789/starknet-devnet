@@ -12,8 +12,8 @@ from .account import get_nonce, invoke
 from .settings import APP_URL, HOST, bind_free_port
 from .shared import (
     ABI_PATH,
-    ALPHA_GOERLI_URL,
     ALPHA_GOERLI2_URL,
+    ALPHA_GOERLI_URL,
     CONTRACT_PATH,
     PREDEPLOY_ACCOUNT_CLI_ARGS,
     PREDEPLOYED_ACCOUNT_ADDRESS,

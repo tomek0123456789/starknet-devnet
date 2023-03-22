@@ -83,9 +83,7 @@ def test_declare_happy_path():
     assert_tx_status(declare_info["tx_hash"], "ACCEPTED_ON_L2")
     assert_class_by_hash(class_hash, CONTRACT_PATH)
 
-    _assert_undeclared_class(
-        resp=get_compiled_class_by_class_hash(class_hash)
-    )
+    _assert_undeclared_class(resp=get_compiled_class_by_class_hash(class_hash))
 
 
 def _assert_undeclared_class(resp=requests.Response):
