@@ -24,8 +24,13 @@ fi
 # setup cairo1 compiler
 if [ -z "$CAIRO_1_COMPILER_MANIFEST" ]; then
     mkdir cairo-compiler
-    git clone git@github.com:starkware-libs/cairo.git cairo-compiler
-    export CAIRO_1_COMPILER_MANIFEST="cairo-compiler/Cargo.toml"
+    git clone git@github.com:starkware-libs/cairo.git cairo-compiler \
+        --branch v1.0.0-alpha.6 \
+        --single-branch
+    CAIRO_1_COMPILER_MANIFEST="cairo-compiler/Cargo.toml"
+    if [ -n "$CIRCLE_BRANCH" ]; then
+        echo "CAIRO_1_COMPILER_MANIFEST=$CAIRO_1_COMPILER_MANIFEST" >"$BASH_ENV"
+    fi
 fi
 
 echo "Using Cairo compiler at $CAIRO_1_COMPILER_MANIFEST"

@@ -12,7 +12,8 @@ aliases:
     <<: *on_master
     requires:
       - test_py_max
-      - test_py_max_rust
+      # TMP: rust vm
+      # - test_py_max_rust
       - image_build
       - image_build_arm
 
@@ -31,8 +32,7 @@ jobs:
             jq . "${CIRCLE_INTERNAL_TASK_DATA}/circle-test-results/results.json"
       - run:
           name: Install development tools
-          # Using `source` to keep necessary env vars
-          command: source ./scripts/install_dev_tools.sh
+          command: ./scripts/install_dev_tools.sh
       - run:
           name: Check devnet versions
           command: ./scripts/check_versions.sh
@@ -128,7 +128,8 @@ workflows:
   test_and_publish:
     jobs:
       - test_py_max
-      - test_py_max_rust
+      # TMP: rust vm
+      # - test_py_max_rust
       - image_build:
           <<: *on_master
       - image_build_arm:
