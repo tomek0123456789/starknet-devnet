@@ -126,7 +126,7 @@ async def group_classes_by_version(
     cairo1_classes: List[ContractAddressHashPair] = []
     for contract in contracts:
         compiled_class_hash = await state.get_compiled_class_hash(contract.class_hash)
-        if 0 == compiled_class_hash:
+        if compiled_class_hash == 0:
             cairo0_classes.append(contract.class_hash)
         else:
             class_hash_pair = ClassHashPair(contract.class_hash, compiled_class_hash)
@@ -137,17 +137,15 @@ async def group_classes_by_version(
 async def get_all_declared_cairo0_classes(
     previous_state: CachedState,
     explicitly_declared_contracts: List[int],
-    deployed_cairo0_contracts: List[ContractAddressHashPair],
+    deployed_cairo0_classes: List[int],
 ) -> Tuple[int]:
     """Returns a tuple of explicitly and implicitly declared cairo0 classes"""
     declared_contracts_set = set(explicitly_declared_contracts)
-    for deployed_contract in deployed_cairo0_contracts:
+    for deployed_contract in deployed_cairo0_classes:
         try:
-            await previous_state.get_compiled_class_by_class_hash(
-                deployed_contract.class_hash
-            )
+            await previous_state.get_compiled_class_by_class_hash(deployed_contract)
         except StarkException:
-            declared_contracts_set.add(deployed_contract.class_hash)
+            declared_contracts_set.add(deployed_contract)
     return tuple(declared_contracts_set)
 
 
@@ -166,6 +164,21 @@ async def get_all_declared_cairo1_classes(
         except StarkException:
             declared_classes_set.add(deployed_contract.class_hash)
     return list(declared_classes_set)
+
+
+async def get_replaced_classes(
+    previous_state: CachedState,
+    current_state: CachedState,
+) -> List[ContractAddressHashPair]:
+    """Find contracts whose class has been replaced"""
+    replaced: List[ContractAddressHashPair] = []
+    for address, class_hash in current_state.cache.address_to_class_hash.items():
+        previous_class_hash = await previous_state.get_class_hash_at(address)
+        if previous_class_hash and previous_class_hash != class_hash:
+            replaced.append(
+                ContractAddressHashPair(address=address, class_hash=class_hash)
+            )
+    return replaced
 
 
 async def get_storage_diffs(
@@ -192,6 +205,24 @@ async def get_storage_diffs(
             )
 
     return storage_diffs
+
+
+async def assert_not_declared(class_hash: int, compiled_class_hash: int):
+    """Assert class is not declared"""
+    if compiled_class_hash != 0:
+        raise StarknetDevnetException(
+            code=StarknetErrorCode.CLASS_ALREADY_DECLARED,
+            message=f"Class with hash {hex(class_hash)} is already declared.\n {hex(compiled_class_hash)} != 0",
+        )
+
+
+def assert_recompiled_class_hash(recompiled: int, expected: int):
+    """Assert the class hashes match"""
+    if recompiled != expected:
+        raise StarknetDevnetException(
+            code=StarknetErrorCode.INVALID_COMPILED_CLASS_HASH,
+            message=f"Compiled class hash not matching; received: {hex(expected)}, computed: {hex(recompiled)}",
+        )
 
 
 def get_fee_estimation_info(tx_fee: int, gas_price: int):

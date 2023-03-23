@@ -101,10 +101,13 @@ from .udc import UDC
 from .util import (
     StarknetDevnetException,
     UndeclaredClassDevnetException,
+    assert_not_declared,
+    assert_recompiled_class_hash,
     enable_pickling,
     get_all_declared_cairo0_classes,
     get_all_declared_cairo1_classes,
     get_fee_estimation_info,
+    get_replaced_classes,
     get_storage_diffs,
     group_classes_by_version,
     warn,
@@ -272,7 +275,7 @@ class StarknetWrapper:
         """
         return self.starknet.state
 
-    async def update_pending_state(
+    async def update_pending_state(  # pylint: disable=too-many-arguments
         self,
         deployed_contracts: List[ContractAddressHashPair] = None,
         explicitly_declared_old: List[int] = None,
@@ -311,6 +314,7 @@ class StarknetWrapper:
         declared_classes = await get_all_declared_cairo1_classes(
             previous_state, explicitly_declared, deployed_cairo1_contracts
         )
+        replaced = await get_replaced_classes(previous_state, current_state)
         storage_diffs = await get_storage_diffs(
             previous_state, current_state, visited_storage_entries
         )
@@ -318,7 +322,7 @@ class StarknetWrapper:
             deployed_contracts=deployed_contracts,
             old_declared_contracts=old_declared_contracts,
             declared_classes=declared_classes,
-            replaced_classes=[],  # TODO
+            replaced_classes=replaced,
             storage_diffs=storage_diffs,
             nonces=nonces or {},
         )
@@ -365,13 +369,13 @@ class StarknetWrapper:
 
             # check if Declare v2
             if isinstance(external_tx, Declare):
-                await self._assert_not_declared(class_hash, compiled_class_hash)
+                await assert_not_declared(class_hash, compiled_class_hash)
                 compiled_class_hash = tx_handler.internal_tx.compiled_class_hash
                 compiled_class = compile_contract_class(external_tx.contract_class)
                 compiled_class_hash_computed = compute_compiled_class_hash(
                     compiled_class
                 )
-                self._assert_recompiled_class_hash(
+                assert_recompiled_class_hash(
                     compiled_class_hash_computed, compiled_class_hash
                 )
 
@@ -990,17 +994,3 @@ class StarknetWrapper:
         cached_state = self.get_state().state
         class_hash = await cached_state.get_class_hash_at(address)
         return bool(class_hash)
-
-    async def _assert_not_declared(self, class_hash: int, compiled_class_hash: int):
-        if compiled_class_hash != 0:
-            raise StarknetDevnetException(
-                code=StarknetErrorCode.CLASS_ALREADY_DECLARED,
-                message=f"Class with hash {hex(class_hash)} is already declared.\n {hex(compiled_class_hash)} != 0",
-            )
-
-    def _assert_recompiled_class_hash(self, recompiled: int, expected: int):
-        if recompiled != expected:
-            raise StarknetDevnetException(
-                code=StarknetErrorCode.INVALID_COMPILED_CLASS_HASH,
-                message=f"Compiled class hash not matching; received: {hex(expected)}, computed: {hex(recompiled)}",
-            )

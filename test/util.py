@@ -774,6 +774,7 @@ def set_time(time_s):
 
 
 def assert_undeclared_class(resp=requests.Response):
+    """Assert that the provided response indicates a failure due to an undeclared class"""
     assert resp.status_code == 500, resp.json()
     resp_body = resp.json()
     assert "code" in resp_body

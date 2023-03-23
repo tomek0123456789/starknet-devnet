@@ -3,7 +3,6 @@
 import contextlib
 import json
 
-from marshmallow.exceptions import ValidationError
 from services.external_api.client import BadRequest
 from starkware.starknet.business_logic.state.state import BlockInfo, CachedState
 from starkware.starknet.business_logic.state.state_api import StateReader

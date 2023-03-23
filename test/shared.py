@@ -16,6 +16,10 @@ EVENTS_ABI_PATH = f"{ARTIFACTS_PATH}/events.cairo/events_abi.json"
 FAILING_CONTRACT_PATH = f"{ARTIFACTS_PATH}/always_fail.cairo/always_fail.json"
 DEPLOYER_CONTRACT_PATH = f"{ARTIFACTS_PATH}/deployer.cairo/deployer.json"
 DEPLOYER_ABI_PATH = f"{ARTIFACTS_PATH}/deployer.cairo/deployer_abi.json"
+REPLACEABLE_CONTRACT_PATH = f"{ARTIFACTS_PATH}/replaceable.cairo/replaceable.json"
+REPLACEABLE_ABI_PATH = f"{ARTIFACTS_PATH}/replaceable.cairo/replaceable_abi.json"
+REPLACING_CONTRACT_PATH = f"{ARTIFACTS_PATH}/replacing.cairo/replacing.json"
+REPLACING_ABI_PATH = f"{ARTIFACTS_PATH}/replacing.cairo/replacing_abi.json"
 
 # cairo 1.0
 ARTIFACTS_1_PATH = "test/artifacts/contracts/cairo1"

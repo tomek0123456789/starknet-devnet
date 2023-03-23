@@ -296,6 +296,7 @@ def send_declare_v2(
     sender_address: str,
     sender_key: int,
 ):
+    """Send a declare v2 transaction"""
     max_fee = int(1e18)  # should be enough
     version = 2
     nonce = get_nonce(sender_address)

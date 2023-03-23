@@ -5,7 +5,6 @@ import asyncio
 import contextlib
 import json
 import os
-import subprocess
 import sys
 from enum import Enum, auto
 from typing import List
