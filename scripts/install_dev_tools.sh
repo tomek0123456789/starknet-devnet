@@ -29,7 +29,6 @@ if [ -z "$CAIRO_1_COMPILER_MANIFEST" ]; then
         --single-branch
     CAIRO_1_COMPILER_MANIFEST="cairo-compiler/Cargo.toml"
     if [ -n "$CIRCLE_BRANCH" ]; then
-        echo "CAIRO_1_COMPILER_MANIFEST=$CAIRO_1_COMPILER_MANIFEST" >"$BASH_ENV"
         echo "source ~/.cargo/env" >"$BASH_ENV"
     fi
 fi
