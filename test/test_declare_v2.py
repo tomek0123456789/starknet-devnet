@@ -37,9 +37,8 @@ from .util import (
 )
 
 
-def _assert_declare_v2_accepted(
-    resp: requests.Response,
-):
+def assert_declare_v2_accepted(resp: requests.Response):
+    """Assert status of declaration is accepted"""
     assert resp.status_code == 200
 
     declare_tx_hash = resp.json()["transaction_hash"]
@@ -82,7 +81,8 @@ def _assert_invalid_compiled_class_hash(declaration_resp: requests.Response):
     )
 
 
-def _load_cairo1_contract():
+def load_cairo1_contract():
+    """Returns (contract_class, compiled_class, compiled_class_hash)"""
     contract_class = load_sierra(CONTRACT_1_PATH)
     with open(CONTRACT_1_CASM_PATH, encoding="utf-8") as casm_file:
         compiled_class = CompiledClass.loads(casm_file.read())
@@ -95,7 +95,7 @@ def _load_cairo1_contract():
 @devnet_in_background(*PREDEPLOY_ACCOUNT_CLI_ARGS)
 def test_declare_v2_invalid_compiled_class_hash():
     """Set an invalid compiled class hash and expect failure"""
-    contract_class, _, compiled_class_hash = _load_cairo1_contract()
+    contract_class, _, compiled_class_hash = load_cairo1_contract()
     _assert_invalid_compiled_class_hash(
         send_declare_v2(
             contract_class=contract_class,
@@ -111,7 +111,7 @@ def test_declare_v2_invalid_compiled_class_hash():
 @devnet_in_background(*PREDEPLOY_ACCOUNT_CLI_ARGS)
 def test_redeclaring_v2():
     """Should fail if redeclaring"""
-    contract_class, _, compiled_class_hash = _load_cairo1_contract()
+    contract_class, _, compiled_class_hash = load_cairo1_contract()
     send_declare_v2(
         contract_class=contract_class,
         compiled_class_hash=compiled_class_hash,
@@ -135,7 +135,7 @@ def test_classes_available_after_declare_v2():
     """Should successfully get class and compiled class by hash"""
     # assert class present only by class hash
 
-    contract_class, compiled_class, compiled_class_hash = _load_cairo1_contract()
+    contract_class, compiled_class, compiled_class_hash = load_cairo1_contract()
 
     declaration_resp = send_declare_v2(
         contract_class=contract_class,
@@ -143,7 +143,7 @@ def test_classes_available_after_declare_v2():
         sender_address=PREDEPLOYED_ACCOUNT_ADDRESS,
         sender_key=PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
     )
-    _assert_declare_v2_accepted(declaration_resp)
+    assert_declare_v2_accepted(declaration_resp)
     class_hash = declaration_resp.json()["class_hash"]
 
     assert ContractClass.load(get_class_by_hash(class_hash).json()) == contract_class
@@ -183,7 +183,7 @@ def _call_get_balance(address: str) -> int:
 def test_v2_contract_interaction():
     """Test using declare v2 and interact with contract (deploy, invoke, call)"""
 
-    contract_class, _, compiled_class_hash = _load_cairo1_contract()
+    contract_class, _, compiled_class_hash = load_cairo1_contract()
 
     # declare
     declaration_resp = send_declare_v2(
@@ -192,7 +192,7 @@ def test_v2_contract_interaction():
         sender_address=PREDEPLOYED_ACCOUNT_ADDRESS,
         sender_key=PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
     )
-    _assert_declare_v2_accepted(declaration_resp)
+    assert_declare_v2_accepted(declaration_resp)
     class_hash = declaration_resp.json()["class_hash"]
 
     # deploy

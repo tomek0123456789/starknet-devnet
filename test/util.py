@@ -17,6 +17,7 @@ from starkware.starknet.definitions.error_codes import StarknetErrorCode
 from starkware.starknet.definitions.general_config import StarknetChainId
 from starkware.starknet.definitions.transaction_type import TransactionType
 from starkware.starknet.services.api.contract_class.contract_class import (
+    CompiledClass,
     CompiledClassBase,
     DeprecatedCompiledClass,
 )
@@ -402,6 +403,7 @@ def assert_tx_status(tx_hash, expected_tx_status: str, feeder_gateway_url=APP_UR
         ["tx_status", "--hash", tx_hash], gateway_url=feeder_gateway_url
     )
     response = json.loads(output.stdout)
+    assert "tx_status" in response
     tx_status = response["tx_status"]
     assert_equal(tx_status, expected_tx_status, response)
 
@@ -557,15 +559,41 @@ def assert_class_by_hash(
     """Assert the class at `class_hash` matches what is at `expected_path`."""
     resp = get_class_by_hash(class_hash, feeder_gateway_url=feeder_gateway_url)
     assert resp.status_code == 200, resp.text
-    class_by_hash = DeprecatedCompiledClass.loads(resp.text)
+    class_by_hash = DeprecatedCompiledClass.loads(resp.text).remove_debug_info()
     assert_contract_class(class_by_hash, expected_class_path=expected_path)
+
+
+def assert_compiled_class_by_hash(
+    class_hash: str,
+    expected_path: str,
+    feeder_gateway_url=APP_URL,
+):
+    """Assert the compiled class at `class_hash` matches what is at `expected_path`."""
+    resp = get_compiled_class_by_class_hash(
+        class_hash, feeder_gateway_url=feeder_gateway_url
+    )
+    assert resp.status_code == 200, resp.text
+    retrieved_class = CompiledClass.loads(resp.text)
+    with open(expected_path, encoding="utf-8") as expected_file:
+        class_from_disk = CompiledClass.loads(expected_file.read())
+
+    assert retrieved_class == class_from_disk
 
 
 def assert_class_by_hash_not_present(class_hash: str, feeder_gateway_url=APP_URL):
     """Assert the server holds no class at provided `class_hash`."""
     resp = get_class_by_hash(class_hash, feeder_gateway_url=feeder_gateway_url)
-    assert resp.json()["code"] == str(StarknetErrorCode.UNDECLARED_CLASS)
-    assert resp.status_code == 500
+    assert_undeclared_class(resp)
+
+
+def assert_compiled_class_by_hash_not_present(
+    class_hash: str, feeder_gateway_url=APP_URL
+):
+    """Assert the server holds no compiled class corresponding to the provided `class_hash`."""
+    resp = get_compiled_class_by_class_hash(
+        class_hash, feeder_gateway_url=feeder_gateway_url
+    )
+    assert_undeclared_class(resp)
 
 
 def assert_receipt(tx_hash, expected_path):

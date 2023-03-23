@@ -34,6 +34,7 @@ from .util import (
     assert_class_by_hash,
     assert_class_by_hash_not_present,
     assert_class_hash_at_address,
+    assert_compiled_class_by_hash_not_present,
     assert_contract_code_not_present,
     assert_contract_code_present,
     assert_full_contract,
@@ -179,6 +180,12 @@ def test_declare_and_get_class_by_hash():
     assert_class_by_hash_not_present(
         class_hash=EXPECTED_CLASS_HASH, feeder_gateway_url=APP_URL
     )
+    assert_compiled_class_by_hash_not_present(
+        class_hash=EXPECTED_CLASS_HASH, feeder_gateway_url=TESTNET_URL
+    )
+    assert_compiled_class_by_hash_not_present(
+        class_hash=EXPECTED_CLASS_HASH, feeder_gateway_url=APP_URL
+    )
 
     declare_info = declare(
         contract_path=CONTRACT_PATH,
@@ -197,9 +204,13 @@ def test_declare_and_get_class_by_hash():
         expected_path=CONTRACT_PATH,
         feeder_gateway_url=APP_URL,
     )
-
-
-# TODO test new endpoint
+    assert_compiled_class_by_hash_not_present(
+        class_hash=EXPECTED_CLASS_HASH, feeder_gateway_url=TESTNET_URL
+    )
+    assert_compiled_class_by_hash_not_present(
+        class_hash=EXPECTED_CLASS_HASH,
+        feeder_gateway_url=APP_URL,
+    )
 
 
 def _assert_transaction_trace_not_present(tx_hash: str, feeder_gateway_url=APP_URL):

@@ -4,9 +4,6 @@ Feeder gateway routes.
 
 from flask import Blueprint, Response, jsonify, request
 from marshmallow import ValidationError
-from starkware.starknet.services.api.contract_class.contract_class import (
-    DeprecatedCompiledClass,
-)
 from starkware.starknet.services.api.feeder_gateway.request_objects import (
     CallFunction,
     CallL1Handler,
@@ -121,7 +118,6 @@ def _get_block_id(args: MultiDict) -> BlockId:
 
 
 def _get_skip_validate(args: MultiDict) -> bool:
-    # TODO test this feature
     skip_validate = args.get("skipValidate")
 
     if skip_validate == "true":
@@ -224,11 +220,11 @@ async def get_class_by_hash():
     """Get contract class by class hash"""
 
     class_hash = request.args.get("classHash", type=parse_hex_string)
-    contract_class = await state.starknet_wrapper.get_class_by_hash(class_hash)
-    if isinstance(contract_class, DeprecatedCompiledClass):
-        contract_class = contract_class.remove_debug_info()
+    class_dict = await state.starknet_wrapper.get_class_by_hash(class_hash)
+    # if isinstance(contract_class, DeprecatedCompiledClass):
+    #     contract_class = contract_class.remove_debug_info()
 
-    return jsonify(contract_class.dump())
+    return jsonify(class_dict)
 
 
 @feeder_gateway.route("/get_compiled_class_by_class_hash", methods=["GET"])

@@ -150,7 +150,7 @@ class StarknetWrapper:
         self.__contract_classes: Dict[
             int, Union[DeprecatedCompiledClass, ContractClass]
         ]
-        """If v2 - store sierra, otherwise store old class"""
+        """If v2 - store sierra, otherwise store old class; needed for get_class_by_hash"""
 
         if config.start_time is not None:
             self.set_block_time(config.start_time)
@@ -575,6 +575,7 @@ class StarknetWrapper:
             tx_handler.internal_tx = internal_tx
             state = self.get_state().state
             state.contract_classes[internal_tx.class_hash] = contract_class
+            self.__contract_classes[internal_tx.class_hash] = contract_class
 
             tx_handler.execution_info = await self.__deploy(internal_tx)
             tx_handler.internal_calls = (
@@ -676,20 +677,13 @@ class StarknetWrapper:
                 internal_call.internal_calls, tx_hash, deployed_contracts
             )
 
-    async def get_class_by_hash(
-        self, class_hash: int
-    ) -> Union[CompiledClassBase, DeprecatedCompiledClass]:
+    async def get_class_by_hash(self, class_hash: int) -> dict:
         """Return contract class given class hash"""
         if class_hash in self.__contract_classes:
-            # check if class v2 (sierra)
-            return self.__contract_classes[class_hash]
+            # check if locally present
+            return self.__contract_classes[class_hash].dump()
 
-        compiled_class = await self.get_state().state.get_compiled_class(class_hash)
-        if isinstance(compiled_class, DeprecatedCompiledClass):
-            return compiled_class
-
-        # TODO default to origin depending on error code
-        raise UndeclaredClassDevnetException(class_hash)
+        return await self.origin.get_class_by_hash(class_hash)
 
     async def get_compiled_class_by_class_hash(self, class_hash: int) -> CompiledClass:
         """
@@ -707,7 +701,6 @@ class StarknetWrapper:
             # the received hash is compiled_class_hash of a cairo1 class
             pass
 
-        # TODO origin?
         raise UndeclaredClassDevnetException(class_hash)
 
     async def get_class_hash_at(
