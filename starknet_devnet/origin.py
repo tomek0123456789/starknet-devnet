@@ -221,6 +221,7 @@ class ForkedOrigin(Origin):
                     code=StarknetErrorCode.BLOCK_NOT_FOUND,
                     message=f"Block hash {block_hash} does not exist.",
                 ) from bad_request
+            raise
 
     async def get_class_by_hash(
         self, class_hash: int, block_number: int = None

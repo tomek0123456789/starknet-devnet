@@ -4,7 +4,6 @@
 %builtins pedersen range_check
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
-from starkware.starknet.common.syscalls import get_block_number
 
 // Define a storage variable.
 @storage_var

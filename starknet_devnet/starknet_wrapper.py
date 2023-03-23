@@ -147,9 +147,7 @@ class StarknetWrapper:
         self.__udc = UDC(self)
         self.pending_txs: List[DevnetTransaction] = []
         self.__latest_state = None
-        self.__contract_classes: Dict[
-            int, Union[DeprecatedCompiledClass, ContractClass]
-        ]
+        self._contract_classes: Dict[int, Union[DeprecatedCompiledClass, ContractClass]]
         """If v2 - store sierra, otherwise store old class; needed for get_class_by_hash"""
 
         if config.start_time is not None:
@@ -171,12 +169,12 @@ class StarknetWrapper:
             # ok that it's here so that e.g. reset includes reset of blocks
             self.blocks = DevnetBlocks(self.origin, lite=self.config.lite_mode)
 
+            self._contract_classes = {}
             await self.fee_token.deploy()
             await self.accounts.deploy()
             await self.__deploy_chargeable_account()
             await self.__predeclare_starknet_cli_account()
             await self.__udc.deploy()
-            self.__contract_classes = {}
 
             await self.__preserve_current_state(starknet.state.state)
             await self.__create_genesis_block()
@@ -400,7 +398,7 @@ class StarknetWrapper:
                 tx_handler.explicitly_declared_old.append(class_hash)
 
             state.state.contract_classes[compiled_class_hash] = compiled_class
-            self.__contract_classes[class_hash] = external_tx.contract_class
+            self._contract_classes[class_hash] = external_tx.contract_class
 
         return class_hash, tx_handler.internal_tx.hash_value
 
@@ -575,7 +573,7 @@ class StarknetWrapper:
             tx_handler.internal_tx = internal_tx
             state = self.get_state().state
             state.contract_classes[internal_tx.class_hash] = contract_class
-            self.__contract_classes[internal_tx.class_hash] = contract_class
+            self._contract_classes[internal_tx.class_hash] = contract_class
 
             tx_handler.execution_info = await self.__deploy(internal_tx)
             tx_handler.internal_calls = (
@@ -679,9 +677,9 @@ class StarknetWrapper:
 
     async def get_class_by_hash(self, class_hash: int) -> dict:
         """Return contract class given class hash"""
-        if class_hash in self.__contract_classes:
+        if class_hash in self._contract_classes:
             # check if locally present
-            return self.__contract_classes[class_hash].dump()
+            return self._contract_classes[class_hash].dump()
 
         return await self.origin.get_class_by_hash(class_hash)
 

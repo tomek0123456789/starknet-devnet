@@ -31,6 +31,7 @@ jobs:
             jq . "${CIRCLE_INTERNAL_TASK_DATA}/circle-test-results/results.json"
       - run:
           name: Install development tools
+          # Using `source` to keep necessary env vars
           command: source ./scripts/install_dev_tools.sh
       - run:
           name: Check devnet versions

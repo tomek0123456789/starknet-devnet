@@ -29,9 +29,12 @@ class PredeployedContractWrapper(ABC):
         """Deploy the contract wrapper to devnet"""
         starknet: Starknet = self.starknet_wrapper.starknet
 
+        # declare
         starknet.state.state.contract_classes[self.class_hash] = self.contract_class
 
         # pylint: disable=protected-access
+        self.starknet_wrapper._contract_classes[self.class_hash] = self.contract_class
+
         starknet.state.state.cache._class_hash_writes[self.address] = self.class_hash
         # replace with await starknet.state.state.deploy_contract
         # await starknet.state.state.deploy_contract(self.address, self.class_hash)
