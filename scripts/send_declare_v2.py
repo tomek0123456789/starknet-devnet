@@ -133,9 +133,7 @@ def main():  # pylint: disable=too-many-locals
         signature=list(sign(msg_hash=hash_value, priv_key=private_key)),
         nonce=nonce,
     ).dump()
-    declaration_body["signature"] = [
-        str(int(s, 16)) for s in declaration_body["signature"]
-    ]
+
     declaration_body["type"] = "DECLARE"
 
     declare_resp = requests.post(

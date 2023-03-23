@@ -361,13 +361,13 @@ files = [
 
 [[package]]
 name = "cairo-lang"
-version = "0.11.0"
+version = "0.11.0.1"
 description = "Compiler and runner for the Cairo language"
 category = "main"
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "cairo-lang-0.11.0.zip", hash = "sha256:c3b27d0b72dd9d0c4ea863ea2bf88a566de7791268474c65ca53f3d5724dca87"},
+    {file = "cairo-lang-0.11.0.1.zip", hash = "sha256:980be66de30b26ab26f9e4e616e32fbcf53530891a2a0a9d4544f17863cfbfa7"},
 ]
 
 [package.dependencies]
@@ -2596,4 +2596,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.10"
-content-hash = "4d3a45c418d3550b8b0d221fbcc1373944e8172ef038fa414b2272a1fa4ec290"
+content-hash = "c0523bd4f4b5b64de3ed0ab2c0cff3b7a08bbe96ab8fdd246378facdca85bd5d"

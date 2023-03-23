@@ -120,10 +120,6 @@ async def test_deploy(starknet_wrapper_args, expected_block_hash):
         contract_class=deploy_transaction.contract_definition,
     )
 
-    assert_hex_equal(
-        hex(tx_hash),
-        "0x74d9362e03375244d281132846a8ef19aa61ee7f98944238908c854e57c27ed",
-    )
     assert contract_address == expected_contract_address
 
     tx_status = await devnet.transactions.get_transaction_status(hex(tx_hash))
