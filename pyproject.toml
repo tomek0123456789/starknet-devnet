@@ -33,6 +33,7 @@ pylint-quotes = "~0.2.3"
 black = "~22.6"
 requests = "~2.28"
 isort = "^5.10.1"
+pyright = "~1.1.301"
 
 [tool.poetry.group.vm.dependencies]
 cairo-rs-py = "~0.1.1"
@@ -75,3 +76,5 @@ filterwarnings=[
     "ignore::DeprecationWarning:eth_abi.codec.*:",
     "ignore::marshmallow.warnings.RemovedInMarshmallow4Warning",
 ]
+
+[tool.pyright]
