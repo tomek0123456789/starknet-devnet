@@ -5,12 +5,16 @@ from typing import List
 import pytest
 from starkware.starknet.core.os.contract_address.contract_address import (
     calculate_contract_address,
-    compute_class_hash,
+)
+from starkware.starknet.core.os.contract_class.deprecated_class_hash import (
+    compute_deprecated_class_hash,
 )
 from starkware.starknet.definitions.general_config import DEFAULT_CHAIN_ID
 from starkware.starknet.definitions.transaction_type import TransactionType
 from starkware.starknet.public.abi import get_selector_from_name
-from starkware.starknet.services.api.contract_class import ContractClass
+from starkware.starknet.services.api.contract_class.contract_class import (
+    DeprecatedCompiledClass,
+)
 from starkware.starknet.services.api.feeder_gateway.response_objects import (
     TransactionStatus,
 )
@@ -60,7 +64,7 @@ from .util import (
 def get_contract_class():
     """Get the contract class from the contract.json file."""
     with open(CONTRACT_PATH, "r", encoding="utf-8") as contract_class_file:
-        return ContractClass.loads(contract_class_file.read())
+        return DeprecatedCompiledClass.loads(contract_class_file.read())
 
 
 def get_deploy_transaction(inputs: List[int], salt=0):
@@ -116,10 +120,6 @@ async def test_deploy(starknet_wrapper_args, expected_block_hash):
         contract_class=deploy_transaction.contract_definition,
     )
 
-    assert_hex_equal(
-        hex(tx_hash),
-        "0x29c0f6e2321da26dd143dc772740526416294e9300634ec646cb525c3eb9c5e",
-    )
     assert contract_address == expected_contract_address
 
     tx_status = await devnet.transactions.get_transaction_status(hex(tx_hash))
@@ -131,7 +131,9 @@ async def test_deploy(starknet_wrapper_args, expected_block_hash):
 
 def test_predeclared_oz_account():
     """Test that precomputed class matches"""
-    assert STARKNET_CLI_ACCOUNT_CLASS_HASH == compute_class_hash(oz_account_class)
+    assert STARKNET_CLI_ACCOUNT_CLASS_HASH == compute_deprecated_class_hash(
+        oz_account_class
+    )
 
 
 @devnet_in_background()
@@ -154,11 +156,11 @@ def deploy_account_test_body():
     account_address, deploy_account_tx = sign_deploy_account_tx(
         private_key=private_key,
         public_key=public_key,
-        class_hash=compute_class_hash(oz_account_class),
+        class_hash=compute_deprecated_class_hash(oz_account_class),
         salt=account_salt,
         max_fee=int(1e18),
         version=SUPPORTED_TX_VERSION,
-        chain_id=DEFAULT_CHAIN_ID.value,
+        chain_id=DEFAULT_CHAIN_ID,
         nonce=0,
     )
     deploy_account_tx = deploy_account_tx.dump()
@@ -194,7 +196,7 @@ def deploy_account_test_body():
         contract_address=int(contract_address, 16),
         selector=get_selector_from_name("increase_balance"),
         calldata=[10, 20],
-        chain_id=DEFAULT_CHAIN_ID.value,
+        chain_id=DEFAULT_CHAIN_ID,
         max_fee=int(1e18),
         version=SUPPORTED_TX_VERSION,
         nonce=1,

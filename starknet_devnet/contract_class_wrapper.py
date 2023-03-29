@@ -1,18 +1,19 @@
-"""Starknet ContractClass wrapper utilities"""
+"""Starknet CompiledClassBase wrapper utilities"""
 
 import os
 from dataclasses import dataclass
 
-from starkware.python.utils import to_bytes
-from starkware.starknet.services.api.contract_class import ContractClass
+from starkware.starknet.services.api.contract_class.contract_class import (
+    CompiledClassBase,
+)
 
 
 @dataclass
-class ContractClassWrapper:
-    """Wrapper of ContractClass"""
+class CompiledClassWrapper:
+    """Wrapper of CompiledClassBase"""
 
-    contract_class: ContractClass
-    hash_bytes: bytes
+    contract_class: CompiledClassBase
+    hash: int
 
 
 DEFAULT_ACCOUNT_PATH = os.path.abspath(
@@ -26,6 +27,5 @@ DEFAULT_ACCOUNT_PATH = os.path.abspath(
         "Account.json",
     )
 )
-DEFAULT_ACCOUNT_HASH_BYTES = to_bytes(
-    2177626953842241688342849477958144159584215338353441986251810208376165874783
-)
+
+DEFAULT_ACCOUNT_HASH = 0x4D07E40E93398ED3C76981E72DD1FD22557A78CE36C0515F679E27F0BB5BC5F

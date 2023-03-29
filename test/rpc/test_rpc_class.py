@@ -88,7 +88,7 @@ def test_get_class(class_hash):
 
     assert contract_class["entry_points_by_type"] == EXPECTED_ENTRY_POINTS
     assert isinstance(contract_class["program"], str)
-    decompress_program({"contract_class": contract_class}, False)
+    decompress_program(contract_class["program"])
     assert contract_class["abi"] == EXPECTED_ABI
 
 
@@ -125,5 +125,5 @@ def test_get_class_at(deploy_info):
 
     assert contract_class["entry_points_by_type"] == EXPECTED_ENTRY_POINTS
     assert isinstance(contract_class["program"], str)
-    decompress_program({"contract_class": contract_class}, False)
+    decompress_program(contract_class["program"])
     assert contract_class["abi"] == EXPECTED_ABI

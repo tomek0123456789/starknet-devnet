@@ -7,6 +7,8 @@ from typing import Dict, List
 from services.everest.business_logic.transaction_execution_objects import (
     TransactionFailureReason,
 )
+from starkware.python.utils import to_bytes
+from starkware.starknet.business_logic.execution.objects import TransactionExecutionInfo
 from starkware.starknet.business_logic.transaction.objects import (
     InternalDeclare,
     InternalDeploy,
@@ -24,10 +26,7 @@ from starkware.starknet.services.api.feeder_gateway.response_objects import (
     TransactionStatus,
     TransactionTrace,
 )
-from starkware.starknet.testing.starknet import (
-    StarknetCallInfo,
-    TransactionExecutionInfo,
-)
+from starkware.starknet.testing.objects import StarknetCallInfo
 from starkware.starkware_utils.error_handling import StarkErrorCode
 from web3 import Web3
 
@@ -298,7 +297,7 @@ class DevnetTransactions:
         )
 
 
-def create_empty_internal_declare(tx_hash, class_hash) -> InternalDeclare:
+def create_empty_internal_declare(tx_hash: int, class_hash: int) -> InternalDeclare:
     "Create InternalDeclare used in the genesis block"
     return InternalDeclare(
         hash_value=tx_hash,
@@ -307,6 +306,7 @@ def create_empty_internal_declare(tx_hash, class_hash) -> InternalDeclare:
         signature=[],
         nonce=0,
         class_hash=class_hash,
+        compiled_class_hash=None,
         sender_address=1,
     )
 
@@ -317,7 +317,7 @@ def create_empty_internal_deploy(
     "Create InternalDeploy used in the genesis block"
     return InternalDeploy(
         contract_address=contract_address,
-        contract_hash=class_hash,
+        contract_hash=to_bytes(class_hash),
         contract_address_salt=0,
         hash_value=tx_hash,
         version=0,

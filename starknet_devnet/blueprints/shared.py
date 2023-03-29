@@ -14,7 +14,7 @@ def validate_transaction(data: bytes) -> Transaction:
     """Ensure `transaction_dict` is a valid Starknet transaction. Returns the parsed Transaction."""
     try:
         return Transaction.loads(data)
-    except (TypeError, ValidationError) as err:
+    except (TypeError, ValidationError, KeyError) as err:
         msg = f"""Invalid tx: {err}
 Be sure to use the correct compilation (json) artifact. Devnet-compatible cairo-lang version: {CAIRO_LANG_VERSION}"""
         raise StarknetDevnetException(

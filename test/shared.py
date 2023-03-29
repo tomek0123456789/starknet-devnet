@@ -16,6 +16,16 @@ EVENTS_ABI_PATH = f"{ARTIFACTS_PATH}/events.cairo/events_abi.json"
 FAILING_CONTRACT_PATH = f"{ARTIFACTS_PATH}/always_fail.cairo/always_fail.json"
 DEPLOYER_CONTRACT_PATH = f"{ARTIFACTS_PATH}/deployer.cairo/deployer.json"
 DEPLOYER_ABI_PATH = f"{ARTIFACTS_PATH}/deployer.cairo/deployer_abi.json"
+REPLACEABLE_CONTRACT_PATH = f"{ARTIFACTS_PATH}/replaceable.cairo/replaceable.json"
+REPLACEABLE_ABI_PATH = f"{ARTIFACTS_PATH}/replaceable.cairo/replaceable_abi.json"
+REPLACING_CONTRACT_PATH = f"{ARTIFACTS_PATH}/replacing.cairo/replacing.json"
+REPLACING_ABI_PATH = f"{ARTIFACTS_PATH}/replacing.cairo/replacing_abi.json"
+
+# cairo 1.0
+ARTIFACTS_1_PATH = "test/artifacts/contracts/cairo1"
+CONTRACT_1_PATH = f"{ARTIFACTS_1_PATH}/contract.cairo/contract.json"
+CONTRACT_1_CASM_PATH = f"{ARTIFACTS_1_PATH}/contract.cairo/contract.casm"
+ABI_1_PATH = f"{ARTIFACTS_1_PATH}/contract.cairo/contract_abi.json"
 
 STARKNET_CLI_ACCOUNT_ABI_PATH = f"{ARTIFACTS_PATH}/starknet_cli_oz_account_abi.json"
 with open(STARKNET_CLI_ACCOUNT_ABI_PATH, "w", encoding="utf-8") as oz_account_abi_file:
@@ -29,14 +39,19 @@ BALANCE_KEY = (
 )
 
 EXPECTED_SALTY_DEPLOY_ADDRESS = (
-    "0x05b5c8722ce893e19fc813996e610f0699fbe9b6c685ce175e60d7cbdbb87fa1"
+    "0x002fa79baaf35f083c85518ab60ef037bad5c731dc39818522798b61ab3b5f57"
 )
 EXPECTED_SALTY_DEPLOY_HASH = (
-    "0x2e750343e63dc7ddf543c196c54018b4e5989acd413e6acafdae62ef2c3146d"
+    "0x697aaff4bc1e2ae682e20b5f4c4775bdc09b689d3f427c28d676e0ab60514ce"
 )
 
+# hash of contract at CONTRACT_PATH
 EXPECTED_CLASS_HASH = (
-    "0x71df7c871d389943e24aaaf85d41594266d12f2f9b580a9f92ba4a0bf763d67"
+    "0x5188a855a7ee2940b80d15b882358fb209d5b7d0b1558a6163858071a55148b"
+)
+# hash of contract at CONTRACT_1_PATH
+EXPECTED_CLASS_1_HASH = (
+    "0x7c93b555d40b18537ae7107aaa26dce3f8658337f5be3f563955fd24b623fec"
 )
 
 NONEXISTENT_TX_HASH = "0x99"

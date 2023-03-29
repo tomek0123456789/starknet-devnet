@@ -20,6 +20,7 @@ from .shared import (
     PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
 )
 from .util import (
+    assert_tx_status,
     call,
     deploy,
     devnet_in_background,
@@ -70,7 +71,11 @@ def flush():
 
 
 def assert_flush_response(
-    response, expected_from_l1, expected_from_l2, expected_l1_provider
+    response,
+    expected_from_l1,
+    expected_from_l2,
+    expected_l1_provider,
+    expected_generated_l2_transactions: int,
 ):
     """Asserts that the flush response is correct"""
 
@@ -112,6 +117,10 @@ def assert_flush_response(
         assert l2_message["from_address"] == expected_from_l2[i]["from_address"].lower()
         assert l2_message["to_address"] == expected_from_l2[i]["to_address"].lower()
         assert l2_message["payload"] == [hex(x) for x in expected_from_l2[i]["payload"]]
+
+    assert (
+        len(response["generated_l2_transactions"]) == expected_generated_l2_transactions
+    )
 
 
 def init_messaging_contract():
@@ -193,6 +202,7 @@ def _init_l2_contract(l1l2_example_contract_address: str):
             }
         ],
         expected_l1_provider=L1_URL,
+        expected_generated_l2_transactions=0,
     )
 
     # assert balance
@@ -218,11 +228,13 @@ def _l1_l2_message_exchange(web3, l1l2_example_contract, l2_contract_address):
     withdraw_amount = 1000
     web3_transact(
         web3,
-        "withdraw",
-        l1l2_example_contract,
-        int(l2_contract_address, base=16),
-        USER_ID,
-        withdraw_amount,
+        function_name="withdraw",
+        contract=l1l2_example_contract,
+        function_args=[
+            int(l2_contract_address, base=16),
+            USER_ID,
+            withdraw_amount,
+        ],
     )
 
     # Check if l2 to l1 message is included in transaction_receipts
@@ -255,11 +267,14 @@ def _l1_l2_message_exchange(web3, l1l2_example_contract, l2_contract_address):
     # deposit in l1 and assert contract balance
     web3_transact(
         web3,
-        "deposit",
-        l1l2_example_contract,
-        int(l2_contract_address, base=16),
-        USER_ID,
-        600,
+        function_name="deposit",
+        contract=l1l2_example_contract,
+        function_args=[
+            int(l2_contract_address, base=16),
+            USER_ID,
+            600,
+        ],
+        value=1,  # for now any message fee >0 is ok
     )
 
     balance = web3_call("userBalances", l1l2_example_contract, USER_ID)
@@ -283,7 +298,11 @@ def _l1_l2_message_exchange(web3, l1l2_example_contract, l2_contract_address):
         ],
         expected_from_l2=[],
         expected_l1_provider=L1_URL,
+        expected_generated_l2_transactions=1,
     )
+
+    generated_l2_transaction = flush_response["generated_l2_transactions"][0]
+    assert_tx_status(generated_l2_transaction, "ACCEPTED_ON_L2")
 
     # assert l2 contract balance
     l2_balance = call(
@@ -297,10 +316,13 @@ def _l1_l2_message_exchange(web3, l1l2_example_contract, l2_contract_address):
 
     # Check if last block contains L1_HANDLER transaction and event contains the correct balance
     latest_block = get_block(parse=True)
-    assert latest_block["transactions"][0]["type"] == "L1_HANDLER"
-    assert latest_block["transaction_receipts"][0]["events"][0]["data"][1] == hex(
-        int(l2_balance)
-    )
+
+    assert len(latest_block["transactions"]) == 1
+    l2_transaction = latest_block["transactions"][0]
+
+    assert l2_transaction["type"] == "L1_HANDLER"
+    latest_receipts = latest_block["transaction_receipts"]
+    assert latest_receipts[0]["events"][0]["data"][1] == hex(int(l2_balance))
 
 
 @pytest.mark.web3_messaging

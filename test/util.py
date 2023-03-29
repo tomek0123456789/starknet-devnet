@@ -14,8 +14,13 @@ import pytest
 import requests
 from starkware.starknet.cli.starknet_cli import get_salt
 from starkware.starknet.definitions.error_codes import StarknetErrorCode
+from starkware.starknet.definitions.general_config import StarknetChainId
 from starkware.starknet.definitions.transaction_type import TransactionType
-from starkware.starknet.services.api.contract_class import ContractClass
+from starkware.starknet.services.api.contract_class.contract_class import (
+    CompiledClass,
+    CompiledClassBase,
+    DeprecatedCompiledClass,
+)
 from starkware.starknet.services.api.gateway.transaction import Deploy
 
 from starknet_devnet.general_config import DEFAULT_GENERAL_CONFIG
@@ -250,7 +255,7 @@ def assert_transaction(
     if tx_type == "INVOKE_FUNCTION":
         invoke_transaction_keys = [
             "calldata",
-            "contract_address",
+            "sender_address",
             "max_fee",
             "signature",
             "transaction_hash",
@@ -321,6 +326,7 @@ def estimate_fee(
     nonce=None,
     block_number=None,
     block_hash=None,
+    chain_id=StarknetChainId.TESTNET,
     feeder_gateway_url=APP_URL,
 ):
     """Wrapper around starknet estimate_fee. Returns fee in wei."""
@@ -335,6 +341,8 @@ def estimate_fee(
         address,
         "--abi",
         abi_path,
+        "--chain_id",
+        hex(chain_id.value),
     ]
 
     if signature:
@@ -386,7 +394,7 @@ def load_contract_class(contract_path: str):
     """Loads the contract class from the contract path"""
     loaded_contract = load_json_from_path(contract_path)
 
-    return ContractClass.load(loaded_contract)
+    return DeprecatedCompiledClass.load(loaded_contract)
 
 
 def assert_tx_status(tx_hash, expected_tx_status: str, feeder_gateway_url=APP_URL):
@@ -395,6 +403,7 @@ def assert_tx_status(tx_hash, expected_tx_status: str, feeder_gateway_url=APP_UR
         ["tx_status", "--hash", tx_hash], gateway_url=feeder_gateway_url
     )
     response = json.loads(output.stdout)
+    assert "tx_status" in response
     tx_status = response["tx_status"]
     assert_equal(tx_status, expected_tx_status, response)
 
@@ -429,7 +438,7 @@ def assert_contract_code_not_present(address: str, feeder_gateway_url=APP_URL):
     assert resp.status_code == 200
 
 
-def assert_contract_class(actual_class: ContractClass, expected_class_path: str):
+def assert_contract_class(actual_class: CompiledClassBase, expected_class_path: str):
     """Asserts equality between `actual_class` and class at `expected_class_path`."""
 
     loaded_contract_class = load_contract_class(expected_class_path)
@@ -471,13 +480,13 @@ def get_transaction_receipt(tx_hash: str, feeder_gateway_url=APP_URL):
 
 def get_full_contract(
     contract_address: str, feeder_gateway_url=APP_URL
-) -> ContractClass:
+) -> CompiledClassBase:
     """Gets contract class by contract address"""
     output = run_starknet(
         ["get_full_contract", "--contract_address", contract_address],
         gateway_url=feeder_gateway_url,
     )
-    return ContractClass.loads(output.stdout)
+    return DeprecatedCompiledClass.loads(output.stdout)
 
 
 def assert_full_contract_not_present(address: str, feeder_gateway_url=APP_URL):
@@ -536,21 +545,55 @@ def get_class_by_hash(class_hash: str, feeder_gateway_url=APP_URL):
     )
 
 
+def get_compiled_class_by_class_hash(class_hash: str, feeder_gateway_url=APP_URL):
+    """Gets compiled class by sierra hash"""
+    return requests.get(
+        f"{feeder_gateway_url}/feeder_gateway/get_compiled_class_by_class_hash",
+        {"classHash": class_hash},
+    )
+
+
 def assert_class_by_hash(
     class_hash: str, expected_path: str, feeder_gateway_url=APP_URL
 ):
     """Assert the class at `class_hash` matches what is at `expected_path`."""
     resp = get_class_by_hash(class_hash, feeder_gateway_url=feeder_gateway_url)
-    class_by_hash = ContractClass.loads(resp.text)
+    assert resp.status_code == 200, resp.text
+    class_by_hash = DeprecatedCompiledClass.loads(resp.text).remove_debug_info()
     assert_contract_class(class_by_hash, expected_class_path=expected_path)
-    assert resp.status_code == 200
+
+
+def assert_compiled_class_by_hash(
+    class_hash: str,
+    expected_path: str,
+    feeder_gateway_url=APP_URL,
+):
+    """Assert the compiled class at `class_hash` matches what is at `expected_path`."""
+    resp = get_compiled_class_by_class_hash(
+        class_hash, feeder_gateway_url=feeder_gateway_url
+    )
+    assert resp.status_code == 200, resp.text
+    retrieved_class = CompiledClass.loads(resp.text)
+    with open(expected_path, encoding="utf-8") as expected_file:
+        class_from_disk = CompiledClass.loads(expected_file.read())
+
+    assert retrieved_class == class_from_disk
 
 
 def assert_class_by_hash_not_present(class_hash: str, feeder_gateway_url=APP_URL):
     """Assert the server holds no class at provided `class_hash`."""
     resp = get_class_by_hash(class_hash, feeder_gateway_url=feeder_gateway_url)
-    assert resp.json()["code"] == str(StarknetErrorCode.UNDECLARED_CLASS)
-    assert resp.status_code == 500
+    assert_undeclared_class(resp)
+
+
+def assert_compiled_class_by_hash_not_present(
+    class_hash: str, feeder_gateway_url=APP_URL
+):
+    """Assert the server holds no compiled class corresponding to the provided `class_hash`."""
+    resp = get_compiled_class_by_class_hash(
+        class_hash, feeder_gateway_url=feeder_gateway_url
+    )
+    assert_undeclared_class(resp)
 
 
 def assert_receipt(tx_hash, expected_path):
@@ -756,3 +799,11 @@ def set_time(time_s):
         assert set_time_response.json().get("block_timestamp") == time_s
 
     return set_time_response
+
+
+def assert_undeclared_class(resp=requests.Response):
+    """Assert that the provided response indicates a failure due to an undeclared class"""
+    assert resp.status_code == 500, resp.json()
+    resp_body = resp.json()
+    assert "code" in resp_body
+    assert resp_body["code"] == str(StarknetErrorCode.UNDECLARED_CLASS)

@@ -5,12 +5,13 @@ Utility functions used across the project.
 import os
 import sys
 from dataclasses import dataclass
-from typing import Dict, List, Set, Union
+from typing import Dict, List, Set, Tuple
 
 from starkware.starknet.business_logic.state.state import CachedState
 from starkware.starknet.definitions.error_codes import StarknetErrorCode
 from starkware.starknet.services.api.feeder_gateway.response_objects import (
-    DeployedContract,
+    ClassHashPair,
+    ContractAddressHashPair,
     FeeEstimationInfo,
     StorageEntry,
 )
@@ -22,7 +23,7 @@ def parse_hex_string(arg: str) -> int:
     """
     Converts the argument to an integer only if it starts with `0x`.
     """
-    if arg.startswith("0x"):
+    if isinstance(arg, str) and arg.startswith("0x"):
         try:
             return int(arg, 16)
         except ValueError:
@@ -74,6 +75,16 @@ class StarknetDevnetException(StarkException):
         self.status_code = status_code
 
 
+class UndeclaredClassDevnetException(StarknetDevnetException):
+    """Exception raised when Devnet has to return an undeclared class"""
+
+    def __init__(self, class_hash: int):
+        super().__init__(
+            code=StarknetErrorCode.UNDECLARED_CLASS,
+            message=f"Class with hash {class_hash:#x} is not declared.",
+        )
+
+
 def enable_pickling():
     """
     Extends the `StarknetContract` class to enable pickling.
@@ -87,14 +98,6 @@ def enable_pickling():
 
     StarknetContract.__getstate__ = contract_getstate
     StarknetContract.__setstate__ = contract_setstate
-
-
-def to_bytes(value: Union[int, bytes]) -> bytes:
-    """
-    If int, convert to 32-byte big-endian bytes instance
-    If bytes, return the received value
-    """
-    return value if isinstance(value, bytes) else value.to_bytes(32, "big")
 
 
 def check_valid_dump_path(dump_path: str):
@@ -115,20 +118,67 @@ def str_to_felt(text: str) -> int:
     return int.from_bytes(bytes(text, "ascii"), "big")
 
 
-async def get_all_declared_contracts(
+async def group_classes_by_version(
+    contracts: List[ContractAddressHashPair], state: CachedState
+) -> Tuple[List[int], List[ContractAddressHashPair]]:
+    """Group into two lists: cairo0 contracts and  cairo1 contracts"""
+    cairo0_classes: List[int] = []
+    cairo1_classes: List[ContractAddressHashPair] = []
+    for contract in contracts:
+        compiled_class_hash = await state.get_compiled_class_hash(contract.class_hash)
+        if compiled_class_hash == 0:
+            cairo0_classes.append(contract.class_hash)
+        else:
+            class_hash_pair = ClassHashPair(contract.class_hash, compiled_class_hash)
+            cairo1_classes.append(class_hash_pair)
+    return cairo0_classes, cairo1_classes
+
+
+async def get_all_declared_cairo0_classes(
     previous_state: CachedState,
     explicitly_declared_contracts: List[int],
-    deployed_contracts: List[DeployedContract],
-):
-    """Returns a tuple of explicitly and implicitly declared classes"""
+    deployed_cairo0_classes: List[int],
+) -> Tuple[int]:
+    """Returns a tuple of explicitly and implicitly declared cairo0 classes"""
     declared_contracts_set = set(explicitly_declared_contracts)
-    for deployed_contract in deployed_contracts:
-        class_hash_bytes = to_bytes(deployed_contract.class_hash)
+    for deployed_contract in deployed_cairo0_classes:
         try:
-            await previous_state.get_contract_class(class_hash_bytes)
+            await previous_state.get_compiled_class_by_class_hash(deployed_contract)
         except StarkException:
-            declared_contracts_set.add(deployed_contract.class_hash)
+            declared_contracts_set.add(deployed_contract)
     return tuple(declared_contracts_set)
+
+
+async def get_all_declared_cairo1_classes(
+    previous_state: CachedState,
+    explicitly_declared_classes: List[ClassHashPair],
+    deployed_cairo1_contracts: List[ContractAddressHashPair],
+) -> List[ClassHashPair]:
+    """Returns a list of explicitly and implicitly declared cairo1 classes"""
+    declared_classes_set = set(explicitly_declared_classes)
+    for deployed_contract in deployed_cairo1_contracts:
+        try:
+            await previous_state.get_compiled_class_by_class_hash(
+                deployed_contract.class_hash
+            )
+        except StarkException:
+            declared_classes_set.add(deployed_contract.class_hash)
+    return list(declared_classes_set)
+
+
+async def get_replaced_classes(
+    previous_state: CachedState,
+    current_state: CachedState,
+) -> List[ContractAddressHashPair]:
+    """Find contracts whose class has been replaced"""
+    replaced: List[ContractAddressHashPair] = []
+    for address, class_hash in current_state.cache.address_to_class_hash.items():
+        previous_class_hash = await previous_state.get_class_hash_at(address)
+        if previous_class_hash and previous_class_hash != class_hash:
+            replaced.append(
+                ContractAddressHashPair(address=address, class_hash=class_hash)
+            )
+    return replaced
 
 
 async def get_storage_diffs(
@@ -155,6 +205,24 @@ async def get_storage_diffs(
             )
 
     return storage_diffs
+
+
+async def assert_not_declared(class_hash: int, compiled_class_hash: int):
+    """Assert class is not declared"""
+    if compiled_class_hash != 0:
+        raise StarknetDevnetException(
+            code=StarknetErrorCode.CLASS_ALREADY_DECLARED,
+            message=f"Class with hash {hex(class_hash)} is already declared.\n {hex(compiled_class_hash)} != 0",
+        )
+
+
+def assert_recompiled_class_hash(recompiled: int, expected: int):
+    """Assert the class hashes match"""
+    if recompiled != expected:
+        raise StarknetDevnetException(
+            code=StarknetErrorCode.INVALID_COMPILED_CLASS_HASH,
+            message=f"Compiled class hash not matching; received: {hex(expected)}, computed: {hex(recompiled)}",
+        )
 
 
 def get_fee_estimation_info(tx_fee: int, gas_price: int):

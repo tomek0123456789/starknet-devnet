@@ -18,11 +18,11 @@ _RUST_VM_LOG_LINE = "Using Cairo VM: Rust"
     [
         ("", False),
         ("python", False),
-        ("rust", True),
+        # ("rust", True),
     ],
 )
 def test_valid_cairo_vm(cairo_vm, assert_rust_vm_logged):
-    """Test if the invalid chain id fails"""
+    """Test valid cairo vm options"""
 
     env_copy = os.environ.copy()
     env_copy[_VM_VAR] = cairo_vm
@@ -37,6 +37,26 @@ def test_valid_cairo_vm(cairo_vm, assert_rust_vm_logged):
         assert _RUST_VM_LOG_LINE not in stderr
 
     assert proc.returncode == 0
+
+
+# TMP: rust vm
+def test_rust_vm_temporarily_unavailable():
+    """
+    Temporarily test that rust vm is unavailable.
+    When deleting this test-case, uncomment the rust case in test_valid_cairo_vm
+    """
+
+    env_copy = os.environ.copy()
+    env_copy[_VM_VAR] = "rust"
+
+    proc = ACTIVE_DEVNET.start(stderr=subprocess.PIPE, env=env_copy)
+    terminate_and_wait(proc)
+
+    stderr = proc.stderr.read().decode("utf-8")
+    assert _RUST_VM_LOG_LINE not in stderr
+    assert "Rust Cairo VM is temporarily not available" in stderr
+
+    assert proc.returncode == 1
 
 
 def test_passing_if_no_cairo_vm_set():

@@ -7,18 +7,24 @@ from typing import List, Tuple
 
 import requests
 from starkware.crypto.signature.signature import private_to_stark_key, sign
+from starkware.starknet.cli.starknet_cli import get_salt
+from starkware.starknet.core.os.contract_address.contract_address import (
+    calculate_contract_address_from_hash,
+)
 from starkware.starknet.core.os.transaction_hash.transaction_hash import (
     calculate_declare_transaction_hash,
+    calculate_deprecated_declare_transaction_hash,
 )
 from starkware.starknet.definitions.constants import QUERY_VERSION
 from starkware.starknet.definitions.general_config import StarknetChainId
+from starkware.starknet.services.api.gateway.transaction import ContractClass, Declare
 
 from starknet_devnet.account_util import AccountCall, get_execute_args
 
 from .settings import APP_URL
-from .shared import SUPPORTED_TX_VERSION
+from .shared import EXPECTED_UDC_ADDRESS, SUPPORTED_TX_VERSION
+from .util import deploy as deploy_contract
 from .util import (
-    deploy,
     estimate_fee,
     extract_class_hash,
     extract_tx_hash,
@@ -39,7 +45,7 @@ PUBLIC_KEY = private_to_stark_key(PRIVATE_KEY)
 
 def deploy_account_contract(salt=None):
     """Deploy account contract."""
-    return deploy(ACCOUNT_PATH, inputs=[str(PUBLIC_KEY)], salt=salt)
+    return deploy_contract(ACCOUNT_PATH, inputs=[str(PUBLIC_KEY)], salt=salt)
 
 
 def get_nonce(account_address: str, feeder_gateway_url=APP_URL) -> int:
@@ -126,6 +132,7 @@ def get_estimated_fee(
         nonce=nonce,
         block_number=block_number,
         feeder_gateway_url=feeder_gateway_url,
+        chain_id=chain_id,
     )
 
 
@@ -179,6 +186,8 @@ def invoke(
             *signature,
             "--max_fee",
             str(max_fee),
+            "--chain_id",
+            hex(chain_id.value),
         ],
         gateway_url=gateway_url,
     )
@@ -193,13 +202,14 @@ def declare(
     private_key: str,
     nonce: int = None,
     max_fee: int = 0,
+    chain_id=StarknetChainId.TESTNET,
 ):
     """Wrapper around starknet declare"""
 
     if nonce is None:
         nonce = get_nonce(account_address)
 
-    tx_hash = calculate_declare_transaction_hash(
+    tx_hash = calculate_deprecated_declare_transaction_hash(
         contract_class=load_contract_class(contract_path),
         chain_id=StarknetChainId.TESTNET.value,
         sender_address=int(account_address, 16),
@@ -212,6 +222,7 @@ def declare(
     output = run_starknet(
         [
             "declare",
+            "--deprecated",
             "--contract",
             contract_path,
             "--signature",
@@ -220,9 +231,95 @@ def declare(
             account_address,
             "--max_fee",
             str(max_fee),
+            "--chain_id",
+            hex(chain_id.value),
         ]
     )
     return {
         "tx_hash": extract_tx_hash(output.stdout),
         "class_hash": extract_class_hash(output.stdout),
     }
+
+
+def deploy(
+    class_hash: str,
+    account_address: str,
+    private_key: int,
+    inputs=None,
+    salt=None,
+    unique=False,
+    max_fee=None,
+    gateway_url=APP_URL,
+):
+    """Wrapper around starknet deploy"""
+
+    ctor_args = [int(val, 0) for val in inputs or []]
+    salt = get_salt(salt)
+
+    invoke_tx_hash = invoke(
+        calls=[
+            (
+                EXPECTED_UDC_ADDRESS,
+                "deployContract",
+                [
+                    int(class_hash, 16),
+                    salt,
+                    int(unique),
+                    len(ctor_args),
+                    *ctor_args,
+                ],
+            )
+        ],
+        account_address=account_address,
+        private_key=private_key,
+        max_fee=max_fee,
+        gateway_url=gateway_url,
+    )
+
+    contract_address = calculate_contract_address_from_hash(
+        salt=salt,
+        class_hash=int(class_hash, 16),
+        constructor_calldata=ctor_args,
+        deployer_address=0 if not unique else int(account_address, 16),
+    )
+    contract_address = hex(contract_address)
+
+    return {
+        "tx_hash": invoke_tx_hash,
+        "address": contract_address,
+    }
+
+
+def send_declare_v2(
+    contract_class: ContractClass,
+    compiled_class_hash: int,
+    sender_address: str,
+    sender_key: int,
+):
+    """Send a declare v2 transaction"""
+    max_fee = int(1e18)  # should be enough
+    version = 2
+    nonce = get_nonce(sender_address)
+    chain_id = StarknetChainId.TESTNET.value
+    hash_value = calculate_declare_transaction_hash(
+        contract_class=contract_class,
+        compiled_class_hash=compiled_class_hash,
+        sender_address=int(sender_address, 16),
+        max_fee=max_fee,
+        version=version,
+        nonce=nonce,
+        chain_id=chain_id,
+    )
+
+    declaration_body = Declare(
+        contract_class=contract_class,
+        compiled_class_hash=compiled_class_hash,
+        sender_address=int(sender_address, 16),
+        version=version,
+        max_fee=max_fee,
+        signature=list(sign(msg_hash=hash_value, priv_key=sender_key)),
+        nonce=nonce,
+    ).dump()
+    declaration_body["type"] = "DECLARE"
+
+    return requests.post(f"{APP_URL}/gateway/add_transaction", json=declaration_body)

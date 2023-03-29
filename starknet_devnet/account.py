@@ -9,7 +9,7 @@ from starkware.starknet.public.abi import get_selector_from_name
 from starkware.starknet.testing.starknet import Starknet
 
 from starknet_devnet.account_util import set_balance
-from starknet_devnet.contract_class_wrapper import ContractClassWrapper
+from starknet_devnet.contract_class_wrapper import CompiledClassWrapper
 from starknet_devnet.predeployed_contract_wrapper import PredeployedContractWrapper
 
 
@@ -23,13 +23,13 @@ class Account(PredeployedContractWrapper):
         private_key: int,
         public_key: int,
         initial_balance: int,
-        account_class_wrapper: ContractClassWrapper,
+        account_class_wrapper: CompiledClassWrapper,
     ):
         self.starknet_wrapper = starknet_wrapper
         self.private_key = private_key
         self.public_key = public_key
         self.contract_class = account_class_wrapper.contract_class
-        self.class_hash_bytes = account_class_wrapper.hash_bytes
+        self.class_hash = account_class_wrapper.hash
 
         # salt and class_hash have frozen values that make the constructor_calldata
         # the only thing that affects the account address

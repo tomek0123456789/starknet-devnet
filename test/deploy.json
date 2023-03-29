@@ -43,5 +43,6 @@
         }
     },
     "contract_address_salt": "0x1",
+    "version": "0x0",
     "type": "DEPLOY"
 }

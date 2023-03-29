@@ -4,6 +4,8 @@ Test genesis block
 
 import pytest
 
+from starknet_devnet.constants import STARKNET_CLI_ACCOUNT_CLASS_HASH
+
 from .util import get_block
 
 FEE_TOKEN_CLASS_HASH = (
@@ -12,9 +14,6 @@ FEE_TOKEN_CLASS_HASH = (
 UDC_CLASS_HASH = "0x7b3e05f48f0c69e4a65ce5e076a66271a527aff2c34ce1083ec6e1526997a69"
 CHARGEABLE_ACCOUNT_CLASS_HASH = (
     "0x4d07e40e93398ed3c76981e72dd1fd22557a78ce36c0515f679e27f0bb5bc5f"
-)
-STARKNET_CLI_ACCOUNT_CLASS_HASH = (
-    "0x6f500f527355dfdb8093c7fe46e6f73c96a867392b49fa4157a757538928539"
 )
 
 
@@ -59,7 +58,7 @@ def test_genesis_block_transactions(last_tx_hash):
             FEE_TOKEN_CLASS_HASH,
             UDC_CLASS_HASH,
             CHARGEABLE_ACCOUNT_CLASS_HASH,
-            STARKNET_CLI_ACCOUNT_CLASS_HASH,
+            hex(STARKNET_CLI_ACCOUNT_CLASS_HASH),
         ]
     )
     assert declared == expected_declared

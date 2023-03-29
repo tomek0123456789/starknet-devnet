@@ -1,10 +1,6 @@
 """Constants used across the project."""
 
-try:
-    from importlib_metadata import version
-except ImportError:
-    # >= py 3.8
-    from importlib.metadata import version
+from importlib.metadata import version
 
 CAIRO_LANG_VERSION = version("cairo-lang")
 TIMEOUT_FOR_WEB3_REQUESTS = 120  # seconds
@@ -30,7 +26,12 @@ OLD_SUPPORTED_VERSIONS = [0]
 
 # account used by Starknet CLI
 STARKNET_CLI_ACCOUNT_CLASS_HASH = (
-    0x6F500F527355DFDB8093C7FE46E6F73C96A867392B49FA4157A757538928539
+    0x6F3EC04229F8F9663EE7D5BB9D2E06F213BA8C20EB34C58C25A54EF8FC591CB
+)
+
+# starkware.starknet.public.abi.get_selector_from_name("replace_class")
+REPLACE_CLASS_SELECTOR = (
+    0x217DF192877EED2921E241046523F8D8DA7981F0A3DDAFE0E7517F6523276D2
 )
 
 LEGACY_RPC_TX_VERSION = 0

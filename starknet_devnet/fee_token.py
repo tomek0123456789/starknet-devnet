@@ -2,10 +2,13 @@
 Fee token and its predefined constants.
 """
 
-from starkware.python.utils import to_bytes
 from starkware.solidity.utils import load_nearby_contract
+from starkware.starknet.business_logic.transaction.objects import InternalInvokeFunction
 from starkware.starknet.compiler.compile import get_selector_from_name
-from starkware.starknet.services.api.contract_class import ContractClass
+from starkware.starknet.services.api.contract_class.contract_class import (
+    CompiledClassBase,
+    DeprecatedCompiledClass,
+)
 from starkware.starknet.services.api.gateway.transaction import InvokeFunction
 from starkware.starknet.testing.starknet import Starknet
 
@@ -13,19 +16,17 @@ from starknet_devnet.account_util import get_execute_args
 from starknet_devnet.chargeable_account import ChargeableAccount
 from starknet_devnet.constants import SUPPORTED_TX_VERSION
 from starknet_devnet.predeployed_contract_wrapper import PredeployedContractWrapper
-from starknet_devnet.sequencer_api_utils import InternalInvokeFunction
 from starknet_devnet.util import Uint256, str_to_felt
 
 
 class FeeToken(PredeployedContractWrapper):
     """Wrapper of token for charging fees."""
 
-    CONTRACT_CLASS: ContractClass = None  # loaded lazily
+    CONTRACT_CLASS: CompiledClassBase = None  # loaded lazily
 
     # Precalculated
-    # HASH = to_bytes(compute_class_hash(contract_class=FeeToken.get_contract_class()))
+    # HASH = compute_deprecated_class_hash(contract_class=FeeToken.get_contract_class())
     HASH = 0x6A22BF63C7BC07EFFA39A25DFBD21523D211DB0100A0AFD054D172B81840EAF
-    HASH_BYTES = to_bytes(HASH)
 
     # Taken from
     # https://github.com/starknet-community-libs/starknet-addresses/blob/df19b17d2c83f11c30e65e2373e8a0c65446f17c/bridged_tokens/goerli.json
@@ -36,19 +37,19 @@ class FeeToken(PredeployedContractWrapper):
     def __init__(self, starknet_wrapper):
         self.starknet_wrapper = starknet_wrapper
         self.address = self.ADDRESS
-        self.class_hash_bytes = self.HASH_BYTES
+        self.class_hash = self.HASH
 
     @classmethod
-    def get_contract_class(cls):
+    def get_contract_class(cls) -> CompiledClassBase:
         """Returns contract class via lazy loading."""
         if not cls.CONTRACT_CLASS:
-            cls.CONTRACT_CLASS = ContractClass.load(
+            cls.CONTRACT_CLASS = DeprecatedCompiledClass.load(
                 load_nearby_contract("ERC20_Mintable_OZ_0.2.0")
             )
         return cls.CONTRACT_CLASS
 
     @property
-    def contract_class(self) -> ContractClass:
+    def contract_class(self) -> DeprecatedCompiledClass:
         """Same as `get_contract_class`, used by `PredeployedContractWrapper` parent"""
         return self.get_contract_class()
 

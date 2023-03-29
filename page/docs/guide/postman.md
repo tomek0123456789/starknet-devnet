@@ -35,7 +35,7 @@ Goes through the newly enqueued messages, sending them from L1 to L2 and from L2
 
 ### Postman - disclaimer
 
-This method of L1 <-> L2 communication testing differs from Starknet Alpha networks. Taking the [**L1 L2 Example .sol**](https://www.cairo-lang.org/docs/_static/L1L2Example.sol) contract in the [**starknet documentation**](https://www.cairo-lang.org/docs/hello_starknet/l1l2.html) :
+This method of L1 <-> L2 communication testing differs from Starknet Alpha networks. Taking the [**L1L2Example.sol**](https://www.cairo-lang.org/docs/_static/L1L2Example.sol) contract from the [**Starknet documentation**](https://www.cairo-lang.org/docs/hello_starknet/l1l2.html):
 
 ```
 constructor(IStarknetCore starknetCore_) public {

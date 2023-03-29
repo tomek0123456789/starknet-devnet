@@ -36,7 +36,7 @@ class Accounts:
         ):
             self.__print()
 
-    def __getitem__(self, index):
+    def __getitem__(self, index) -> Account:
         return self.list[index]
 
     async def deploy(self):

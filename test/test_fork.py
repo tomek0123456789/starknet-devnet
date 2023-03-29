@@ -13,7 +13,7 @@ from .settings import APP_URL, HOST, bind_free_port
 from .shared import (
     ABI_PATH,
     ALPHA_GOERLI2_URL,
-    ALPHA_MAINNET_URL,
+    ALPHA_GOERLI_URL,
     CONTRACT_PATH,
     PREDEPLOY_ACCOUNT_CLI_ARGS,
     PREDEPLOYED_ACCOUNT_ADDRESS,
@@ -237,8 +237,9 @@ def test_forking_testnet_from_valid_block():
     "run_devnet_in_background, origin_url",
     [
         (
-            [*PREDEPLOY_ACCOUNT_CLI_ARGS, "--fork-network", "alpha-mainnet"],
-            ALPHA_MAINNET_URL,
+            # Used to be a mainnet test, but it's a problem if mainnet hasn't been updated
+            [*PREDEPLOY_ACCOUNT_CLI_ARGS, "--fork-network", "alpha-goerli"],
+            ALPHA_GOERLI_URL,
         ),
         ([*TESTNET_FORK_PARAMS], TESTNET_URL),
     ],

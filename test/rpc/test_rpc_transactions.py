@@ -27,7 +27,7 @@ from typing import List
 
 import pytest
 from starkware.starknet.core.os.transaction_hash.transaction_hash import (
-    calculate_declare_transaction_hash,
+    calculate_deprecated_declare_transaction_hash,
 )
 from starkware.starknet.definitions.general_config import (
     DEFAULT_CHAIN_ID,
@@ -549,7 +549,7 @@ def test_add_declare_transaction(declare_content):
     )
 
     nonce = get_nonce(PREDEPLOYED_ACCOUNT_ADDRESS)
-    tx_hash = calculate_declare_transaction_hash(
+    tx_hash = calculate_deprecated_declare_transaction_hash(
         contract_class=load_contract_class(CONTRACT_PATH),
         chain_id=StarknetChainId.TESTNET.value,
         sender_address=int(PREDEPLOYED_ACCOUNT_ADDRESS, 16),
@@ -754,7 +754,7 @@ def test_add_deploy_account_transaction(deploy_account_details):
         contract_address=int(contract_address, 16),
         selector=get_selector_from_name("increase_balance"),
         calldata=[10, 20],
-        chain_id=DEFAULT_CHAIN_ID.value,
+        chain_id=DEFAULT_CHAIN_ID,
         max_fee=int(1e18),
         version=SUPPORTED_RPC_TX_VERSION,
         nonce=1,

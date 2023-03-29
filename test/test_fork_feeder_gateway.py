@@ -34,6 +34,7 @@ from .util import (
     assert_class_by_hash,
     assert_class_by_hash_not_present,
     assert_class_hash_at_address,
+    assert_compiled_class_by_hash_not_present,
     assert_contract_code_not_present,
     assert_contract_code_present,
     assert_full_contract,
@@ -51,10 +52,10 @@ from .util import (
 
 DEPLOYMENT_INPUT = "10"
 EXPECTED_DEPLOYMENT_ADDRESS = (
-    "0x0737ae2bc29753c32794143d098d87f2f96bdcbb9acd83969318522af90e4ebe"
+    "0x0122ab9601964393400c68fee98f80f8f194c86a8c966b57418bcdc59fd53434"
 )
 EXPECTED_INVOKE_HASH = (
-    "0x51b501687e77d5433c7fc00b3a6dd25c2f6edf95f506dd9cba2251a4ce9ed43"
+    "0x54dd317f451041c1d4f138538ee665bff505dbeeec575902122014b60d0ce06"
 )
 
 
@@ -179,6 +180,12 @@ def test_declare_and_get_class_by_hash():
     assert_class_by_hash_not_present(
         class_hash=EXPECTED_CLASS_HASH, feeder_gateway_url=APP_URL
     )
+    assert_compiled_class_by_hash_not_present(
+        class_hash=EXPECTED_CLASS_HASH, feeder_gateway_url=TESTNET_URL
+    )
+    assert_compiled_class_by_hash_not_present(
+        class_hash=EXPECTED_CLASS_HASH, feeder_gateway_url=APP_URL
+    )
 
     declare_info = declare(
         contract_path=CONTRACT_PATH,
@@ -195,6 +202,13 @@ def test_declare_and_get_class_by_hash():
     assert_class_by_hash(
         class_hash=EXPECTED_CLASS_HASH,
         expected_path=CONTRACT_PATH,
+        feeder_gateway_url=APP_URL,
+    )
+    assert_compiled_class_by_hash_not_present(
+        class_hash=EXPECTED_CLASS_HASH, feeder_gateway_url=TESTNET_URL
+    )
+    assert_compiled_class_by_hash_not_present(
+        class_hash=EXPECTED_CLASS_HASH,
         feeder_gateway_url=APP_URL,
     )
 

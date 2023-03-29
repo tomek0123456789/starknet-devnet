@@ -5,6 +5,7 @@ import asyncio
 import contextlib
 import json
 import os
+import subprocess
 import sys
 from enum import Enum, auto
 from typing import List
@@ -12,10 +13,13 @@ from typing import List
 from aiohttp.client_exceptions import ClientConnectorError, InvalidURL
 from marshmallow.exceptions import ValidationError
 from services.external_api.client import BadRequest, RetryConfig
-from starkware.python.utils import to_bytes
-from starkware.starknet.core.os.class_hash import compute_class_hash
+from starkware.starknet.core.os.contract_class.deprecated_class_hash import (
+    compute_deprecated_class_hash,
+)
 from starkware.starknet.definitions.general_config import StarknetChainId
-from starkware.starknet.services.api.contract_class import ContractClass
+from starkware.starknet.services.api.contract_class.contract_class import (
+    DeprecatedCompiledClass,
+)
 from starkware.starknet.services.api.feeder_gateway.feeder_gateway_client import (
     FeederGatewayClient,
 )
@@ -30,9 +34,9 @@ from .constants import (
     DEFAULT_TIMEOUT,
 )
 from .contract_class_wrapper import (
-    DEFAULT_ACCOUNT_HASH_BYTES,
+    DEFAULT_ACCOUNT_HASH,
     DEFAULT_ACCOUNT_PATH,
-    ContractClassWrapper,
+    CompiledClassWrapper,
 )
 
 NETWORK_TO_URL = {
@@ -103,7 +107,7 @@ def _parse_dump_on(option: str):
 EXPECTED_ACCOUNT_METHODS = ["__execute__", "__validate__", "__validate_declare__"]
 
 
-def _parse_account_class(class_path: str) -> ContractClassWrapper:
+def _parse_account_class(class_path: str) -> CompiledClassWrapper:
     """Parse account class"""
     class_path = os.path.abspath(class_path)
 
@@ -117,12 +121,12 @@ def _parse_account_class(class_path: str) -> ContractClassWrapper:
             sys.exit(f"Error: {class_path} is not a valid JSON file")
 
     try:
-        contract_class = ContractClass.load(loaded_dict)
+        contract_class = DeprecatedCompiledClass.load(loaded_dict)
     except ValidationError:
         sys.exit(f"Error: {class_path} is not a valid contract class artifact")
 
     if class_path == DEFAULT_ACCOUNT_PATH:
-        class_hash_bytes = DEFAULT_ACCOUNT_HASH_BYTES
+        class_hash = DEFAULT_ACCOUNT_HASH
     else:
         contract_methods = [entry["name"] for entry in contract_class.abi]
         missing_methods = [
@@ -132,9 +136,9 @@ def _parse_account_class(class_path: str) -> ContractClassWrapper:
             sys.exit(
                 f"Error: {class_path} is missing account methods: {', '.join(missing_methods)}"
             )
-        class_hash_bytes = to_bytes(compute_class_hash(contract_class))
+        class_hash = compute_deprecated_class_hash(contract_class)
 
-    return ContractClassWrapper(contract_class, class_hash_bytes)
+    return CompiledClassWrapper(contract_class, class_hash)
 
 
 def _get_feeder_gateway_client(url: str, block_id: str, n_retries: int = 1):
@@ -204,6 +208,33 @@ class PositiveAction(argparse.Action):
             parser.error(error_msg)
 
         setattr(namespace, self.dest, value)
+
+
+def _parse_cairo_compiler_manifest(manifest_path: str):
+    """Assert user machine can compile with cairo 1"""
+    check = subprocess.run(
+        [
+            "cargo",
+            "run",
+            "--bin",
+            "starknet-compile",
+            "--manifest-path",
+            manifest_path,
+            "--",
+            "--version",
+        ],
+        check=False,
+        capture_output=True,
+    )
+
+    if check.returncode:
+        stderr_content = check.stderr.decode("utf-8")
+        sys.exit(f"Cairo compiler error: {stderr_content}")
+
+    version_used = check.stdout.decode("utf-8")
+    print(f"Using cairo compiler: {version_used}")
+
+    return manifest_path
 
 
 def parse_args(raw_args: List[str]):
@@ -343,6 +374,12 @@ def parse_args(raw_args: List[str]):
         action="store_true",
         help="Disable RPC schema validation for devnet responses",
     )
+    parser.add_argument(
+        "--cairo-compiler-manifest",
+        type=_parse_cairo_compiler_manifest,
+        help="Specify the path to the manifest (Cargo.toml) of the Cairo 1.0 compiler to be used for contract recompilation; "
+        "if omitted, the default x86-compatible compiler (from cairo-lang package) is used",
+    )
 
     parsed_args = parser.parse_args(raw_args)
     if parsed_args.dump_on and not parsed_args.dump_path:
@@ -383,3 +420,4 @@ class DevnetConfig:
         self.chain_id = self.args.chain_id
         self.validate_rpc_requests = not self.args.disable_rpc_request_validation
         self.validate_rpc_responses = not self.args.disable_rpc_response_validation
+        self.cairo_compiler_manifest = self.args.cairo_compiler_manifest
