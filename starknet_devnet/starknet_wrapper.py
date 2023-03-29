@@ -65,7 +65,7 @@ from starkware.starknet.services.utils.sequencer_api_utils import (
     InternalInvokeFunctionForSimulate,
 )
 from starkware.starknet.testing.objects import FunctionInvocation
-from starkware.starknet.testing.starknet import Starknet
+from starkware.starknet.testing.starknet import Starknet, StarknetState
 from starkware.starknet.third_party.open_zeppelin.starknet_contracts import (
     account_contract as oz_account_class,
 )
@@ -133,18 +133,18 @@ class StarknetWrapper:
         """Origin chain that this devnet was forked from."""
 
         self.block_info_generator = BlockInfoGenerator()
-        self.blocks = None
+        self.blocks: DevnetBlocks = None
         self.config = config
         self.l1l2 = DevnetL1L2()
         self.transactions = DevnetTransactions(self.origin)
         self.starknet: Starknet = None
-        self.__current_cached_state = None
+        self.__current_cached_state: CachedState
         self.__initialized = False
         self.fee_token = FeeToken(self)
         self.accounts = Accounts(self)
         self.__udc = UDC(self)
         self.pending_txs: List[DevnetTransaction] = []
-        self.__latest_state = None
+        self.__latest_state: StarknetState = None
         self._contract_classes: Dict[int, Union[DeprecatedCompiledClass, ContractClass]]
         """If v2 - store sierra, otherwise store old class; needed for get_class_by_hash"""
 
@@ -864,7 +864,7 @@ class StarknetWrapper:
         external_tx: InvokeFunction,
         skip_validate: bool,
         block_id: BlockId = DEFAULT_BLOCK_ID,
-    ):
+    ) -> Tuple[list, list]:
         """Calculates trace and fee by simulating tx on state copy."""
         traces, fees = await self.calculate_traces_and_fees(
             [external_tx], skip_validate=skip_validate, block_id=block_id

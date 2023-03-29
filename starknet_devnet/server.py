@@ -131,11 +131,12 @@ def api():
     """Return available endpoints."""
     routes = {}
     for url in app.url_map.iter_rules():
+        doc = app.view_functions[url.endpoint].__doc__ or ""
         if url.endpoint != "static":
             routes[url.rule] = {
                 "functionName": url.endpoint,
-                "methods": list(url.methods),
-                "doc": app.view_functions[url.endpoint].__doc__.strip(),
+                "methods": list(url.methods or []),
+                "doc": doc.strip(),
             }
     return jsonify(routes)
 

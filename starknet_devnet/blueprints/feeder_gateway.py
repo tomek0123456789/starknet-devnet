@@ -2,7 +2,7 @@
 Feeder gateway routes.
 """
 
-from typing import Type
+from typing import Tuple, Type
 
 from flask import Blueprint, Response, jsonify, request
 from marshmallow import ValidationError
@@ -61,7 +61,7 @@ def validate_int(request_args: MultiDict, attribute: str):
         ) from err
 
 
-def _extract_raw_block_arguments(args: MultiDict):
+def _extract_raw_block_arguments(args: MultiDict) -> Tuple[str, str]:
     block_hash = args.get("blockHash")
     block_number = args.get("blockNumber")
 
@@ -139,6 +139,38 @@ def _get_skip_validate(args: MultiDict) -> bool:
     )
 
 
+def _get_transaction_hash(args: MultiDict) -> str:
+    # TODO test this
+    tx_hash = args.get("transactionHash")
+    # Transaction hash should be a hexadecimal string starting with 0x; got: None
+    return tx_hash
+
+
+def _get_contract_address(args: MultiDict) -> int:
+    # TODO test this
+    raw_contract_address = args.get("contractAddress")
+    if raw_contract_address is None:
+        raise StarknetDevnetException(
+            code=StarkErrorCode.MALFORMED_REQUEST,
+            message="Key not found: 'contractAddress'",
+        )
+    return parse_hex_string(raw_contract_address)
+
+
+def _get_class_hash(args: MultiDict) -> int:
+    # TODO test this
+    raw_class_hash = args.get("classHash")
+    if raw_class_hash is None:
+        raise StarknetDevnetException(
+            code=StarkErrorCode.MALFORMED_REQUEST,
+            message=""  # TODO what kind of error should it throw if key not provided? 
+        )
+    # TODO note that the error message from parse_hex_string contains potentially mismatching content like "Hash"
+    # instead of a better key name, as well as mentioning "null" being supported
+    return parse_hex_string(raw_class_hash)
+
+
+
 @feeder_gateway.route("/get_contract_addresses", methods=["GET"])
 def get_contract_addresses():
     """Endpoint that returns an object containing the addresses of key system components."""
@@ -190,7 +222,7 @@ async def get_code():
 
     block_id = _get_block_id(request.args)
 
-    contract_address = request.args.get("contractAddress", type=parse_hex_string)
+    contract_address = _get_contract_address(request.args)
     code_dict = await state.starknet_wrapper.get_code(contract_address, block_id)
     return jsonify(code_dict)
 
@@ -201,8 +233,7 @@ async def get_full_contract():
     Returns the contract class of the contract whose contractAddress is provided.
     """
     block_id = _get_block_id(request.args)
-
-    contract_address = request.args.get("contractAddress", type=parse_hex_string)
+    contract_address = _get_contract_address(request.args)
 
     contract_class = await state.starknet_wrapper.get_class_by_address(
         contract_address, block_id
@@ -214,7 +245,7 @@ async def get_full_contract():
 async def get_class_hash_at():
     """Get contract class hash by contract address"""
 
-    contract_address = request.args.get("contractAddress", type=parse_hex_string)
+    contract_address = _get_contract_address(request.args)
     class_hash = await state.starknet_wrapper.get_class_hash_at(contract_address)
     return jsonify(fixed_length_hex(class_hash))
 
@@ -223,7 +254,7 @@ async def get_class_hash_at():
 async def get_class_by_hash():
     """Get contract class by class hash"""
 
-    class_hash = request.args.get("classHash", type=parse_hex_string)
+    class_hash = _get_class_hash(request.args)
     class_dict = await state.starknet_wrapper.get_class_by_hash(class_hash)
     # if isinstance(contract_class, DeprecatedCompiledClass):
     #     contract_class = contract_class.remove_debug_info()
@@ -234,7 +265,7 @@ async def get_class_by_hash():
 @feeder_gateway.route("/get_compiled_class_by_class_hash", methods=["GET"])
 async def get_compiled_class_by_hash():
     """Get compiled class by class hash (sierra hash)"""
-    class_hash = request.args.get("classHash", type=parse_hex_string)
+    class_hash = _get_class_hash(request.args)
     compiled_class = await state.starknet_wrapper.get_compiled_class_by_class_hash(
         class_hash
     )
@@ -246,7 +277,7 @@ async def get_storage_at():
     """Endpoint for returning the storage identified by `key` from the contract at"""
     block_id = _get_block_id(request.args)
 
-    contract_address = request.args.get("contractAddress", type=parse_hex_string)
+    contract_address = _get_contract_address(request.args)
     key = validate_int(request.args, "key")
 
     storage = await state.starknet_wrapper.get_storage_at(
@@ -261,7 +292,7 @@ async def get_transaction_status():
     Returns the status of the transaction identified by the transactionHash argument in the GET request.
     """
 
-    transaction_hash = request.args.get("transactionHash")
+    transaction_hash = _get_transaction_hash(request.args)
     tx_status = await state.starknet_wrapper.transactions.get_transaction_status(
         transaction_hash
     )
@@ -274,7 +305,7 @@ async def get_transaction():
     Returns the transaction identified by the transactionHash argument in the GET request.
     """
 
-    transaction_hash = request.args.get("transactionHash")
+    transaction_hash = _get_transaction_hash(request.args)
     transaction_info = await state.starknet_wrapper.transactions.get_transaction(
         transaction_hash
     )
@@ -289,7 +320,7 @@ async def get_transaction_receipt():
     Returns the transaction receipt identified by the transactionHash argument in the GET request.
     """
 
-    transaction_hash = request.args.get("transactionHash")
+    transaction_hash = _get_transaction_hash(request.args)
     tx_receipt = await state.starknet_wrapper.transactions.get_transaction_receipt(
         transaction_hash
     )
@@ -304,7 +335,7 @@ async def get_transaction_trace():
     Returns the trace of the transaction identified by the transactionHash argument in the GET request.
     """
 
-    transaction_hash = request.args.get("transactionHash")
+    transaction_hash = _get_transaction_hash(request.args)
     transaction_trace = await state.starknet_wrapper.transactions.get_transaction_trace(
         transaction_hash
     )
@@ -397,7 +428,7 @@ async def get_nonce():
     """Returns the nonce of the contract whose contractAddress is provided"""
 
     block_id = _get_block_id(request.args)
-    contract_address = request.args.get("contractAddress", type=parse_hex_string)
+    contract_address = _get_contract_address(request.args)
     nonce = await state.starknet_wrapper.get_nonce(contract_address, block_id)
 
     return jsonify(hex(nonce))
