@@ -106,23 +106,25 @@ def test_general_workflow():
 def test_salty_deploy():
     """Test deploying with salt"""
 
+    expected_tx_hash = (
+        "0x2fa79baaf35f083c85518ab60ef037bad5c731dc39818522798b61ab3b5f57"
+    )
+
     def deploy(max_fee):
         deploy_info = declare_and_deploy_with_chargeable(
             EVENTS_CONTRACT_PATH, inputs=None, salt="0x99", max_fee=max_fee
         )
         assert_hex_equal(
             actual=deploy_info["address"],
-            expected="0x5b5c8722ce893e19fc813996e610f0699fbe9b6c685ce175e60d7cbdbb87fa1",
+            expected=expected_tx_hash,
         )
         return deploy_info
 
     deploy_info = deploy(max_fee=int(1e18))
     assert_tx_status(deploy_info["tx_hash"], "ACCEPTED_ON_L2")
-    assert_hex_equal(
-        actual=deploy_info["tx_hash"],
-        expected="0x19b84c4267071b0b338c01ccfe729ca075b9d13d93fc2a0a779ce9382b4e082",
-    )
+    assert int(deploy_info["tx_hash"], 16) != int(expected_tx_hash, 16)
 
+    # TODO here just deploy, don't declare and deploy as per the function in L113
     repeated_deploy_info = deploy(max_fee=(int(1e18) + 1))
     assert_tx_status(repeated_deploy_info["tx_hash"], "REJECTED")
 

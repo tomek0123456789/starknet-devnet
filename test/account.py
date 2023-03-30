@@ -262,7 +262,8 @@ def deploy(
 ):
     """Wrapper around starknet deploy"""
 
-    ctor_args = [int(val, 0) for val in inputs or []]  # TODO int(val) instead
+    # TODO int(val) instead of int(val, 0)
+    ctor_args = [int(val) for val in inputs or []]
     salt = get_salt(salt)
 
     invoke_tx_hash = invoke(
@@ -327,6 +328,7 @@ def declare_and_deploy(
         contract_path=contract,
         account_address=account_address,
         private_key=private_key,
+        max_fee=int(1e18),  # TODO
         gateway_url=gateway_url,
     )
     class_hash = declare_info["class_hash"]
