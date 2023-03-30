@@ -289,7 +289,6 @@ class DevnetTransactions:
         Reject transaction in aborted block.
         """
         self.__instances[tx_hash].status = TransactionStatus.REJECTED
-        self.__instances[tx_hash].transaction_index = 0
         self.__instances[tx_hash].block = None
         self.__instances[tx_hash].transaction_failure_reason = TransactionFailureReason(
             code=StarknetErrorCode.TRANSACTION_FAILED.name,
