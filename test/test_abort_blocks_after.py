@@ -3,7 +3,6 @@ Tests the abort block functionality.
 """
 from test.rpc.rpc_utils import rpc_call
 
-import pytest
 import requests
 
 from .account import invoke

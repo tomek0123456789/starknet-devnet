@@ -324,5 +324,3 @@ class DevnetBlocks:
             self.__num2block[block_number] = StarknetBlock.load(block_dict)
 
             return block.block_hash
-
-        return ""
