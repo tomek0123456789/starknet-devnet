@@ -22,7 +22,7 @@ from .util import (
     get_block,
 )
 
-NOT_EXISTING_BLOCK = "0x9"
+NON_EXISTENT_BLOCK = "0x9"
 
 
 def abort_blocks_after(block_hash):
@@ -35,7 +35,7 @@ def abort_blocks_after(block_hash):
 @devnet_in_background()
 def test_abort_not_existing_block():
     """Test abort of not existing block."""
-    response = abort_blocks_after(NOT_EXISTING_BLOCK)
+    response = abort_blocks_after(NON_EXISTENT_BLOCK)
     assert response.status_code == 500
 
 
