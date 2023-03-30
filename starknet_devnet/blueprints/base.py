@@ -9,7 +9,7 @@ from starknet_devnet.state import state
 from starknet_devnet.util import (
     StarknetDevnetException,
     check_valid_dump_path,
-    custom_int,
+    parse_hex_string,
 )
 
 base = Blueprint("base", __name__)
@@ -48,7 +48,7 @@ def extract_positive(request_json, prop_name: str):
     return value
 
 
-def hex_converter(request_json, prop_name: str, convert=custom_int) -> int:
+def hex_converter(request_json, prop_name: str, convert=parse_hex_string) -> int:
     """Parse value from hex string to int, or values from hex strings to ints"""
     value = request_json.get(prop_name)
     if value is None:
@@ -126,25 +126,43 @@ def load():
 
 
 @base.route("/increase_time", methods=["POST"])
-def increase_time():
-    """Increases the block timestamp offset"""
+async def increase_time():
+    """Increases the block timestamp offset and generates a new block"""
     request_dict = request.json or {}
     time_s = extract_positive(request_dict, "time")
 
-    state.starknet_wrapper.increase_block_time(time_s)
+    # Increase block time only when there are no pending transactions
+    if not state.starknet_wrapper.pending_txs:
+        state.starknet_wrapper.increase_block_time(time_s)
+        block = await state.starknet_wrapper.generate_latest_block()
+        return jsonify(
+            {"timestamp_increased_by": time_s, "block_hash": hex(block.block_hash)}
+        )
 
-    return jsonify({"timestamp_increased_by": time_s})
+    raise StarknetDevnetException(
+        code=StarkErrorCode.INVALID_REQUEST,
+        status_code=400,
+        message="Block time can be increased only if there are no pending transactions.",
+    )
 
 
 @base.route("/set_time", methods=["POST"])
-def set_time():
-    """Sets the block timestamp offset"""
+async def set_time():
+    """Sets the block timestamp offset and generates a new block"""
     request_dict = request.json or {}
     time_s = extract_positive(request_dict, "time")
 
-    state.starknet_wrapper.set_block_time(time_s)
+    # Set block time only when there are no pending transactions
+    if not state.starknet_wrapper.pending_txs:
+        state.starknet_wrapper.set_block_time(time_s)
+        block = await state.starknet_wrapper.generate_latest_block()
+        return jsonify({"block_timestamp": time_s, "block_hash": hex(block.block_hash)})
 
-    return jsonify({"next_block_timestamp": time_s})
+    raise StarknetDevnetException(
+        code=StarkErrorCode.MALFORMED_REQUEST,
+        status_code=400,
+        message="Block time can be set only if there are no pending transactions.",
+    )
 
 
 @base.route("/account_balance", methods=["GET"])
@@ -190,14 +208,7 @@ async def mint():
 
 @base.route("/create_block", methods=["POST"])
 async def create_block():
-    """Create empty block"""
-    block = await state.starknet_wrapper.create_empty_block()
-    return Response(block.dumps(), status=200, mimetype="application/json")
-
-
-@base.route("/create_block_on_demand", methods=["POST"])
-async def create_block_on_demand():
-    """Create block on demand"""
+    """Create block with pending transactions."""
     block = await state.starknet_wrapper.generate_latest_block()
 
     return jsonify({"block_hash": hex(block.block_hash)})

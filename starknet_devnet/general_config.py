@@ -22,14 +22,16 @@ def build_devnet_general_config(chain_id: StarknetChainId):
             "cairo_resource_fee_weights": {
                 "n_steps": constants.N_STEPS_FEE_WEIGHT,
             },
+            "compiled_class_hash_commitment_tree_height": constants.COMPILED_CLASS_HASH_COMMITMENT_TREE_HEIGHT,
             "contract_storage_commitment_tree_height": constants.CONTRACT_STATES_COMMITMENT_TREE_HEIGHT,
+            "enforce_l1_handler_fee": True,
             "event_commitment_tree_height": constants.EVENT_COMMITMENT_TREE_HEIGHT,
             "global_state_commitment_tree_height": constants.CONTRACT_ADDRESS_BITS,
             "invoke_tx_max_n_steps": DEFAULT_MAX_STEPS,
             "min_gas_price": DEFAULT_GAS_PRICE,
             "sequencer_address": hex(DEFAULT_SEQUENCER_ADDRESS),
             "starknet_os_config": {
-                "chain_id": chain_id.name,
+                "chain_id": chain_id.value,
                 "fee_token_address": hex(FeeToken.ADDRESS),
             },
             "tx_version": SUPPORTED_TX_VERSION,

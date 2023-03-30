@@ -2,6 +2,8 @@
 Feeder gateway routes.
 """
 
+from typing import Type
+
 from flask import Blueprint, Response, jsonify, request
 from marshmallow import ValidationError
 from starkware.starknet.services.api.feeder_gateway.request_objects import (
@@ -21,20 +23,25 @@ from starkware.starknet.services.api.gateway.transaction import (
     Transaction,
 )
 from starkware.starkware_utils.error_handling import StarkErrorCode
+from starkware.starkware_utils.validated_dataclass import ValidatedMarshmallowDataclass
 from werkzeug.datastructures import MultiDict
 
 from starknet_devnet.blueprints.rpc.structures.types import BlockId
 from starknet_devnet.state import state
-from starknet_devnet.util import StarknetDevnetException, custom_int, fixed_length_hex
+from starknet_devnet.util import (
+    StarknetDevnetException,
+    fixed_length_hex,
+    parse_hex_string,
+)
 
 feeder_gateway = Blueprint("feeder_gateway", __name__, url_prefix="/feeder_gateway")
 
 
-def validate_request(data: bytes, cls, many=False):
+def validate_request(data: bytes, cls: Type[ValidatedMarshmallowDataclass], many=False):
     """Ensure `data` is valid Starknet function call. Returns an object of type specified with `cls`."""
     try:
         return cls.Schema().loads(data, many=many)
-    except (TypeError, ValidationError) as err:
+    except (AttributeError, KeyError, TypeError, ValidationError) as err:
         raise StarknetDevnetException(
             code=StarkErrorCode.MALFORMED_REQUEST,
             message=f"Invalid {cls.__name__}: {err}",
@@ -113,6 +120,25 @@ def _get_block_id(args: MultiDict) -> BlockId:
     return {"block_number": block_number}
 
 
+def _get_skip_validate(args: MultiDict) -> bool:
+    skip_validate = args.get("skipValidate")
+
+    if skip_validate == "true":
+        return True
+
+    if skip_validate == "false":
+        return False
+
+    # default case (user did not specify)
+    if skip_validate is None:
+        return False
+
+    raise StarknetDevnetException(
+        code=StarkErrorCode.MALFORMED_REQUEST,
+        message=f"Invalid value for skipValidate: {skip_validate}. Should be true or false.",
+    )
+
+
 @feeder_gateway.route("/get_contract_addresses", methods=["GET"])
 def get_contract_addresses():
     """Endpoint that returns an object containing the addresses of key system components."""
@@ -126,13 +152,14 @@ async def call_contract():
     """
 
     block_id = _get_block_id(request.args)
+    data = request.get_data()  # better than request.data in some edge cases
 
     try:
-        call_specifications = validate_request(request.data, CallFunction)  # version 1
+        # version 1
+        call_specifications = validate_request(data, CallFunction)
     except StarknetDevnetException:
-        call_specifications = validate_request(
-            request.data, InvokeFunction
-        )  # version 0
+        # version 0
+        call_specifications = validate_request(data, InvokeFunction)
 
     result_dict = await state.starknet_wrapper.call(call_specifications, block_id)
     return jsonify(result_dict)
@@ -163,7 +190,7 @@ async def get_code():
 
     block_id = _get_block_id(request.args)
 
-    contract_address = request.args.get("contractAddress", type=custom_int)
+    contract_address = request.args.get("contractAddress", type=parse_hex_string)
     code_dict = await state.starknet_wrapper.get_code(contract_address, block_id)
     return jsonify(code_dict)
 
@@ -175,7 +202,7 @@ async def get_full_contract():
     """
     block_id = _get_block_id(request.args)
 
-    contract_address = request.args.get("contractAddress", type=custom_int)
+    contract_address = request.args.get("contractAddress", type=parse_hex_string)
 
     contract_class = await state.starknet_wrapper.get_class_by_address(
         contract_address, block_id
@@ -187,7 +214,7 @@ async def get_full_contract():
 async def get_class_hash_at():
     """Get contract class hash by contract address"""
 
-    contract_address = request.args.get("contractAddress", type=custom_int)
+    contract_address = request.args.get("contractAddress", type=parse_hex_string)
     class_hash = await state.starknet_wrapper.get_class_hash_at(contract_address)
     return jsonify(fixed_length_hex(class_hash))
 
@@ -196,9 +223,22 @@ async def get_class_hash_at():
 async def get_class_by_hash():
     """Get contract class by class hash"""
 
-    class_hash = request.args.get("classHash", type=custom_int)
-    contract_class = await state.starknet_wrapper.get_class_by_hash(class_hash)
-    return jsonify(contract_class.remove_debug_info().dump())
+    class_hash = request.args.get("classHash", type=parse_hex_string)
+    class_dict = await state.starknet_wrapper.get_class_by_hash(class_hash)
+    # if isinstance(contract_class, DeprecatedCompiledClass):
+    #     contract_class = contract_class.remove_debug_info()
+
+    return jsonify(class_dict)
+
+
+@feeder_gateway.route("/get_compiled_class_by_class_hash", methods=["GET"])
+async def get_compiled_class_by_hash():
+    """Get compiled class by class hash (sierra hash)"""
+    class_hash = request.args.get("classHash", type=parse_hex_string)
+    compiled_class = await state.starknet_wrapper.get_compiled_class_by_class_hash(
+        class_hash
+    )
+    return jsonify(compiled_class.dump())
 
 
 @feeder_gateway.route("/get_storage_at", methods=["GET"])
@@ -206,7 +246,7 @@ async def get_storage_at():
     """Endpoint for returning the storage identified by `key` from the contract at"""
     block_id = _get_block_id(request.args)
 
-    contract_address = request.args.get("contractAddress", type=custom_int)
+    contract_address = request.args.get("contractAddress", type=parse_hex_string)
     key = validate_int(request.args, "key")
 
     storage = await state.starknet_wrapper.get_storage_at(
@@ -294,16 +334,18 @@ async def get_state_update():
 @feeder_gateway.route("/estimate_fee", methods=["POST"])
 async def estimate_fee():
     """Returns the estimated fee for a transaction."""
+    data = request.get_data()
 
     try:
-        transaction = validate_request(request.data, Transaction)  # version 1
+        transaction = validate_request(data, Transaction)  # version 1
     except StarknetDevnetException:
-        transaction = validate_request(request.data, InvokeFunction)  # version 0
+        transaction = validate_request(data, InvokeFunction)  # version 0
 
     block_id = _get_block_id(request.args)
+    skip_validate = _get_skip_validate(request.args)
 
     _, fee_response = await state.starknet_wrapper.calculate_trace_and_fee(
-        transaction, block_id
+        transaction, skip_validate=skip_validate, block_id=block_id
     )
     return jsonify(fee_response)
 
@@ -314,15 +356,18 @@ async def estimate_fee_bulk():
 
     try:
         # version 1
-        transactions = validate_request(request.data, Transaction, many=True)
+        transactions = validate_request(request.get_data(), Transaction, many=True)
     except StarknetDevnetException:
         # version 0
-        transactions = validate_request(request.data, InvokeFunction, many=True)
+        transactions = validate_request(request.get_data(), InvokeFunction, many=True)
 
     block_id = _get_block_id(request.args)
+    skip_validate = _get_skip_validate(request.args)
 
     _, fee_responses = await state.starknet_wrapper.calculate_traces_and_fees(
-        transactions, block_id
+        transactions,
+        block_id=block_id,
+        skip_validate=skip_validate,
     )
     return jsonify(fee_responses)
 
@@ -330,11 +375,14 @@ async def estimate_fee_bulk():
 @feeder_gateway.route("/simulate_transaction", methods=["POST"])
 async def simulate_transaction():
     """Returns the estimated fee for a transaction."""
-    transaction = validate_request(request.data, AccountTransaction)
+    transaction = validate_request(request.get_data(), AccountTransaction)
     block_id = _get_block_id(request.args)
+    skip_validate = _get_skip_validate(request.args)
 
     trace, fee_response = await state.starknet_wrapper.calculate_trace_and_fee(
-        transaction, block_id
+        transaction,
+        block_id=block_id,
+        skip_validate=skip_validate,
     )
 
     simulation_info = TransactionSimulationInfo(
@@ -349,7 +397,7 @@ async def get_nonce():
     """Returns the nonce of the contract whose contractAddress is provided"""
 
     block_id = _get_block_id(request.args)
-    contract_address = request.args.get("contractAddress", type=custom_int)
+    contract_address = request.args.get("contractAddress", type=parse_hex_string)
     nonce = await state.starknet_wrapper.get_nonce(contract_address, block_id)
 
     return jsonify(hex(nonce))
@@ -361,6 +409,6 @@ async def estimate_message_fee():
 
     block_id = _get_block_id(request.args)
 
-    call = validate_request(request.data, CallL1Handler)
+    call = validate_request(request.get_data(), CallL1Handler)
     fee_estimation = await state.starknet_wrapper.estimate_message_fee(call, block_id)
     return jsonify(fee_estimation)

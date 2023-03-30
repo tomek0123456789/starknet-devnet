@@ -4,7 +4,7 @@ COPY . .
 
 RUN apk add gmp-dev g++ gcc libffi-dev
 
-RUN pip3 install poetry
+RUN pip3 install poetry==1.3
 
 # install rustc+cargo
 RUN wget https://sh.rustup.rs -O - | sh -s -- -y

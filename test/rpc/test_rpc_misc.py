@@ -58,6 +58,7 @@ def test_get_state_update():
         contract_path=CONTRACT_PATH,
         account_address=PREDEPLOYED_ACCOUNT_ADDRESS,
         private_key=PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
+        max_fee=int(4e16),
     )
     contract_class_hash = declare_info["class_hash"]
     assert_hex_equal(contract_class_hash, EXPECTED_CLASS_HASH)
@@ -219,7 +220,7 @@ def test_get_events(input_data, expected_data):
     resp = rpc_call("starknet_getEvents", params=input_data["params"])
     assert len(expected_data) == len(resp["result"]["events"])
     for i, data in enumerate(expected_data):
-        assert str(resp["result"]["events"][i]["data"]) == str(data)
+        assert resp["result"]["events"][i]["data"] == data
 
     if "continuation_token" in input_data["params"]["filter"]:
         expected_continuation_token = int(

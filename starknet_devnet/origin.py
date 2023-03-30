@@ -16,7 +16,7 @@ from starkware.starknet.services.api.feeder_gateway.response_objects import (
 )
 
 from starknet_devnet.forked_state import is_originally_starknet_exception
-from starknet_devnet.util import StarknetDevnetException
+from starknet_devnet.util import StarknetDevnetException, UndeclaredClassDevnetException
 
 
 class Origin:
@@ -56,11 +56,17 @@ class Origin:
 
     async def get_state_update(
         self, block_hash: str = None, block_number: int = None
-    ) -> dict or None:
+    ) -> dict:
         """
         Returns the state update for provided block hash or block number.
         If none are provided return the last state update
         """
+        raise NotImplementedError
+
+    async def get_class_by_hash(
+        self, class_hash: int, block_number: int = None
+    ) -> dict:
+        """Return DeprecatedCompiledClass for cairo0 contracts and ContractClass for cairo1 contracts"""
         raise NotImplementedError
 
 
@@ -118,7 +124,7 @@ class NullOrigin(Origin):
 
     async def get_state_update(
         self, block_hash: str = None, block_number: int = None
-    ) -> dict or None:
+    ) -> dict:
         if block_hash:
             error_message = (
                 f"No state updates saved for the provided block hash {block_hash}"
@@ -134,6 +140,11 @@ class NullOrigin(Origin):
             raise StarknetDevnetException(
                 code=StarknetErrorCode.BLOCK_NOT_FOUND, message=error_message
             )
+
+    async def get_class_by_hash(
+        self, class_hash: int, block_number: int = None
+    ) -> dict:
+        raise UndeclaredClassDevnetException(class_hash)
 
 
 class ForkedOrigin(Origin):
@@ -175,7 +186,7 @@ class ForkedOrigin(Origin):
                 ) from bad_request
             raise
 
-    async def get_block_by_hash(self, block_hash: str):
+    async def get_block_by_hash(self, block_hash: str) -> StarknetBlock:
         custom_exception = StarknetDevnetException(
             code=StarknetErrorCode.BLOCK_NOT_FOUND,
             message=f"Block hash {block_hash} does not exist.",
@@ -184,9 +195,11 @@ class ForkedOrigin(Origin):
             block = await self.__feeder_gateway_client.get_block(block_hash=block_hash)
             if block.block_number > self.get_number_of_blocks():
                 raise custom_exception
+            return block
         except BadRequest as bad_request:
             if is_originally_starknet_exception(bad_request):
                 raise custom_exception from bad_request
+            raise
 
     async def get_block_by_number(self, block_number: int):
         return await self.__feeder_gateway_client.get_block(block_number=block_number)
@@ -196,7 +209,7 @@ class ForkedOrigin(Origin):
 
     async def get_state_update(
         self, block_hash: str = None, block_number: int = None
-    ) -> dict or None:
+    ) -> dict:
         try:
             return await self.__feeder_gateway_client.get_state_update(
                 block_hash=block_hash,
@@ -208,3 +221,16 @@ class ForkedOrigin(Origin):
                     code=StarknetErrorCode.BLOCK_NOT_FOUND,
                     message=f"Block hash {block_hash} does not exist.",
                 ) from bad_request
+            raise
+
+    async def get_class_by_hash(
+        self, class_hash: int, block_number: int = None
+    ) -> dict:
+        try:
+            return await self.__feeder_gateway_client.get_class_by_hash(
+                hex(class_hash), block_number=block_number
+            )
+        except BadRequest as bad_request:
+            if is_originally_starknet_exception(bad_request):
+                raise UndeclaredClassDevnetException(class_hash) from bad_request
+            raise

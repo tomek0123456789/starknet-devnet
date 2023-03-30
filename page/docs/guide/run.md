@@ -7,12 +7,14 @@ sidebar_position: 1
 Installing the package adds the `starknet-devnet` command.
 
 ```text
-usage: starknet-devnet [-h] [-v] [--host HOST] [--port PORT] [--load-path LOAD_PATH] [--dump-path DUMP_PATH] [--dump-on DUMP_ON] [--lite-mode] [--accounts ACCOUNTS]
-                       [--initial-balance INITIAL_BALANCE] [--seed SEED] [--hide-predeployed-accounts] [--start-time START_TIME] [--gas-price GAS_PRICE] [--timeout TIMEOUT]
-                       [--account-class ACCOUNT_CLASS] [--fork-network FORK_NETWORK] [--fork-block FORK_BLOCK]
-                       [--chain-id CHAIN_ID] [--blocks-on-demand]
+usage: starknet-devnet [-h] [-v] [--host HOST] [--port PORT] [--load-path LOAD_PATH] [--dump-path DUMP_PATH] [--dump-on DUMP_ON]
+                       [--lite-mode] [--blocks-on-demand] [--accounts ACCOUNTS] [--initial-balance INITIAL_BALANCE] [--seed SEED]
+                       [--hide-predeployed-accounts] [--start-time START_TIME] [--gas-price GAS_PRICE] [--allow-max-fee-zero]
+                       [--timeout TIMEOUT] [--account-class ACCOUNT_CLASS] [--fork-network FORK_NETWORK] [--fork-block FORK_BLOCK]
+                       [--fork-retries FORK_RETRIES] [--chain-id CHAIN_ID] [--disable-rpc-request-validation]
+                       [--disable-rpc-response-validation]
 
-Run a local instance of StarkNet Devnet
+Run a local instance of Starknet Devnet
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -25,7 +27,7 @@ optional arguments:
                         Specify the path to dump to
   --dump-on DUMP_ON     Specify when to dump; can dump on: exit, transaction
   --lite-mode           Introduces speed-up by skipping block hash calculation - applies sequential numbering instead (0x0, 0x1, 0x2, ...).
-  --blocks-on-demand    Introduces block generation on demand via /create_block_on_demand endpoint
+  --blocks-on-demand    Block generation on demand via an endpoint.
   --accounts ACCOUNTS   Specify the number of accounts to be predeployed; defaults to 10
   --initial-balance INITIAL_BALANCE, -e INITIAL_BALANCE
                         Specify the initial balance of accounts to be predeployed; defaults to 1e+21
@@ -36,20 +38,24 @@ optional arguments:
                         Specify the start time of the genesis block in Unix time seconds
   --gas-price GAS_PRICE, -g GAS_PRICE
                         Specify the gas price in wei per gas unit; defaults to 1e+11
+  --allow-max-fee-zero  Allow transactions with max fee equal to zero
   --timeout TIMEOUT, -t TIMEOUT
                         Specify the server timeout in seconds; defaults to 60
   --account-class ACCOUNT_CLASS
-                        Specify the account implementation to be used for predeploying; should be a path to the compiled JSON artifact; defaults to OpenZeppelin v0.5.1
+                        Specify the account implementation to be used for predeploying; should be a path to the compiled JSON artifact; defaults to OpenZeppelin v1
   --fork-network FORK_NETWORK
                         Specify the network to fork: can be a URL (e.g. https://alpha-mainnet.starknet.io) or network name (valid names: alpha-goerli, alpha-goerli2, alpha-mainnet)
   --fork-block FORK_BLOCK
                         Specify the block number where the --fork-network is forked; defaults to latest
-  --chain-id CHAIN_ID
-                        Specify the chain id as string: {MAINNET, TESTNET, TESTNET2}
+  --fork-retries FORK_RETRIES
+                        Specify the number of retries of failed HTTP requests sent to the network before giving up, defaults to 1
+  --chain-id CHAIN_ID   Specify the chain id as string: {MAINNET, TESTNET, TESTNET2}
   --disable-rpc-request-validation
                         Disable requests schema validation for RPC endpoints
   --disable-rpc-response-validation
                         Disable RPC schema validation for devnet responses
+  --cairo-compiler-manifest CAIRO_COMPILER_MANIFEST
+                        Specify the path to the manifest (Cargo.toml) of the Cairo 1.0 compiler to be used for contract recompilation; if omitted, the default x86-compatible compiler (from cairo-lang package) is used
 ```
 
 You can run `starknet-devnet` in a separate shell, or you can run it in background with `starknet-devnet &`.
@@ -126,6 +132,10 @@ You may ignore any address-related output logged on container startup (e.g. `Run
 If you don't specify the `HOST` part, the server will indeed be available on all of your host machine's addresses (localhost, local network IP, etc.), which may present a security issue if you don't want anyone from the local network to access your Devnet instance.
 
 ## Run with the Rust implementation of Cairo VM
+
+<!-- # TMP: rust vm -->
+
+### ⚠️ This feature is temporarily suspended! ⚠️
 
 By default, Devnet uses the [Python implementation](https://github.com/starkware-libs/cairo-lang/) of Cairo VM.
 

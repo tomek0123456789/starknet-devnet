@@ -6,6 +6,7 @@ starknet-hardhat-example
 .vscode/
 test/build/
 test/artifacts/
+cairo-compiler
 
 # Hardhat specific
 node_modules/

@@ -142,6 +142,7 @@ def test_get_trace_and_block_traces_after_declare():
         CONTRACT_PATH,
         account_address=PREDEPLOYED_ACCOUNT_ADDRESS,
         private_key=PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
+        max_fee=int(4e16),
     )
 
     # assert trace

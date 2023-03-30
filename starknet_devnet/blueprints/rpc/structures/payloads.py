@@ -9,7 +9,9 @@ from typing import Callable, List, Optional, Union
 from marshmallow.exceptions import MarshmallowError
 from starkware.starknet.definitions.general_config import StarknetGeneralConfig
 from starkware.starknet.public.abi import AbiEntryType
-from starkware.starknet.services.api.contract_class import ContractClass
+from starkware.starknet.services.api.contract_class.contract_class import (
+    DeprecatedCompiledClass,
+)
 from starkware.starknet.services.api.feeder_gateway.request_objects import CallFunction
 from starkware.starknet.services.api.feeder_gateway.response_objects import (
     BlockStateUpdate,
@@ -24,9 +26,9 @@ from starkware.starknet.services.api.feeder_gateway.response_objects import (
     TransactionType,
 )
 from starkware.starknet.services.api.gateway.transaction import (
-    Declare,
     Deploy,
     DeployAccount,
+    DeprecatedDeclare,
     InvokeFunction,
 )
 from starkware.starknet.services.api.gateway.transaction_utils import (
@@ -290,13 +292,13 @@ def rpc_invoke_transaction(
 
     if transaction.version == LEGACY_RPC_TX_VERSION:
         txn: RpcInvokeTransactionV0 = {
-            "contract_address": rpc_felt(transaction.contract_address),
+            "contract_address": rpc_felt(transaction.sender_address),
             "entry_point_selector": rpc_felt(transaction.entry_point_selector),
             **common_data,
         }
     else:
         txn: RpcInvokeTransactionV1 = {
-            "sender_address": rpc_felt(transaction.contract_address),
+            "sender_address": rpc_felt(transaction.sender_address),
             **common_data,
         }
     return txn
@@ -414,14 +416,14 @@ def make_invoke_function(invoke_transaction: RpcBroadcastedInvokeTxn) -> InvokeF
 
     if version == LEGACY_RPC_TX_VERSION:
         invoke_function = InvokeFunction(
-            contract_address=int(invoke_transaction["contract_address"], 16),
+            sender_address=int(invoke_transaction["contract_address"], 16),
             entry_point_selector=int(invoke_transaction["entry_point_selector"], 16),
             calldata=[int(data, 16) for data in invoke_transaction.get("calldata", [])],
             **common_data,
         )
     else:
         invoke_function = InvokeFunction(
-            contract_address=int(invoke_transaction["sender_address"], 16),
+            sender_address=int(invoke_transaction["sender_address"], 16),
             calldata=[int(data, 16) for data in invoke_transaction.get("calldata", [])],
             **common_data,
         )
@@ -429,24 +431,22 @@ def make_invoke_function(invoke_transaction: RpcBroadcastedInvokeTxn) -> InvokeF
     return invoke_function
 
 
-def make_declare(declare_transaction: RpcBroadcastedDeclareTxn) -> Declare:
+def make_declare(declare_transaction: RpcBroadcastedDeclareTxn) -> DeprecatedDeclare:
     """
-    Convert RpcBroadcastedDeclareTxn to Declare
+    Convert RpcBroadcastedDeclareTxn to DeprecatedDeclare
     """
     contract_class = declare_transaction["contract_class"]
     if "abi" not in contract_class:
         contract_class["abi"] = []
 
     try:
-        contract_class = decompress_program(declare_transaction, False)[
-            "contract_class"
-        ]
-        contract_class = ContractClass.load(contract_class)
+        contract_class["program"] = decompress_program(contract_class["program"])
+        contract_class = DeprecatedCompiledClass.load(contract_class)
     except (StarkException, TypeError, MarshmallowError) as ex:
         raise RpcError(code=50, message="Invalid contract class") from ex
 
     nonce = declare_transaction.get("nonce")
-    declare_tx = Declare(
+    declare_tx = DeprecatedDeclare(
         contract_class=contract_class,
         sender_address=int(declare_transaction["sender_address"], 16),
         nonce=int(nonce, 16) if nonce is not None else 0,
@@ -466,8 +466,8 @@ def make_deploy(deploy_transaction: RpcBroadcastedDeployTxn) -> Deploy:
         contract_class["abi"] = []
 
     try:
-        contract_class = decompress_program(deploy_transaction, False)["contract_class"]
-        contract_class = ContractClass.load(contract_class)
+        contract_class["program"] = decompress_program(contract_class["program"])
+        contract_class = DeprecatedCompiledClass.load(contract_class)
     except (StarkException, TypeError, MarshmallowError) as ex:
         raise RpcError(code=50, message="Invalid contract class") from ex
 
@@ -631,7 +631,7 @@ class RpcContractClass(TypedDict):
     abi: Optional[List[AbiEntry]]
 
 
-def rpc_contract_class(contract_class: ContractClass) -> RpcContractClass:
+def rpc_contract_class(contract_class: DeprecatedCompiledClass) -> RpcContractClass:
     """
     Convert gateway contract class to rpc contract class
     """
@@ -738,7 +738,10 @@ def rpc_state_update(state_update: BlockStateUpdate) -> RpcStateUpdate:
     def declared_contract_hashes() -> List[Felt]:
         return [
             rpc_felt(contract)
-            for contract in state_update.state_diff.declared_contracts
+            for contract in state_update.state_diff.old_declared_contracts
+        ] + [
+            rpc_felt(class_hash_pair.compiled_class_hash)
+            for class_hash_pair in state_update.state_diff.declared_classes
         ]
 
     def deployed_contracts() -> List[RpcDeployedContractDiff]:

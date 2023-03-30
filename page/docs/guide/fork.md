@@ -7,12 +7,14 @@ sidebar_position: 16
 To interact with contracts deployed on mainnet or testnet, you can use the forking feature to copy the remote origin and experiment with it locally with no changes to the origin.
 
 ```
-starknet-devnet --fork-network <NAME|URL> [--fork-block <BLOCK_NUMBER>]
+starknet-devnet --fork-network <NAME|URL> [--fork-block <BLOCK_NUMBER>] [--fork-retries <NUMBER>]
 ```
 
 The value of `--fork-network` can either be a network name (`alpha-goerli`, `alpha-goerli2`, or `alpha-mainnet`) or a URL (e.g. `https://alpha4.starknet.io`).
 
 The `--fork-block` parameter is optional and its value should be the block number from which the forking is done. If none is provided, defaults to the `"latest"` block at the time of Devnet's start-up.
+
+You can use the `--fork-retries` parameter to specify the number of retries of failed HTTP requests sent to the network before giving up, defaults to `1`
 
 All calls will first try Devnet's state and then fall back to the forking block.
 

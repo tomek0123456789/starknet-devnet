@@ -29,7 +29,9 @@ for contract in "$TEST_DIRECTORY"/cairo/*.cairo; do
     abi=$directory/"${basename%.*}_abi.json"
 
     poetry run starknet-compile --output "$output" --abi "$abi" "$contract"
-    number_of_contracts=$((number_of_contracts+1))
+    number_of_contracts=$((number_of_contracts + 1))
 done
 
 echo "Compiled $number_of_contracts Cairo files successfully"
+
+./scripts/compile_cairo1.sh

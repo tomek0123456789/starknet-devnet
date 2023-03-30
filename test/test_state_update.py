@@ -6,7 +6,9 @@ import re
 
 import pytest
 import requests
-from starkware.starknet.core.os.class_hash import compute_class_hash
+from starkware.starknet.core.os.contract_class.deprecated_class_hash import (
+    compute_deprecated_class_hash,
+)
 from starkware.starknet.public.abi import get_selector_from_name
 
 from .account import declare, declare_and_deploy_with_chargeable, invoke
@@ -66,7 +68,7 @@ def deploy_empty_contract():
 def get_class_hash_at_path(contract_path: str):
     """Get contract hash of the sample contract"""
     contract_class = load_contract_class(contract_path)
-    return compute_class_hash(contract_class)
+    return compute_deprecated_class_hash(contract_class)
 
 
 @pytest.mark.state_update
@@ -210,12 +212,14 @@ def test_declaration_and_deployment():
         contract_path=CONTRACT_PATH,
         account_address=PREDEPLOYED_ACCOUNT_ADDRESS,
         private_key=PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
+        max_fee=int(4e16),
     )
     contract_class_hash = declare_info["class_hash"]
     assert_hex_equal(contract_class_hash, EXPECTED_CLASS_HASH)
 
     diff_after_declare = get_state_update()["state_diff"]
-    assert diff_after_declare["declared_contracts"] == [contract_class_hash]
+    assert diff_after_declare["old_declared_contracts"] == [contract_class_hash]
+    assert diff_after_declare["declared_classes"] == []
 
     # Deploy the deployer - also deploys a contract of the declared class using the declare_and_deploy_with_chargeable syscall
     initial_balance_in_constructor = "5"
@@ -236,4 +240,4 @@ def test_declaration_and_deployment():
     # deployed_contract_diff["address"] is a random value
 
     # deployer expected to be declared
-    assert diff_after_deploy["declared_contracts"] == [deployer_class_hash]
+    assert diff_after_deploy["old_declared_contracts"] == [deployer_class_hash]

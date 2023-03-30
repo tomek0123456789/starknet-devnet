@@ -32,7 +32,7 @@ from typing import List
 
 import pytest
 from starkware.starknet.core.os.transaction_hash.transaction_hash import (
-    calculate_declare_transaction_hash,
+    calculate_deprecated_declare_transaction_hash,
 )
 from starkware.starknet.definitions.general_config import (
     DEFAULT_CHAIN_ID,
@@ -136,10 +136,12 @@ def test_get_transaction_by_hash_declare():
     """
     Get transaction by hash
     """
+    max_fee = int(4e16)
     declare_info = declare(
         contract_path=CONTRACT_PATH,
         account_address=PREDEPLOYED_ACCOUNT_ADDRESS,
         private_key=PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
+        max_fee=max_fee,
     )
 
     block = get_block_with_transaction(declare_info["tx_hash"])
@@ -430,6 +432,7 @@ def test_add_invoke_transaction():
         CONTRACT_PATH, [str(initial_balance)]
     )
     contract_address = deploy_dict["address"]
+    max_fee = int(4e16)
 
     calls = [(contract_address, "increase_balance", [amount1, amount2])]
     signature, execute_calldata = get_execute_args(
@@ -438,12 +441,12 @@ def test_add_invoke_transaction():
         private_key=PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
         nonce=0,
         version=SUPPORTED_RPC_TX_VERSION,
-        max_fee=0,
+        max_fee=max_fee,
     )
 
     invoke_transaction = RpcBroadcastedInvokeTxnV1(
         type="INVOKE",
-        max_fee=rpc_felt(0),
+        max_fee=rpc_felt(max_fee),
         version=hex(SUPPORTED_RPC_TX_VERSION),
         signature=[rpc_felt(sig) for sig in signature],
         nonce=rpc_felt(get_nonce(PREDEPLOYED_ACCOUNT_ADDRESS)),
@@ -546,6 +549,7 @@ def test_add_declare_transaction(declare_content):
     """
     contract_class = declare_content["contract_class"]
     pad_zero_entry_points(contract_class["entry_points_by_type"])
+    max_fee = int(4e16)
 
     rpc_contract_class = RpcContractClass(
         program=contract_class["program"],
@@ -554,11 +558,11 @@ def test_add_declare_transaction(declare_content):
     )
 
     nonce = get_nonce(PREDEPLOYED_ACCOUNT_ADDRESS)
-    tx_hash = calculate_declare_transaction_hash(
+    tx_hash = calculate_deprecated_declare_transaction_hash(
         contract_class=load_contract_class(CONTRACT_PATH),
         chain_id=StarknetChainId.TESTNET.value,
         sender_address=int(PREDEPLOYED_ACCOUNT_ADDRESS, 16),
-        max_fee=0,
+        max_fee=max_fee,
         nonce=nonce,
         version=SUPPORTED_RPC_TX_VERSION,
     )
@@ -566,7 +570,7 @@ def test_add_declare_transaction(declare_content):
 
     declare_transaction = RpcBroadcastedDeclareTxn(
         type=declare_content["type"],
-        max_fee=rpc_felt(declare_content["max_fee"]),
+        max_fee=rpc_felt(max_fee),
         version=hex(SUPPORTED_RPC_TX_VERSION),
         signature=[rpc_felt(sig) for sig in signature],
         nonce=rpc_felt(nonce),
@@ -761,7 +765,7 @@ def test_add_deploy_account_transaction(deploy_account_details):
         contract_address=int(contract_address, 16),
         selector=get_selector_from_name("increase_balance"),
         calldata=[10, 20],
-        chain_id=DEFAULT_CHAIN_ID.value,
+        chain_id=DEFAULT_CHAIN_ID,
         max_fee=int(1e18),
         version=SUPPORTED_RPC_TX_VERSION,
         nonce=1,

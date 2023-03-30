@@ -13,7 +13,7 @@ This file contains monkeypatches used across the project. Advice for monkeypatch
 import os
 import sys
 
-__version__ = "0.4.6"
+__version__ = "0.5.0a1"
 
 
 def _patch_pedersen_hash():
@@ -53,15 +53,19 @@ def _patch_copy():
 
     from copy import copy
 
-    from starkware.starknet.services.api.contract_class import ContractClass
+    from starkware.starknet.services.api.contract_class.contract_class import (
+        CompiledClassBase,
+        ContractClass,
+    )
 
     def simpler_copy(self, memo):  # pylint: disable=unused-argument
         """
-        A dummy implementation of ContractClass.__deepcopy__
+        A dummy implementation of __deepcopy__
         """
         return copy(self)
 
     setattr(ContractClass, "__deepcopy__", simpler_copy)
+    setattr(CompiledClassBase, "__deepcopy__", simpler_copy)
 
 
 _patch_copy()
@@ -69,13 +73,16 @@ _patch_copy()
 
 def _patch_cairo_vm():
     """Apply cairo-rs-py monkey patch"""
-    from starknet_devnet.cairo_rs_py_patch import cairo_rs_py_monkeypatch
+    # TMP: rust vm
+    # from starknet_devnet.cairo_rs_py_patch import cairo_rs_py_monkeypatch
 
-    cairo_rs_py_monkeypatch()
+    # cairo_rs_py_monkeypatch()
 
-    from .util import warn
+    # from .util import warn
 
-    warn("Using Cairo VM: Rust")
+    # warn("Using Cairo VM: Rust")
+
+    sys.exit("Rust Cairo VM is temporarily not available")
 
 
 _VM_VAR = "STARKNET_DEVNET_CAIRO_VM"

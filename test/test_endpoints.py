@@ -7,6 +7,7 @@ import json
 import pytest
 import requests
 from starkware.starknet.definitions.error_codes import StarknetErrorCode
+from starkware.starkware_utils.error_handling import StarkErrorCode
 
 from starknet_devnet.constants import DEFAULT_GAS_PRICE
 from starknet_devnet.server import app
@@ -27,6 +28,9 @@ INVOKE_CONTENT = load_file_content("invoke.json")
 CALL_CONTENT = load_file_content("call.json")
 INVALID_HASH = "0x58d4d4ed7580a7a98ab608883ec9fe722424ce52c19f2f369eeea301f535914"
 INVALID_ADDRESS = "0x123"
+INVALID_TRANSACTION_HASH_MESSAGE_PREFIX = (
+    "Transaction hash should be a hexadecimal string starting with 0x, or 'null';"
+)
 
 
 def send_transaction(req_dict: dict):
@@ -155,10 +159,29 @@ def get_block_by_number(req_dict: dict):
     )
 
 
+def get_block_by_hash(block_hash: str):
+    """Get block by block hash"""
+    return requests.get(f"{APP_URL}/feeder_gateway/get_block?blockHash={block_hash}")
+
+
 def get_transaction_trace(transaction_hash: str):
     """Get transaction trace from request dict"""
     return requests.get(
         f"{APP_URL}/feeder_gateway/get_transaction_trace?transactionHash={transaction_hash}"
+    )
+
+
+def get_transaction_trace_test_client(tx_hash: str):
+    """Get transaction trace from request dict"""
+    return app.test_client().get(
+        f"{APP_URL}/feeder_gateway/get_transaction_trace?transactionHash={tx_hash}"
+    )
+
+
+def get_transaction_test_client(tx_hash: str):
+    """Get transaction from request tx_hash"""
+    return app.test_client().get(
+        f"{APP_URL}/feeder_gateway/get_transaction?transactionHash={tx_hash}"
     )
 
 
@@ -199,6 +222,20 @@ def get_transaction_status(tx_hash):
     return response.json()
 
 
+def get_transaction_status_test_client(tx_hash: str):
+    """Get transaction status"""
+    return app.test_client().get(
+        f"{APP_URL}/feeder_gateway/get_transaction_status?transactionHash={tx_hash}"
+    )
+
+
+def get_transaction_receipt_test_client(tx_hash: str):
+    """Get transaction receipt"""
+    return app.test_client().get(
+        f"{APP_URL}/feeder_gateway/get_transaction_receipt?transactionHash={tx_hash}"
+    )
+
+
 @pytest.mark.deploy
 @devnet_in_background()
 def test_error_response_deploy_without_calldata():
@@ -233,6 +270,19 @@ def test_error_response_call_with_negative_block_number():
     json_error_message = resp.json()["message"]
     assert resp.status_code == 500
     assert json_error_message is not None
+
+
+@pytest.mark.call
+@devnet_in_background()
+def test_error_response_call_with_block_hash_0():
+    """Should fail on call with block hash 0 without 0x prefix"""
+    resp = get_block_by_hash("0")
+
+    json_error_message = resp.json()["message"]
+    assert resp.status_code == 500
+    assert json_error_message.startswith(
+        "Block hash should be a hexadecimal string starting with 0x, or 'null';"
+    )
 
 
 @pytest.mark.call
@@ -303,7 +353,8 @@ def test_create_block_endpoint():
     assert resp.get("block_hash") == GENESIS_BLOCK_HASH
     assert resp.get("block_number") == GENESIS_BLOCK_NUMBER
 
-    resp = create_empty_block()
+    create_empty_block()
+    resp = get_block_by_number({"blockNumber": "latest"}).json()
     assert resp.get("block_number") == GENESIS_BLOCK_NUMBER + 1
     assert resp.get("block_hash") == hex(GENESIS_BLOCK_NUMBER + 1)
     assert resp.get("status") == "ACCEPTED_ON_L2"
@@ -314,7 +365,8 @@ def test_create_block_endpoint():
     resp = get_block_by_number({"blockNumber": "latest"}).json()
     assert resp.get("block_number") == GENESIS_BLOCK_NUMBER + 3
 
-    resp = create_empty_block()
+    create_empty_block()
+    resp = get_block_by_number({"blockNumber": "latest"}).json()
     assert resp.get("block_number") == GENESIS_BLOCK_NUMBER + 4
     assert resp.get("block_hash") == hex(GENESIS_BLOCK_NUMBER + 4)
 
@@ -351,3 +403,61 @@ def test_get_transaction_trace_of_rejected():
     resp_body = resp.json()
     assert resp_body["code"] == str(StarknetErrorCode.NO_TRACE)
     assert resp.status_code == 500
+
+
+@pytest.mark.parametrize("tx_hash", ["0xyz", "0"])
+def test_get_transaction_with_tx_hash(tx_hash):
+    """Should fail on get_transaction with invalid hash"""
+    resp = get_transaction_test_client(tx_hash)
+    assert resp.json["message"].startswith(INVALID_TRANSACTION_HASH_MESSAGE_PREFIX)
+    assert resp.status_code == 500
+
+
+def test_get_transaction_status_with_tx_hash_0():
+    """Should fail on get_transaction_status with hash 0 without 0x prefix"""
+    resp = get_transaction_status_test_client("0")
+    assert resp.json["message"].startswith(INVALID_TRANSACTION_HASH_MESSAGE_PREFIX)
+    assert resp.status_code == 500
+
+
+def test_get_transaction_trace_with_tx_hash_0():
+    """Should fail on get_transaction_trace with hash 0 without 0x prefix"""
+    resp = get_transaction_trace_test_client("0")
+    assert resp.json["message"].startswith(INVALID_TRANSACTION_HASH_MESSAGE_PREFIX)
+    assert resp.status_code == 500
+
+
+def test_get_transaction_receipt_with_tx_hash_0():
+    """Should fail on get_transaction_receipt with hash 0 without 0x prefix"""
+    resp = get_transaction_receipt_test_client("0")
+    assert resp.json["message"].startswith(INVALID_TRANSACTION_HASH_MESSAGE_PREFIX)
+    assert resp.status_code == 500
+
+
+@pytest.mark.parametrize("address_property", ["contract_address", "sender_address"])
+def test_calling_with_different_address_properties(address_property: str):
+    """In starknet 0.11 contract_address was changed to sender_address"""
+    dummy_uninitialized_address = "0x01"
+    resp = app.test_client().post(
+        "/feeder_gateway/call_contract",
+        data=json.dumps(
+            {
+                "entry_point_selector": "0x0",
+                "calldata": [],
+                "signature": [],
+                address_property: dummy_uninitialized_address,
+            }
+        ),
+    )
+
+    assert resp.status_code == 500
+    assert resp.is_json
+    assert resp.json.get("code") == str(StarknetErrorCode.UNINITIALIZED_CONTRACT)
+
+
+def test_calling_without_body():
+    """Test graceful failing without body"""
+    resp = app.test_client().post("/feeder_gateway/call_contract")
+    assert resp.status_code == 500
+    assert resp.is_json
+    assert resp.json.get("code") == str(StarkErrorCode.MALFORMED_REQUEST)

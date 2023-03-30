@@ -7,6 +7,8 @@ from typing import Dict, List
 from services.everest.business_logic.transaction_execution_objects import (
     TransactionFailureReason,
 )
+from starkware.python.utils import to_bytes
+from starkware.starknet.business_logic.execution.objects import TransactionExecutionInfo
 from starkware.starknet.business_logic.transaction.objects import (
     InternalDeclare,
     InternalDeploy,
@@ -24,10 +26,8 @@ from starkware.starknet.services.api.feeder_gateway.response_objects import (
     TransactionStatus,
     TransactionTrace,
 )
-from starkware.starknet.testing.starknet import (
-    StarknetCallInfo,
-    TransactionExecutionInfo,
-)
+from starkware.starknet.testing.objects import StarknetCallInfo
+from starkware.starkware_utils.error_handling import StarkErrorCode
 from web3 import Web3
 
 from .origin import Origin
@@ -194,8 +194,16 @@ class DevnetTransactions:
         """
         Get a transaction by hash.
         """
-        numeric_hash = int(tx_hash, 16)
-        return self.__instances.get(numeric_hash)
+        if tx_hash.startswith("0x"):
+            try:
+                return self.__instances.get(int(tx_hash, 16))
+            except ValueError:
+                pass
+
+        raise StarknetDevnetException(
+            code=StarkErrorCode.MALFORMED_REQUEST,
+            message=f"Transaction hash should be a hexadecimal string starting with 0x, or 'null'; got: '{tx_hash}'.",
+        )
 
     def get_count(self):
         """
@@ -277,7 +285,7 @@ class DevnetTransactions:
         return status_response
 
 
-def create_empty_internal_declare(tx_hash, class_hash) -> InternalDeclare:
+def create_empty_internal_declare(tx_hash: int, class_hash: int) -> InternalDeclare:
     "Create InternalDeclare used in the genesis block"
     return InternalDeclare(
         hash_value=tx_hash,
@@ -286,6 +294,7 @@ def create_empty_internal_declare(tx_hash, class_hash) -> InternalDeclare:
         signature=[],
         nonce=0,
         class_hash=class_hash,
+        compiled_class_hash=None,
         sender_address=1,
     )
 
@@ -296,7 +305,7 @@ def create_empty_internal_deploy(
     "Create InternalDeploy used in the genesis block"
     return InternalDeploy(
         contract_address=contract_address,
-        contract_hash=class_hash,
+        contract_hash=to_bytes(class_hash),
         contract_address_salt=0,
         hash_value=tx_hash,
         version=0,

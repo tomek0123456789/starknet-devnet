@@ -3,6 +3,7 @@ This module wraps the usage of Postman for L1 <> L2 interaction.
 """
 import json
 from abc import ABC, abstractmethod
+from typing import Tuple
 
 from starkware.eth.eth_test_utils import EthAccount, EthContract
 from starkware.solidity.utils import load_nearby_contract
@@ -98,7 +99,7 @@ and that the Messaging Contract is deployed at the provided address ({contract_a
             "address": self.__postman_wrapper.mock_starknet_messaging_contract.address,
         }
 
-    async def flush(self, state) -> dict:
+    async def flush(self, state) -> Tuple[dict, list]:
         """Handles all pending L1 <> L2 messages and sends them to the other layer."""
 
         if self.__postman_wrapper is None:
@@ -207,6 +208,7 @@ class Postman:
                 calldata=[int(args["fromAddress"], 16), *args["payload"]],
                 nonce=args["nonce"],
                 chain_id=self.starknet.state.general_config.chain_id.value,
+                paid_fee_on_l1=args["fee"],
             )
             transactions_to_execute.append(transaction)
             self.mock_starknet_messaging_contract.mockConsumeMessageToL2.transact(

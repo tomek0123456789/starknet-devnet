@@ -198,13 +198,15 @@ def make_transaction(txn: RpcBroadcastedTxn) -> AccountTransaction:
 @validate_schema("estimateFee")
 async def estimate_fee(request: RpcBroadcastedTxn, block_id: BlockId) -> dict:
     """
-    Estimate the fee for a given StarkNet transaction
+    Estimate the fee for a given Starknet transaction
     """
     await assert_block_id_is_valid(block_id)
     transaction = make_transaction(request)
     try:
         _, fee_response = await state.starknet_wrapper.calculate_trace_and_fee(
-            transaction, block_id
+            transaction,
+            skip_validate=False,
+            block_id=block_id,
         )
     except StarkException as ex:
         if "entry_point_selector" in request and (
