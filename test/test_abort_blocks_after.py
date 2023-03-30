@@ -89,7 +89,10 @@ def test_abort_many_blocks_many_transactions():
     # transactions should be rejected
     response = abort_blocks(contract_deploy_block["block_hash"])
     assert response.status_code == 200
-    assert response.json()["aborted"] == [contract_deploy_block["block_hash"], invoke_block["block_hash"]]
+    assert response.json()["aborted"] == [
+        contract_deploy_block["block_hash"],
+        invoke_block["block_hash"],
+    ]
     contract_deploy_block_after_abort = get_block(block_number=1, parse=True)
     assert contract_deploy_block_after_abort["status"] == "ABORTED"
     assert_transaction(contract_deploy_info["tx_hash"], "REJECTED")

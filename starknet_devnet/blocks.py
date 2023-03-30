@@ -317,6 +317,7 @@ class DevnetBlocks:
             block_number = self.__hash2num[int(block_hash, 16)]
             block = await self.get_by_number(block_number)
 
+            # This is done like this because the block object's properties cannot be modified
             block_dict = block.dump()
             block_dict["status"] = BlockStatus.ABORTED.name
             block_dict["transaction_receipts"] = None
