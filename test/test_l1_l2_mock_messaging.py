@@ -151,7 +151,7 @@ def test_send_message_to_l2_execute_without_deploy():
 @devnet_in_background()
 def test_send_message_to_l2_with_zero_message_fee():
     """Should fail if message fee is zero"""
-    deploy_info = deploy(L1L2_CONTRACT_PATH)
+    deploy_info = declare_and_deploy_with_chargeable(L1L2_CONTRACT_PATH)
 
     data = _VALID_MESSAGE_TO_L2_BODY.copy()
     data["l2_contract_address"] = deploy_info["address"]
