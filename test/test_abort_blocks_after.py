@@ -22,7 +22,6 @@ from .util import (
     get_block,
 )
 
-EXPECTED_ABORT_HASHES = ["0x1", "0x2"]
 NOT_EXISTING_BLOCK = "0x9"
 
 
@@ -64,22 +63,8 @@ def test_abort_single_block_single_transaction():
     assert rpc_response["result"]["status"] == "REJECTED"
 
 
-@pytest.mark.usefixtures("run_devnet_in_background")
-@pytest.mark.parametrize(
-    "run_devnet_in_background, expected_block_hash",
-    [
-        (
-            [*PREDEPLOY_ACCOUNT_CLI_ARGS],
-            "",
-        ),
-        (
-            [*PREDEPLOY_ACCOUNT_CLI_ARGS, "--lite-mode"],
-            EXPECTED_ABORT_HASHES,
-        ),
-    ],
-    indirect=True,
-)
-def test_abort_many_blocks_many_transactions(expected_block_hash):
+@devnet_in_background(*PREDEPLOY_ACCOUNT_CLI_ARGS)
+def test_abort_many_blocks_many_transactions():
     """Test abort of many blocks and many transactions."""
 
     # Contract deploy block should be accepted on L2 and
@@ -104,9 +89,7 @@ def test_abort_many_blocks_many_transactions(expected_block_hash):
     # transactions should be rejected
     response = abort_blocks_after(contract_deploy_block["block_hash"])
     assert response.status_code == 200
-    # check if in lite mode expected block hashes are 0x1 and 0x2
-    if expected_block_hash == EXPECTED_ABORT_HASHES:
-        assert response.json()["aborted"] == EXPECTED_ABORT_HASHES
+    assert response.json()["aborted"] == [contract_deploy_block["block_hash"], invoke_block["block_hash"]]
     contract_deploy_block_after_abort = get_block(block_number=1, parse=True)
     assert contract_deploy_block_after_abort["status"] == "ABORTED"
     assert_transaction(contract_deploy_info["tx_hash"], "REJECTED")
