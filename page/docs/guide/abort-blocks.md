@@ -11,9 +11,9 @@ This functionality allows to simulate blocks abort that can occur on mainnet.
 Abort blocks and reject transactions from given block hash to last block. 
 
 ```
-POST /abort_blocks_after
+POST /abort_blocks
 {
-    "blockHash": BLOCK_HASH
+    "startingBlockHash": BLOCK_HASH
 }
 ```
 

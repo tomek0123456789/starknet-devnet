@@ -223,12 +223,12 @@ async def fork_status():
     return jsonify({})
 
 
-@base.route("/abort_blocks_after", methods=["POST"])
-async def abort_blocks_after():
+@base.route("/abort_blocks", methods=["POST"])
+async def abort_blocks():
     """Abort blocks and transactions from given block hash to last block."""
     request_json = request.json or {}
     current_block = await state.starknet_wrapper.blocks.get_by_hash(
-        hex(hex_converter(request_json, "blockHash"))
+        hex(hex_converter(request_json, "startingBlockHash"))
     )
     last_block = await state.starknet_wrapper.blocks.get_last_block()
     block_hashes = []

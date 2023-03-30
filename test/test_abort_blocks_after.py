@@ -25,17 +25,17 @@ from .util import (
 NON_EXISTENT_BLOCK = "0x9"
 
 
-def abort_blocks_after(block_hash):
+def abort_blocks(block_hash):
     """Abort blocks after certain block hash"""
     return requests.post(
-        f"{APP_URL}/abort_blocks_after", json={"blockHash": block_hash}
+        f"{APP_URL}/abort_blocks", json={"startingBlockHash": block_hash}
     )
 
 
 @devnet_in_background()
 def test_abort_not_existing_block():
     """Test abort of not existing block."""
-    response = abort_blocks_after(NON_EXISTENT_BLOCK)
+    response = abort_blocks(NON_EXISTENT_BLOCK)
     assert response.status_code == 500
 
 
@@ -52,7 +52,7 @@ def test_abort_single_block_single_transaction():
 
     # After abort blocks call block should be aborted and
     # transaction should be rejected
-    response = abort_blocks_after(contract_deploy_block["block_hash"])
+    response = abort_blocks(contract_deploy_block["block_hash"])
     contract_deploy_block_after_abort = get_block(parse=True)
     assert response.status_code == 200
     assert contract_deploy_block_after_abort["status"] == "ABORTED"
@@ -87,7 +87,7 @@ def test_abort_many_blocks_many_transactions():
 
     # After abort blocks call blocks should be aborted and
     # transactions should be rejected
-    response = abort_blocks_after(contract_deploy_block["block_hash"])
+    response = abort_blocks(contract_deploy_block["block_hash"])
     assert response.status_code == 200
     assert response.json()["aborted"] == [contract_deploy_block["block_hash"], invoke_block["block_hash"]]
     contract_deploy_block_after_abort = get_block(block_number=1, parse=True)
