@@ -4,6 +4,7 @@ Tests the abort block functionality.
 from test.rpc.rpc_utils import rpc_call
 
 import requests
+from starkware.starknet.definitions.error_codes import StarknetErrorCode
 
 from .account import invoke
 from .settings import APP_URL
@@ -35,6 +36,7 @@ def abort_blocks(block_hash):
 def test_abort_not_existing_block():
     """Test abort of not existing block."""
     response = abort_blocks(NON_EXISTENT_BLOCK)
+    assert response.json()["code"] == str(StarknetErrorCode.BLOCK_NOT_FOUND)
     assert response.status_code == 500
 
 

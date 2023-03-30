@@ -227,14 +227,14 @@ async def fork_status():
 async def abort_blocks():
     """Abort blocks and transactions from given block hash to last block."""
     request_json = request.json or {}
-    current_block = await state.starknet_wrapper.blocks.get_by_hash(
+    starting_block = await state.starknet_wrapper.blocks.get_by_hash(
         hex(hex_converter(request_json, "startingBlockHash"))
     )
     last_block = await state.starknet_wrapper.blocks.get_last_block()
     block_hashes = []
 
     # Abort blocks
-    for block_number in range(current_block.block_number, last_block.block_number + 1):
+    for block_number in range(starting_block.block_number, last_block.block_number + 1):
         block = await state.starknet_wrapper.blocks.get_by_number(block_number)
         await state.starknet_wrapper.blocks.abort_block_by_hash(hex(block.block_hash))
 
