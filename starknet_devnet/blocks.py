@@ -183,7 +183,7 @@ class DevnetBlocks:
 
         # now we know the block ID is "latest"
         return (
-            self.__state_updates.get(self.get_number_of_blocks() - 1)  # Fix
+            self.__state_updates[(await self.get_last_block()).block_hash]
             or await self.origin.get_state_update()
         )
 
