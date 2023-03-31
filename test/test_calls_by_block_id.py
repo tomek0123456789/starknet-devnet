@@ -48,10 +48,12 @@ def test_call():
     """Expect variable value not to be changed in the old state"""
 
     def assert_old_block_correct():
-        value_at_1 = _get_value(contract_address, block_number="1")
+        # genesis (0) + declare + deploy = block number 2
+        value_at_1 = _get_value(contract_address, block_number="2")
         assert value_at_1 == initial_value
 
-        value_at_2 = _get_value(contract_address, block_number="2")
+        # genesis (0) + declare + deploy + invoke = block number 3
+        value_at_2 = _get_value(contract_address, block_number="3")
         assert value_at_2 == value_at_1 + increment_value
 
     initial_value = 5
@@ -178,7 +180,7 @@ def test_after_restart():
     contract_address = deploy_info["address"]
 
     # first assert that it's callable before the restart
-    assert _get_value(contract_address, block_number="1") == initial_balance
+    assert _get_value(contract_address, block_number="latest") == initial_balance
 
     restart()
 

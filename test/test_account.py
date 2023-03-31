@@ -90,6 +90,7 @@ def get_account_balance(address: str, server_url=APP_URL) -> int:
 @devnet_in_background()
 def test_account_contract_deploy():
     """Test account contract deploy, public key and initial nonce value."""
+    mint(address=SALTY_ACCOUNT_ADDRESS, amount=int(1e18), lite=True)
     account_deploy_info = deploy_account_contract(private_key=PRIVATE_KEY, salt=SALT)
     account_address = account_deploy_info["address"]
     assert_hex_equal(account_address, SALTY_ACCOUNT_ADDRESS)
@@ -98,7 +99,7 @@ def test_account_contract_deploy():
     assert int(deployed_public_key, 16) == PUBLIC_KEY
 
     nonce = get_nonce(account_address)
-    assert nonce == 1  # tested on alpha-goerli2 - nonce is 1 just after deployment
+    assert nonce == 1  # tested on alpha-goerli2: nonce is 1 right after deployment
 
 
 @pytest.mark.account
@@ -106,19 +107,18 @@ def test_account_contract_deploy():
 def test_invoking_another_contract():
     """Test invoking another contract through a newly deployed (not predeployed) account."""
     # deploy the non-account contract
-    max_fee = int(4e16)
     deploy_info = deploy_empty_contract()
     to_address = deploy_info["address"]
 
+    mint(address=SALTY_ACCOUNT_ADDRESS, amount=int(1e18), lite=True)
     deploy_account_info = deploy_account_contract(private_key=PRIVATE_KEY, salt=SALT)
     assert_tx_status(deploy_account_info["tx_hash"], "ACCEPTED_ON_L2")
     account_address = deploy_account_info["address"]
-    # add funds to new account
-    mint(account_address, max_fee)
+    assert_hex_equal(account_address, SALTY_ACCOUNT_ADDRESS)
 
     # execute increase_balance call
     calls = [(to_address, "increase_balance", [10, 20])]
-    tx_hash = invoke(calls, account_address, PRIVATE_KEY, 0, max_fee=max_fee)
+    tx_hash = invoke(calls, account_address, PRIVATE_KEY)
 
     assert_tx_status(tx_hash, "ACCEPTED_ON_L2")
 
@@ -139,8 +139,10 @@ def test_invoking_another_contract():
 def test_estimated_fee():
     """Test estimate fees."""
     deploy_info = deploy_empty_contract()
+    mint(address=SALTY_ACCOUNT_ADDRESS, amount=int(1e18), lite=True)
     deploy_account_info = deploy_account_contract(private_key=PRIVATE_KEY, salt=SALT)
     account_address = deploy_account_info["address"]
+    assert_hex_equal(account_address, SALTY_ACCOUNT_ADDRESS)
 
     initial_balance = call("get_balance", deploy_info["address"], abi_path=ABI_PATH)
 
@@ -162,8 +164,11 @@ def test_estimated_fee():
 def test_low_max_fee():
     """Test if transaction is rejected with low max fee"""
     deploy_info = deploy_empty_contract()
+
+    mint(address=SALTY_ACCOUNT_ADDRESS, amount=int(1e18), lite=True)
     deploy_account_info = deploy_account_contract(private_key=PRIVATE_KEY, salt=SALT)
     account_address = deploy_account_info["address"]
+    assert_hex_equal(account_address, SALTY_ACCOUNT_ADDRESS)
 
     initial_balance = call("get_balance", deploy_info["address"], abi_path=ABI_PATH)
 
@@ -264,21 +269,21 @@ def test_insufficient_balance():
 @devnet_in_background()
 def test_multicall():
     """Test making multiple calls."""
-    max_fee = int(4e16)
+
     deploy_info = deploy_empty_contract()
-    deploy_account_info = deploy_account_contract(private_key=PRIVATE_KEY, salt=SALT)
-    account_address = deploy_account_info["address"]
     to_address = deploy_info["address"]
 
-    # add funds to new account
-    mint(account_address, max_fee)
+    mint(address=SALTY_ACCOUNT_ADDRESS, amount=int(1e18), lite=True)
+    deploy_account_info = deploy_account_contract(private_key=PRIVATE_KEY, salt=SALT)
+    account_address = deploy_account_info["address"]
+    assert_hex_equal(account_address, SALTY_ACCOUNT_ADDRESS)
 
     # execute increase_balance calls
     calls = [
         (to_address, "increase_balance", [10, 20]),
         (to_address, "increase_balance", [30, 40]),
     ]
-    tx_hash = invoke(calls, account_address, PRIVATE_KEY, max_fee=max_fee)
+    tx_hash = invoke(calls, account_address, PRIVATE_KEY, max_fee=int(1e18))
 
     assert_tx_status(tx_hash, "ACCEPTED_ON_L2")
 

@@ -88,7 +88,7 @@ def test_invokable_on_pending_block():
     latest_block = get_block(block_number="latest", parse=True)
     block_number_after_block_on_demand_call = latest_block["block_number"]
     assert block_number_after_block_on_demand_call == 1
-    assert len(latest_block["transactions"]) == 2
+    assert len(latest_block["transactions"]) == 3  # declare + deploy + invoke
 
 
 @devnet_in_background(*PREDEPLOY_ACCOUNT_CLI_ARGS, "--blocks-on-demand")
@@ -222,8 +222,10 @@ def test_pending_block_traces():
     deploy_info = declare_and_deploy_with_chargeable(CONTRACT_PATH, inputs=["0"])
 
     pending_block_traces = get_block_traces({"blockNumber": "pending"})
+    assert len(pending_block_traces.traces) == 2
     assert_hex_equal(
-        hex(pending_block_traces.traces[0].transaction_hash),
+        # trace at index 0 is declare, at index 1 is deploy
+        hex(pending_block_traces.traces[1].transaction_hash),
         deploy_info["tx_hash"],
     )
 
@@ -368,7 +370,7 @@ def test_endpoint_if_some_pending():
 @devnet_in_background("--blocks-on-demand")
 def test_increase_time_in_block_on_demand_mode():
     """Test block creation with increase_time and pending txs"""
-    deploy_info = deploy(CONTRACT_PATH, inputs=["0"])
+    deploy_info = declare_and_deploy_with_chargeable(CONTRACT_PATH, inputs=["0"])
     assert_tx_status(deploy_info["tx_hash"], "PENDING")
     latest_block_timestamp = get_block(block_number="latest", parse=True)["timestamp"]
 
@@ -390,7 +392,7 @@ def test_increase_time_in_block_on_demand_mode():
 @devnet_in_background("--blocks-on-demand")
 def test_set_time_in_block_on_demand_mode():
     """Test block creation with set_time and pending txs"""
-    deploy_info = deploy(CONTRACT_PATH, inputs=["0"])
+    deploy_info = declare_and_deploy_with_chargeable(CONTRACT_PATH, inputs=["0"])
     assert_tx_status(deploy_info["tx_hash"], "PENDING")
     latest_block_timestamp = get_block(block_number="latest", parse=True)["timestamp"]
 

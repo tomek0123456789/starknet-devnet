@@ -180,7 +180,7 @@ def send_tx(transaction: dict, tx_type: TransactionType, gateway_url=APP_URL) ->
         url=f"{gateway_url}/gateway/add_transaction",
         json={**transaction, "type": tx_type.name},
     )
-    assert resp.status_code == 200
+    assert resp.status_code == 200, resp.json()
     return resp.json()
 
 
@@ -341,7 +341,7 @@ def call(
     address: str,
     abi_path: str,
     inputs=None,
-    block_number=None,  # Starknet CLI defaults to pending
+    block_number=None,  # Starknet CLI defaults to pending - we shouldn't rely on that
     block_hash=None,
     feeder_gateway_url=APP_URL,
 ):

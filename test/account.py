@@ -3,7 +3,7 @@ Account test functions and utilities.
 Latest changes based on https://github.com/OpenZeppelin/nile/pull/184
 """
 
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import requests
 from starkware.crypto.signature.signature import private_to_stark_key, sign
@@ -22,6 +22,9 @@ from starkware.starknet.definitions.general_config import (
     StarknetChainId,
 )
 from starkware.starknet.definitions.transaction_type import TransactionType
+from starkware.starknet.services.api.feeder_gateway.response_objects import (
+    BlockIdentifier,
+)
 from starkware.starknet.services.api.gateway.transaction import (
     ContractClass,
     Declare,
@@ -55,10 +58,19 @@ PRIVATE_KEY = 123456789987654321
 PUBLIC_KEY = private_to_stark_key(PRIVATE_KEY)
 
 
-def get_nonce(account_address: str, feeder_gateway_url=APP_URL) -> int:
+def get_nonce(
+    account_address: str,
+    feeder_gateway_url=APP_URL,
+    block_number: Optional[BlockIdentifier] = "pending",
+) -> int:
     """Get nonce."""
+    params = {"contractAddress": account_address}
+    if block_number is not None:
+        params["blockNumber"] = block_number
+
     resp = requests.get(
-        f"{feeder_gateway_url}/feeder_gateway/get_nonce?contractAddress={account_address}"
+        f"{feeder_gateway_url}/feeder_gateway/get_nonce",
+        params=params,
     )
     return int(resp.json(), 16)
 
@@ -118,7 +130,7 @@ def get_estimated_fee(
     """Get estimated fee through account."""
 
     if nonce is None:
-        nonce = get_nonce(account_address)
+        nonce = get_nonce(account_address, feeder_gateway_url=feeder_gateway_url)
 
     signature, execute_calldata = get_execute_args(
         calls=calls,
@@ -215,7 +227,7 @@ def declare(
     """Wrapper around starknet declare"""
 
     if nonce is None:
-        nonce = get_nonce(account_address)
+        nonce = get_nonce(account_address, feeder_gateway_url=gateway_url)
 
     tx_hash = calculate_deprecated_declare_transaction_hash(
         contract_class=load_contract_class(contract_path),
@@ -371,6 +383,7 @@ def deploy_account_contract(
     private_key: int,
     class_hash=DEFAULT_ACCOUNT_HASH,
     salt=None,
+    max_fee=int(1e18),
 ):
     """Deploy account contract. Defaults to using a pre-created key."""
 
@@ -384,7 +397,6 @@ def deploy_account_contract(
     )
 
     version = SUPPORTED_TX_VERSION
-    max_fee = 0
     nonce = 0
     tx_hash = calculate_deploy_account_transaction_hash(
         version=version,
@@ -394,7 +406,7 @@ def deploy_account_contract(
         max_fee=max_fee,
         nonce=nonce,
         salt=salt,
-        chain_id=DEFAULT_CHAIN_ID.value,
+        chain_id=DEFAULT_CHAIN_ID,
     )
 
     deploy_tx = DeployAccount(
