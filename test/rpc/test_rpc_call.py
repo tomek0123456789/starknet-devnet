@@ -11,7 +11,6 @@ from starkware.starknet.public.abi import get_selector_from_name
 from starknet_devnet.blueprints.rpc.structures.types import PredefinedRpcErrorCode
 from starknet_devnet.blueprints.rpc.utils import rpc_felt
 
-
 # @pytest.mark.usefixtures("run_devnet_in_background")
 # def test_call(deploy_info, latest_block_id):
 #     """
