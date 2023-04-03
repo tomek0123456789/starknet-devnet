@@ -176,7 +176,7 @@ class DevnetBlocks:
         # now either an int or "latest"
         if block_number != LATEST_BLOCK_ID:
             self.__assert_block_number_in_range(block_number)
-            numeric_hash = (await self.get_last_block()).block_hash
+            numeric_hash = self.__num2hash[block_number]
             if numeric_hash in self.__state_updates:
                 return self.__state_updates[numeric_hash]
 

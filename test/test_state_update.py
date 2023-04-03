@@ -143,10 +143,6 @@ def test_block_hash():
 
     new_state_update = get_state_update()
     previous_state_update = get_state_update(first_block_hash)
-    # This is worng but it works - remove later
-    initial_state_update = get_state_update(
-        block_hash=initial_state_update["block_hash"]
-    )
 
     assert new_state_update["block_hash"] != first_block_hash
     assert_equal(previous_state_update, initial_state_update)
@@ -172,8 +168,6 @@ def test_block_number():
     deploy_empty_contract()
 
     new_state_update = get_state_update()
-    # This is worng but it works - remove later
-    initial_state_update = get_state_update(block_number=GENESIS_BLOCK_NUMBER)
     first_block_state_update = get_state_update(block_number=GENESIS_BLOCK_NUMBER + 1)
     second_block_state_update = get_state_update(block_number=GENESIS_BLOCK_NUMBER + 2)
 
