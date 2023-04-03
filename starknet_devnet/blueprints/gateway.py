@@ -41,7 +41,6 @@ async def add_transaction():
         response_dict["address"] = fixed_length_hex(contract_address)
 
     elif tx_type == TransactionType.DEPLOY:
-        # TODO test this
         raise StarknetDevnetException(
             code=StarknetErrorCode.DEPRECATED_TRANSACTION,
             message="Deploy transaction is no longer supported.",

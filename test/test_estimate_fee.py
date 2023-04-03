@@ -32,7 +32,6 @@ from .shared import (
 )
 from .util import call, devnet_in_background, estimate_message_fee, load_file_content
 
-# TODO the content might not be valid anymore
 DEPLOY_CONTENT = load_file_content("deploy.json")
 INVOKE_CONTENT = load_file_content("invoke.json")
 

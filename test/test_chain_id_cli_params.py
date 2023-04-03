@@ -72,7 +72,9 @@ def test_chain_id_invalid(chain_id):
 )
 def test_deploy_and_invoke(chain_id):
     """Test deploy and invoke with MAINNET and TESTNET chain_id"""
-    deploy_info = declare_and_deploy_with_chargeable(CONTRACT_PATH, inputs=["0"])
+    deploy_info = declare_and_deploy_with_chargeable(
+        CONTRACT_PATH, inputs=["0"], chain_id=chain_id
+    )
 
     assert_tx_status(deploy_info["tx_hash"], "ACCEPTED_ON_L2")
     assert_transaction(deploy_info["tx_hash"], "ACCEPTED_ON_L2")

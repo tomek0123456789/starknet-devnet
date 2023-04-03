@@ -149,8 +149,8 @@ def test_forked():
     _increment(contract_address, increment_value=5)
 
     latest_block = get_block(block_number="latest", parse=True)
-    # genesis + deploy + invoke + invoke
-    assert latest_block["block_number"] == FORK_BLOCK + 4
+    # fork + genesis + declare + deploy + invoke + invoke
+    assert latest_block["block_number"] == FORK_BLOCK + 5
 
     with ErrorExpector(StarknetErrorCode.OUT_OF_RANGE_BLOCK_ID):
         # before first devnet block
@@ -158,13 +158,13 @@ def test_forked():
 
     with ErrorExpector(StarknetErrorCode.UNINITIALIZED_CONTRACT):
         # at genesis block, but before deployment
-        _get_value(contract_address, block_number=str(FORK_BLOCK + 1))
+        _get_value(contract_address, block_number=str(FORK_BLOCK + 2))
 
-    value_after_deploy = _get_value(contract_address, block_number=str(FORK_BLOCK + 2))
+    value_after_deploy = _get_value(contract_address, block_number=str(FORK_BLOCK + 3))
     assert value_after_deploy == initial_balance
 
     value_after_first_invoke = _get_value(
-        contract_address, block_number=str(FORK_BLOCK + 3)
+        contract_address, block_number=str(FORK_BLOCK + 4)
     )
     assert value_after_first_invoke == initial_balance + first_increment_value
 
@@ -246,12 +246,14 @@ def test_getting_storage_at_old_block():
             block_hash=block_hash,
         )
 
-    assert_balance_in_storage(expected_value=hex(initial_balance), block_number="1")
+    # declaration block
+    assert_balance_in_storage(expected_value=hex(0), block_number="1")
+    assert_balance_in_storage(expected_value=hex(initial_balance), block_number="2")
     assert_balance_in_storage(
         expected_value=hex(initial_balance),
         block_hash=deployment_block["block_hash"],
     )
     assert_balance_in_storage(
         expected_value=hex(initial_balance + increment_value),
-        block_number="2",
+        block_number="3",
     )

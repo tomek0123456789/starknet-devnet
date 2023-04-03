@@ -1,7 +1,5 @@
 """Test devnet contract deployment"""
 
-from typing import List
-
 import pytest
 from starkware.starknet.core.os.contract_address.contract_address import (
     calculate_contract_address,
@@ -15,7 +13,6 @@ from starkware.starknet.public.abi import get_selector_from_name
 from starkware.starknet.services.api.contract_class.contract_class import (
     DeprecatedCompiledClass,
 )
-from starkware.starknet.services.api.gateway.transaction import Deploy
 from starkware.starknet.third_party.open_zeppelin.starknet_contracts import (
     account_contract as oz_account_class,
 )
@@ -59,19 +56,6 @@ def get_contract_class():
     """Get the contract class from the contract.json file."""
     with open(CONTRACT_PATH, "r", encoding="utf-8") as contract_class_file:
         return DeprecatedCompiledClass.loads(contract_class_file.read())
-
-
-# TODO drop this
-def get_deploy_transaction(inputs: List[int], salt=0):
-    """Get a Deploy transaction."""
-    contract_class = get_contract_class()
-
-    return Deploy(
-        contract_address_salt=salt,
-        contract_definition=contract_class,
-        constructor_calldata=inputs,
-        version=SUPPORTED_TX_VERSION,
-    )
 
 
 @pytest.fixture(name="starknet_wrapper_args")

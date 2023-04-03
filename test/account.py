@@ -231,7 +231,7 @@ def declare(
 
     tx_hash = calculate_deprecated_declare_transaction_hash(
         contract_class=load_contract_class(contract_path),
-        chain_id=StarknetChainId.TESTNET.value,
+        chain_id=chain_id.value,
         sender_address=int(account_address, 16),
         max_fee=max_fee,
         nonce=nonce,
@@ -271,6 +271,7 @@ def deploy(
     unique=False,
     max_fee=None,
     gateway_url=APP_URL,
+    chain_id=StarknetChainId.TESTNET,
 ):
     """Wrapper around starknet deploy"""
 
@@ -296,6 +297,7 @@ def deploy(
         private_key=private_key,
         max_fee=max_fee,
         gateway_url=gateway_url,
+        chain_id=chain_id,
     )
 
     contract_address = calculate_contract_address_from_hash(
@@ -329,6 +331,7 @@ def declare_and_deploy(
     salt=None,
     max_fee=None,
     gateway_url=APP_URL,
+    chain_id=StarknetChainId.TESTNET,
 ):
     """
     Declare a class and deploy its instance using the provided account.
@@ -342,8 +345,10 @@ def declare_and_deploy(
         private_key=private_key,
         max_fee=int(1e18),  # TODO
         gateway_url=gateway_url,
+        chain_id=chain_id,
     )
     class_hash = declare_info["class_hash"]
+    # here we could benefit from asserting the status of declaration, but it would also introduce time overhead
 
     return deploy(
         class_hash=class_hash,
@@ -353,6 +358,7 @@ def declare_and_deploy(
         salt=salt,
         max_fee=max_fee,
         gateway_url=gateway_url,
+        chain_id=chain_id,
     )
 
 
@@ -362,6 +368,7 @@ def declare_and_deploy_with_chargeable(
     salt=None,
     max_fee=None,
     gateway_url=APP_URL,
+    chain_id=StarknetChainId.TESTNET,
 ):
     """
     Declare a class and deploy its instance using the chargeable account.
@@ -376,6 +383,7 @@ def declare_and_deploy_with_chargeable(
         salt=salt,
         max_fee=max_fee,
         gateway_url=gateway_url,
+        chain_id=chain_id,
     )
 
 
