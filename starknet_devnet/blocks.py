@@ -112,7 +112,7 @@ class DevnetBlocks:
                 code=StarkErrorCode.MALFORMED_REQUEST, message=message
             )
 
-        if block_number >= self.get_number_of_blocks():
+        if block_number >= self.get_number_of_not_aborted_blocks():
             message = f"Block number too high. There are currently {self.get_number_of_not_aborted_blocks()} blocks; got: {block_number}."
             raise StarknetDevnetException(
                 code=StarknetErrorCode.BLOCK_NOT_FOUND, message=message
@@ -180,7 +180,7 @@ class DevnetBlocks:
             if numeric_hash in self.__state_updates:
                 return self.__state_updates[numeric_hash]
 
-            return await self.origin.get_state_update(block_number=block_number)
+            return await self.origin.get_state_update(block_hash=numeric_hash)
 
         # now we know the block ID is "latest"
         return (
@@ -306,15 +306,15 @@ class DevnetBlocks:
 
         block = StarknetBlock.load(block_dict)
         self.__hash2block[block.block_hash] = block
-        self.__state_archive.store(block_number, state)
+        self.__state_archive.store(block_hash, state)
 
         self.__pending_block = None
         self.__pending_signatures = None
         return block
 
-    def get_state(self, block_number: int) -> StarknetState:
+    def get_state(self, block_hash: int) -> StarknetState:
         """Return state at block with `number`"""
-        return self.__state_archive.get(block_number)
+        return self.__state_archive.get(block_hash)
 
     def set_pending_block_to_none(self):
         """Set pending block to none"""
@@ -334,6 +334,7 @@ class DevnetBlocks:
             block_dict = block.dump()
             block_dict["status"] = BlockStatus.ABORTED.name
             block_dict["transaction_receipts"] = None
+            del self.__num2hash[block_dict["block_number"]]
             block_dict["block_number"] = None
             self.__hash2block[numeric_hash] = StarknetBlock.load(block_dict)
 
