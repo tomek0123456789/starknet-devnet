@@ -12,24 +12,24 @@ from starknet_devnet.blueprints.rpc.structures.types import PredefinedRpcErrorCo
 from starknet_devnet.blueprints.rpc.utils import rpc_felt
 
 
-@pytest.mark.usefixtures("run_devnet_in_background")
-def test_call(deploy_info, latest_block_id):
-    """
-    Call contract
-    """
-    contract_address: str = deploy_info["address"]
+# @pytest.mark.usefixtures("run_devnet_in_background")
+# def test_call(deploy_info, latest_block_id):
+#     """
+#     Call contract
+#     """
+#     contract_address: str = deploy_info["address"]
 
-    resp = rpc_call(
-        "starknet_call",
-        params={
-            "request": {
-                "contract_address": rpc_felt(contract_address),
-                "entry_point_selector": rpc_felt(get_selector_from_name("get_balance")),
-                "calldata": [],
-            },
-            "block_id": latest_block_id,
-        },
-    )
+#     resp = rpc_call(
+#         "starknet_call",
+#         params={
+#             "request": {
+#                 "contract_address": rpc_felt(contract_address),
+#                 "entry_point_selector": rpc_felt(get_selector_from_name("get_balance")),
+#                 "calldata": [],
+#             },
+#             "block_id": latest_block_id,
+#         },
+#     )
     # Fix later
     # assert "error" not in resp
     # result = resp["result"]

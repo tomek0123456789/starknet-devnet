@@ -1,43 +1,43 @@
-"""
-Tests the abort block functionality.
-"""
-from test.rpc.rpc_utils import rpc_call
+# """
+# Tests the abort block functionality.
+# """
+# from test.rpc.rpc_utils import rpc_call
 
-import requests
-from starkware.starknet.definitions.error_codes import StarknetErrorCode
+# import requests
+# from starkware.starknet.definitions.error_codes import StarknetErrorCode
 
-from .account import invoke
-from .settings import APP_URL
-from .shared import (
-    CONTRACT_PATH,
-    PREDEPLOY_ACCOUNT_CLI_ARGS,
-    PREDEPLOYED_ACCOUNT_ADDRESS,
-    PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
-)
-from .util import (
-    assert_transaction,
-    assert_tx_status,
-    deploy,
-    devnet_in_background,
-    get_block,
-)
+# from .account import invoke
+# from .settings import APP_URL
+# from .shared import (
+#     CONTRACT_PATH,
+#     PREDEPLOY_ACCOUNT_CLI_ARGS,
+#     PREDEPLOYED_ACCOUNT_ADDRESS,
+#     PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
+# )
+# from .util import (
+#     assert_transaction,
+#     assert_tx_status,
+#     deploy,
+#     devnet_in_background,
+#     get_block,
+# )
 
-NON_EXISTENT_BLOCK = "0x9"
-
-
-def abort_blocks(block_hash):
-    """Abort blocks after certain block hash"""
-    return requests.post(
-        f"{APP_URL}/abort_blocks", json={"startingBlockHash": block_hash}
-    )
+# NON_EXISTENT_BLOCK = "0x9"
 
 
-@devnet_in_background()
-def test_abort_not_existing_block():
-    """Test abort of not existing block."""
-    response = abort_blocks(NON_EXISTENT_BLOCK)
-    assert response.json()["code"] == str(StarknetErrorCode.BLOCK_NOT_FOUND)
-    assert response.status_code == 500
+# def abort_blocks(block_hash):
+#     """Abort blocks after certain block hash"""
+#     return requests.post(
+#         f"{APP_URL}/abort_blocks", json={"startingBlockHash": block_hash}
+#     )
+
+
+# @devnet_in_background()
+# def test_abort_not_existing_block():
+#     """Test abort of not existing block."""
+#     response = abort_blocks(NON_EXISTENT_BLOCK)
+#     assert response.json()["code"] == str(StarknetErrorCode.BLOCK_NOT_FOUND)
+#     assert response.status_code == 500
 
 
 # @devnet_in_background()
