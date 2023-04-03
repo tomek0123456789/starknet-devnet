@@ -63,7 +63,7 @@ def test_rejection_of_deprecated_deploy():
     resp = app.test_client().post(
         "/gateway/add_transaction",
         content_type="application/json",
-        data=load_file_content("deploy.json"),
+        data=load_file_content("deprecated_deploy.json"),
     )
     assert resp.status_code == 500, resp.json
     assert resp.json == {

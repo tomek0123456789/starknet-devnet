@@ -20,6 +20,9 @@ from starkware.starknet.services.api.contract_class.contract_class import (
     CompiledClassBase,
     DeprecatedCompiledClass,
 )
+from starkware.starknet.services.api.feeder_gateway.response_objects import (
+    TransactionInfo,
+)
 
 from starknet_devnet.general_config import DEFAULT_GENERAL_CONFIG
 
@@ -214,52 +217,12 @@ def assert_transaction(
     output = run_starknet(
         ["get_transaction", "--hash", tx_hash], gateway_url=feeder_gateway_url
     )
-    transaction = json.loads(output.stdout)
-    assert_equal(transaction["status"], expected_status, transaction)
+
+    transaction: TransactionInfo = TransactionInfo.loads(output.stdout)
+    assert_equal(transaction.status.name, expected_status, transaction)
+
     if expected_signature:
-        assert_equal(transaction["transaction"]["signature"], expected_signature)
-
-    expected_keys = ["status", "transaction", "transaction_index"]
-    if expected_status == "REJECTED":
-        expected_keys.append("transaction_failure_reason")
-    else:
-        expected_keys.extend(["block_hash", "block_number"])
-
-    assert_keys(transaction, expected_keys)
-
-    tx_type = transaction["transaction"]["type"]
-
-    if tx_type == "INVOKE_FUNCTION":
-        invoke_transaction_keys = [
-            "calldata",
-            "sender_address",
-            "max_fee",
-            "signature",
-            "transaction_hash",
-            "type",
-            "nonce",
-            "version",
-        ]
-        assert_keys(transaction["transaction"], invoke_transaction_keys)
-    elif tx_type == "DEPLOY":
-        deploy_transaction_keys = [
-            "class_hash",
-            "constructor_calldata",
-            "contract_address",
-            "contract_address_salt",
-            "transaction_hash",
-            "type",
-            "version",
-        ]
-        assert_keys(transaction["transaction"], deploy_transaction_keys)
-    else:
-        raise RuntimeError(f"Unknown tx_type: {tx_type}")
-
-
-def assert_keys(dictionary, keys):
-    """Asserts that the dict has the correct keys"""
-    expected_set = set(keys)
-    assert dictionary.keys() == expected_set, f"{dictionary.keys()} != {expected_set}"
+        assert_equal(transaction.transaction.signature, expected_signature)
 
 
 def assert_transaction_not_received(tx_hash: str, feeder_gateway_url=APP_URL):

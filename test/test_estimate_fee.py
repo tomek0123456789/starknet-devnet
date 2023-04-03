@@ -32,7 +32,7 @@ from .shared import (
 )
 from .util import call, devnet_in_background, estimate_message_fee, load_file_content
 
-DEPLOY_CONTENT = load_file_content("deploy.json")
+DEPRECATED_DEPLOY_CONTENT = load_file_content("deprecated_deploy.json")
 INVOKE_CONTENT = load_file_content("invoke.json")
 
 
@@ -104,7 +104,7 @@ def test_estimate_fee_in_unknown_address():
 @devnet_in_background()
 def test_estimate_fee_with_invalid_data():
     """Call estimate fee with invalid data on body"""
-    req_dict = json.loads(DEPLOY_CONTENT)
+    req_dict = json.loads(DEPRECATED_DEPLOY_CONTENT)
     resp = estimate_fee_local(req_dict)
 
     json_error_message = resp.json()["message"]

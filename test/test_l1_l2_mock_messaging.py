@@ -24,11 +24,6 @@ from .shared import (
 )
 from .util import assert_tx_status, call, devnet_in_background, load_file_content
 
-DEPLOY_CONTENT = load_file_content("deploy.json")
-INVOKE_CONTENT = load_file_content("invoke.json")
-CALL_CONTENT = load_file_content("call.json")
-INVALID_HASH = "0x58d4d4ed7580a7a98ab608883ec9fe722424ce52c19f2f369eeea301f535914"
-INVALID_ADDRESS = "0x123"
 USER_ID = 1
 L1_CONTRACT_ADDRESS = "0xE7F1725E7734CE288F8367E1BB143E90BB3F0512"
 L2_CONTRACT_ADDRESS = (

@@ -84,6 +84,10 @@ def fixture_deploy_info() -> dict:
     """
     Deploy a contract on devnet and return deployment info dict
     """
+    declare_tx = json.loads(DECLARE_CONTENT)
+    add_transaction(declare_tx)  # TODO replace DEPLOY_CONTENT
+    raise NotImplementedError("DEBUG: replace DEPLOY_CONTENT")
+
     deploy_tx = json.loads(DEPLOY_CONTENT)
     deploy_info = add_transaction(deploy_tx)
     return {**deploy_info, **deploy_tx}
