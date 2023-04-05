@@ -12,6 +12,7 @@ from test.rpc.test_data.get_events import (
     BLOCK_FROM_0_TO_LATEST_WRONG_BLOCK_TYPE,
     GET_EVENTS_TEST_DATA,
     create_get_events_rpc,
+    create_block_from_0, BLOCK_FROM_0_TO_1_CHUNK_3_CONTINUATION_TOKEN,
 )
 from test.shared import (
     CONTRACT_PATH,
@@ -20,7 +21,7 @@ from test.shared import (
     EXPECTED_CLASS_HASH,
     EXPECTED_FEE_TOKEN_ADDRESS,
     PREDEPLOYED_ACCOUNT_ADDRESS,
-    PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
+    PREDEPLOYED_ACCOUNT_PRIVATE_KEY, PREDEPLOY_ACCOUNT_CLI_ARGS,
 )
 from test.test_account import deploy_empty_contract
 from test.test_state_update import get_class_hash_at_path
@@ -202,6 +203,59 @@ def test_get_events_wrong_blockid_type():
 
 @pytest.mark.usefixtures("run_devnet_in_background")
 @pytest.mark.parametrize(
+    "run_devnet_in_background",
+    [PREDEPLOY_ACCOUNT_CLI_ARGS],
+    indirect=True,
+)
+def test_get_events_continuation_token():
+    """
+    Test RPC get_events returning continuation token.
+    """
+    deploy_info = deploy(EVENTS_CONTRACT_PATH)
+    for i in range(3):
+        invoke(
+            calls=[(deploy_info["address"], "increase_balance", [i])],
+            account_address=PREDEPLOYED_ACCOUNT_ADDRESS,
+            private_key=PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
+        )
+    resp = rpc_call(
+        "starknet_getEvents",
+        params=create_get_events_rpc(create_block_from_0(3))["params"],
+    )
+    assert len(resp["result"]["events"]) == 3
+    assert "continuation_token" not in resp["result"]
+
+    resp = rpc_call(
+        "starknet_getEvents",
+        params=create_get_events_rpc(create_block_from_0(1))["params"],
+    )
+    assert len(resp["result"]["events"]) == 1
+    assert resp["result"]["continuation_token"] == "1"
+
+    resp = rpc_call(
+        "starknet_getEvents",
+        params=create_get_events_rpc(create_block_from_0(1, "1"))["params"],
+    )
+    assert len(resp["result"]["events"]) == 1
+    assert resp["result"]["continuation_token"] == "2"
+
+    resp = rpc_call(
+        "starknet_getEvents",
+        params=create_get_events_rpc(create_block_from_0(1, "2"))["params"],
+    )
+    assert len(resp["result"]["events"]) == 1
+    assert "continuation_token" not in resp["result"]
+
+    resp = rpc_call(
+        "starknet_getEvents",
+        params=create_get_events_rpc(BLOCK_FROM_0_TO_1_CHUNK_3_CONTINUATION_TOKEN)["params"],
+    )
+    assert len(resp["result"]["events"]) == 0
+    assert "continuation_token" not in resp["result"]
+
+
+@pytest.mark.usefixtures("run_devnet_in_background")
+@pytest.mark.parametrize(
     "run_devnet_in_background, input_data, expected_data",
     GET_EVENTS_TEST_DATA,
     indirect=True,
@@ -221,16 +275,6 @@ def test_get_events(input_data, expected_data):
     assert len(expected_data) == len(resp["result"]["events"])
     for i, data in enumerate(expected_data):
         assert resp["result"]["events"][i]["data"] == data
-
-    if "continuation_token" in input_data["params"]["filter"]:
-        expected_continuation_token = int(
-            input_data["params"]["filter"]["continuation_token"]
-        )
-        # increase continuation_token when events are not empty
-        if resp["result"]["events"]:
-            expected_continuation_token += 1
-
-        assert expected_continuation_token == int(resp["result"]["continuation_token"])
 
 
 @pytest.mark.usefixtures("devnet_with_account")

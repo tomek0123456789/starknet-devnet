@@ -1,6 +1,8 @@
 """
 RPC get events test data.
 """
+from typing import Optional
+
 from test.shared import (
     EXPECTED_FEE_TOKEN_ADDRESS,
     FEE_CHARGED_EVENT_KEY,
@@ -91,27 +93,6 @@ BLOCK_FROM_2_TO_3 = {
     "chunk_size": 10,
 }
 
-BLOCK_FROM_0_TO_LATEST_CHUNK_SIZE_1 = {
-    "from_block": {"block_number": 0},
-    "address": rpc_felt(EXPECTED_FEE_TOKEN_ADDRESS),
-    "keys": [
-        rpc_felt(FEE_CHARGED_EVENT_KEY),
-    ],
-    "to_block": "latest",
-    "chunk_size": 1,
-}
-
-BLOCK_FROM_0_TO_LATEST_CHUNK_1_CONTINUATION_TOKEN = {
-    "from_block": {"block_number": 0},
-    "to_block": "latest",
-    "address": rpc_felt(EXPECTED_FEE_TOKEN_ADDRESS),
-    "keys": [
-        rpc_felt(FEE_CHARGED_EVENT_KEY),
-    ],
-    "chunk_size": 1,
-    "continuation_token": "1",
-}
-
 BLOCK_FROM_0_TO_1_CHUNK_3_CONTINUATION_TOKEN = {
     "from_block": {"block_number": 0},
     "to_block": {"block_number": 1},
@@ -122,6 +103,22 @@ BLOCK_FROM_0_TO_1_CHUNK_3_CONTINUATION_TOKEN = {
     "chunk_size": 3,
     "continuation_token": "0",
 }
+
+
+def create_block_from_0(n: int, continuation_token: Optional[str] = None) -> dict:
+    request_body = {
+        "from_block": {"block_number": 0},
+        "address": rpc_felt(EXPECTED_FEE_TOKEN_ADDRESS),
+        "keys": [
+            rpc_felt(FEE_CHARGED_EVENT_KEY),
+        ],
+        "to_block": "latest",
+        "chunk_size": n,
+    }
+    if continuation_token:
+        request_body["continuation_token"] = continuation_token
+    return request_body
+
 
 EVENT_FEE_ADDRESS = rpc_felt(
     0xBEBE7DEC64B911AEFFECC184AFCEFA6470E3B3652A1605E42D643E1EA9093D
@@ -186,22 +183,5 @@ GET_EVENTS_TEST_DATA = [
             FEE_CHARGING_IN_BLOCK_2_EVENT,
             FEE_CHARGING_IN_BLOCK_3_EVENT,
         ],
-    ),
-    (
-        [*PREDEPLOY_ACCOUNT_CLI_ARGS],
-        create_get_events_rpc(BLOCK_FROM_0_TO_LATEST_CHUNK_SIZE_1),
-        [
-            FEE_CHARGING_IN_BLOCK_2_EVENT,
-        ],
-    ),
-    (
-        [*PREDEPLOY_ACCOUNT_CLI_ARGS],
-        create_get_events_rpc(BLOCK_FROM_0_TO_LATEST_CHUNK_1_CONTINUATION_TOKEN),
-        [FEE_CHARGING_IN_BLOCK_3_EVENT],
-    ),
-    (
-        [*PREDEPLOY_ACCOUNT_CLI_ARGS],
-        create_get_events_rpc(BLOCK_FROM_0_TO_1_CHUNK_3_CONTINUATION_TOKEN),
-        [],
     ),
 ]

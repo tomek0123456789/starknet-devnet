@@ -156,7 +156,7 @@ async def get_events(
     remaining_events_length = len(events) - start_index
 
     # Continuation_token should be increased only if events are not empty
-    if events and remaining_events_length > chunk_size:
+    if remaining_events_length > chunk_size:
         continuation_token = continuation_token + 1
         return RpcEventsResult(
             events=chunked_events, continuation_token=str(continuation_token)
