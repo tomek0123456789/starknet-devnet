@@ -7,12 +7,8 @@ from __future__ import annotations
 from test.account import declare, invoke
 from test.rpc.rpc_utils import deploy_and_invoke_storage_contract, rpc_call
 from test.rpc.test_data.get_events import (
-    BLOCK_FROM_0_TO_LATEST_MALFORMED_REQUEST,
-    BLOCK_FROM_0_TO_LATEST_MISSING_PARAMETER,
-    BLOCK_FROM_0_TO_LATEST_WRONG_BLOCK_TYPE,
-    GET_EVENTS_TEST_DATA,
-    create_get_events_rpc,
-    create_block_from_0, BLOCK_FROM_0_TO_1_CHUNK_3_CONTINUATION_TOKEN,
+    create_get_events_filter,
+    GET_EVENTS_TEST_DATA
 )
 from test.shared import (
     CONTRACT_PATH,
@@ -25,7 +21,7 @@ from test.shared import (
 )
 from test.test_account import deploy_empty_contract
 from test.test_state_update import get_class_hash_at_path
-from test.util import assert_hex_equal, assert_transaction, deploy
+from test.util import assert_hex_equal, assert_transaction, deploy, devnet_in_background
 
 import pytest
 from starkware.starknet.public.abi import get_storage_var_address
@@ -166,11 +162,11 @@ def test_get_events_malformed_request():
     """
     Test RPC get_events with malformed request.
     """
+    params = create_get_events_filter()
+    params["filter"]["chunk_size"] = "test"
     resp = rpc_call(
         "starknet_getEvents",
-        params=create_get_events_rpc(BLOCK_FROM_0_TO_LATEST_MALFORMED_REQUEST)[
-            "params"
-        ],
+        params=params,
     )
     assert resp["error"]["code"] == PredefinedRpcErrorCode.INVALID_PARAMS.value
 
@@ -182,9 +178,7 @@ def test_get_events_missing_parameter():
     """
     resp = rpc_call(
         "starknet_getEvents",
-        params=create_get_events_rpc(BLOCK_FROM_0_TO_LATEST_MISSING_PARAMETER)[
-            "params"
-        ],
+        params=create_get_events_filter(address=None)
     )
     assert resp["error"]["code"] == PredefinedRpcErrorCode.INVALID_PARAMS.value
 
@@ -194,25 +188,23 @@ def test_get_events_wrong_blockid_type():
     """
     Test RPC get_events with malformed request.
     """
+    params = create_get_events_filter()
+    params["filter"]["from_block"] = {"block_number": "0x0"}
     resp = rpc_call(
         "starknet_getEvents",
-        params=create_get_events_rpc(BLOCK_FROM_0_TO_LATEST_WRONG_BLOCK_TYPE)["params"],
+        params=params,
     )
     assert resp["error"]["code"] == PredefinedRpcErrorCode.INVALID_PARAMS.value
 
 
-@pytest.mark.usefixtures("run_devnet_in_background")
-@pytest.mark.parametrize(
-    "run_devnet_in_background",
-    [PREDEPLOY_ACCOUNT_CLI_ARGS],
-    indirect=True,
-)
+@devnet_in_background(*PREDEPLOY_ACCOUNT_CLI_ARGS)
 def test_get_events_continuation_token():
     """
     Test RPC get_events returning continuation token.
     """
     deploy_info = deploy(EVENTS_CONTRACT_PATH)
-    for i in range(3):
+    total_invokes = 3
+    for i in range(total_invokes):
         invoke(
             calls=[(deploy_info["address"], "increase_balance", [i])],
             account_address=PREDEPLOYED_ACCOUNT_ADDRESS,
@@ -220,35 +212,37 @@ def test_get_events_continuation_token():
         )
     resp = rpc_call(
         "starknet_getEvents",
-        params=create_get_events_rpc(create_block_from_0(3))["params"],
+        params=create_get_events_filter(chunk_size=total_invokes),
     )
-    assert len(resp["result"]["events"]) == 3
+    assert len(resp["result"]["events"]) == total_invokes
     assert "continuation_token" not in resp["result"]
 
     resp = rpc_call(
         "starknet_getEvents",
-        params=create_get_events_rpc(create_block_from_0(1))["params"],
+        params=create_get_events_filter(chunk_size=1),
+
     )
     assert len(resp["result"]["events"]) == 1
     assert resp["result"]["continuation_token"] == "1"
 
     resp = rpc_call(
         "starknet_getEvents",
-        params=create_get_events_rpc(create_block_from_0(1, "1"))["params"],
+        params=create_get_events_filter(chunk_size=1, continuation_token="1"),
+
     )
     assert len(resp["result"]["events"]) == 1
     assert resp["result"]["continuation_token"] == "2"
 
     resp = rpc_call(
         "starknet_getEvents",
-        params=create_get_events_rpc(create_block_from_0(1, "2"))["params"],
+        params=create_get_events_filter(chunk_size=1, continuation_token="2"),
     )
     assert len(resp["result"]["events"]) == 1
     assert "continuation_token" not in resp["result"]
 
     resp = rpc_call(
         "starknet_getEvents",
-        params=create_get_events_rpc(BLOCK_FROM_0_TO_1_CHUNK_3_CONTINUATION_TOKEN)["params"],
+        params=create_get_events_filter(from_block=0, to_block=1, chunk_size=3, continuation_token="0"),
     )
     assert len(resp["result"]["events"]) == 0
     assert "continuation_token" not in resp["result"]
@@ -271,7 +265,8 @@ def test_get_events(input_data, expected_data):
             account_address=PREDEPLOYED_ACCOUNT_ADDRESS,
             private_key=PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
         )
-    resp = rpc_call("starknet_getEvents", params=input_data["params"])
+    resp = rpc_call("starknet_getEvents", params=input_data)
+    print(resp)
     assert len(expected_data) == len(resp["result"]["events"])
     for i, data in enumerate(expected_data):
         assert resp["result"]["events"][i]["data"] == data
