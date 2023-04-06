@@ -10,7 +10,16 @@ from test.shared import (
 )
 from typing import List, Optional, Union
 
+from starkware.starknet.services.api.feeder_gateway.response_objects import (
+    BlockIdentifier,
+    BlockNumber,
+    LatestBlock,
+    PendingBlock,
+)
+
 from starknet_devnet.blueprints.rpc.utils import rpc_felt
+
+BlockHash = str
 
 
 def create_get_events_filter(
@@ -52,8 +61,8 @@ def create_get_events_filter(
 
 
 def parse_block_delimiter_parameter(
-        block_delimiter: Union[str, int]
-) -> dict:
+    block_delimiter: Union[BlockIdentifier, BlockHash]
+) -> Union[dict, LatestBlock, PendingBlock]:
     """
     Parses `from_block` and `to_block` parameters for ``create_get_events_filter`` function.
 
@@ -63,7 +72,7 @@ def parse_block_delimiter_parameter(
     """
     if block_delimiter in ("latest", "pending"):
         return block_delimiter
-    if isinstance(block_delimiter, int):
+    if isinstance(block_delimiter, BlockNumber):
         return {"block_number": block_delimiter}
     return {"block_hash": block_delimiter}
 

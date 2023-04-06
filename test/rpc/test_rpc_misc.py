@@ -19,7 +19,13 @@ from test.shared import (
 )
 from test.test_account import deploy_empty_contract
 from test.test_state_update import get_class_hash_at_path
-from test.util import assert_hex_equal, assert_transaction, deploy, devnet_in_background
+from test.util import (
+    assert_get_events_response,
+    assert_hex_equal,
+    assert_transaction,
+    deploy,
+    devnet_in_background,
+)
 
 import pytest
 from starkware.starknet.public.abi import get_storage_var_address
@@ -209,29 +215,25 @@ def test_get_events_continuation_token():
         "starknet_getEvents",
         params=create_get_events_filter(chunk_size=total_invokes),
     )
-    assert len(resp["result"]["events"]) == total_invokes
-    assert "continuation_token" not in resp["result"]
+    assert_get_events_response(resp, expected_block_length=total_invokes)
 
     resp = rpc_call(
         "starknet_getEvents",
         params=create_get_events_filter(chunk_size=1),
     )
-    assert len(resp["result"]["events"]) == 1
-    assert resp["result"]["continuation_token"] == "1"
+    assert_get_events_response(resp, expected_block_length=1, expected_token="1")
 
     resp = rpc_call(
         "starknet_getEvents",
         params=create_get_events_filter(chunk_size=1, continuation_token="1"),
     )
-    assert len(resp["result"]["events"]) == 1
-    assert resp["result"]["continuation_token"] == "2"
+    assert_get_events_response(resp, expected_block_length=1, expected_token="2")
 
     resp = rpc_call(
         "starknet_getEvents",
         params=create_get_events_filter(chunk_size=1, continuation_token="2"),
     )
-    assert len(resp["result"]["events"]) == 1
-    assert "continuation_token" not in resp["result"]
+    assert_get_events_response(resp, expected_block_length=1)
 
     resp = rpc_call(
         "starknet_getEvents",
@@ -239,8 +241,7 @@ def test_get_events_continuation_token():
             from_block=0, to_block=1, chunk_size=3, continuation_token="0"
         ),
     )
-    assert len(resp["result"]["events"]) == 0
-    assert "continuation_token" not in resp["result"]
+    assert_get_events_response(resp, expected_block_length=0)
 
 
 @pytest.mark.usefixtures("run_devnet_in_background")
@@ -261,7 +262,6 @@ def test_get_events(input_data, expected_data):
             private_key=PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
         )
     resp = rpc_call("starknet_getEvents", params=input_data)
-    print(resp)
     assert len(expected_data) == len(resp["result"]["events"])
     for i, data in enumerate(expected_data):
         assert resp["result"]["events"][i]["data"] == data
