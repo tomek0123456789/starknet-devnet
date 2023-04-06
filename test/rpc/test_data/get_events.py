@@ -1,7 +1,6 @@
 """
 RPC get events test data.
 """
-import re
 from test.shared import (
     EXPECTED_FEE_TOKEN_ADDRESS,
     FEE_CHARGED_EVENT_KEY,
@@ -35,7 +34,7 @@ def create_get_events_filter(
     :param chunk_size: Size of returned one chunk of events, defaults to 10.
     :param continuation_token: (optional) String with a continuation token.
 
-    :return: `filter` param.
+    :return: `filter` param matching the specification.
     """
     if keys is None:
         keys = [rpc_felt(FEE_CHARGED_EVENT_KEY)]
@@ -52,7 +51,16 @@ def create_get_events_filter(
     return {"filter": filter_body}
 
 
-def parse_block_delimiter_parameter(block_delimiter) -> dict:
+def parse_block_delimiter_parameter(
+        block_delimiter: Union[str, int]
+) -> dict:
+    """
+    Parses `from_block` and `to_block` parameters for ``create_get_events_filter`` function.
+
+    :param block_delimiter: `block_hash`, `block_number` or literals "pending" or "latest".
+
+    :return: Dictionary matching the specification.
+    """
     if block_delimiter in ("latest", "pending"):
         return block_delimiter
     if isinstance(block_delimiter, int):
