@@ -2,8 +2,6 @@
 RPC get events test data.
 """
 import re
-from typing import Optional, Union, List
-
 from test.shared import (
     EXPECTED_FEE_TOKEN_ADDRESS,
     FEE_CHARGED_EVENT_KEY,
@@ -11,18 +9,19 @@ from test.shared import (
     PREDEPLOY_ACCOUNT_CLI_ARGS,
     PREDEPLOYED_ACCOUNT_ADDRESS,
 )
+from typing import List, Optional, Union
 
 from starknet_devnet.blueprints.rpc.utils import rpc_felt
 
 
 def create_get_events_filter(
-        *,
-        from_block: Union[int, str] = 0,
-        to_block: Union[int, str] = "latest",
-        address: Optional[str] = rpc_felt(EXPECTED_FEE_TOKEN_ADDRESS),
-        keys: Optional[List[str]] = None,
-        chunk_size: int = 10,
-        continuation_token: Optional[str] = None
+    *,
+    from_block: Union[int, str] = 0,
+    to_block: Union[int, str] = "latest",
+    address: Optional[str] = rpc_felt(EXPECTED_FEE_TOKEN_ADDRESS),
+    keys: Optional[List[str]] = None,
+    chunk_size: int = 10,
+    continuation_token: Optional[str] = None
 ) -> dict:
     """
     Method that creates ``filter`` parameter for `get_events` RPC call.
@@ -35,7 +34,7 @@ def create_get_events_filter(
     :param keys: Names of events that are searched for in rpc felt form.
     :param chunk_size: Size of returned one chunk of events, defaults to 10.
     :param continuation_token: (optional) String with a continuation token.
-    
+
     :return: `filter` param.
     """
     if keys is None:
@@ -81,7 +80,12 @@ FEE_CHARGING_IN_BLOCK_3_EVENT = [
 GET_EVENTS_TEST_DATA = [
     (
         [*PREDEPLOY_ACCOUNT_CLI_ARGS],
-        create_get_events_filter(keys=[rpc_felt(FEE_CHARGED_EVENT_KEY), rpc_felt(INCREASE_BALANCE_CALLED_EVENT_KEY)]),
+        create_get_events_filter(
+            keys=[
+                rpc_felt(FEE_CHARGED_EVENT_KEY),
+                rpc_felt(INCREASE_BALANCE_CALLED_EVENT_KEY),
+            ]
+        ),
         [
             FEE_CHARGING_IN_BLOCK_2_EVENT,
             FEE_CHARGING_IN_BLOCK_3_EVENT,

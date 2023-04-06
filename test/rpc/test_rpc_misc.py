@@ -6,18 +6,16 @@ from __future__ import annotations
 
 from test.account import declare, invoke
 from test.rpc.rpc_utils import deploy_and_invoke_storage_contract, rpc_call
-from test.rpc.test_data.get_events import (
-    create_get_events_filter,
-    GET_EVENTS_TEST_DATA
-)
+from test.rpc.test_data.get_events import GET_EVENTS_TEST_DATA, create_get_events_filter
 from test.shared import (
     CONTRACT_PATH,
     DEPLOYER_CONTRACT_PATH,
     EVENTS_CONTRACT_PATH,
     EXPECTED_CLASS_HASH,
     EXPECTED_FEE_TOKEN_ADDRESS,
+    PREDEPLOY_ACCOUNT_CLI_ARGS,
     PREDEPLOYED_ACCOUNT_ADDRESS,
-    PREDEPLOYED_ACCOUNT_PRIVATE_KEY, PREDEPLOY_ACCOUNT_CLI_ARGS,
+    PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
 )
 from test.test_account import deploy_empty_contract
 from test.test_state_update import get_class_hash_at_path
@@ -176,10 +174,7 @@ def test_get_events_missing_parameter():
     """
     Test RPC get_events with malformed request.
     """
-    resp = rpc_call(
-        "starknet_getEvents",
-        params=create_get_events_filter(address=None)
-    )
+    resp = rpc_call("starknet_getEvents", params=create_get_events_filter(address=None))
     assert resp["error"]["code"] == PredefinedRpcErrorCode.INVALID_PARAMS.value
 
 
@@ -220,7 +215,6 @@ def test_get_events_continuation_token():
     resp = rpc_call(
         "starknet_getEvents",
         params=create_get_events_filter(chunk_size=1),
-
     )
     assert len(resp["result"]["events"]) == 1
     assert resp["result"]["continuation_token"] == "1"
@@ -228,7 +222,6 @@ def test_get_events_continuation_token():
     resp = rpc_call(
         "starknet_getEvents",
         params=create_get_events_filter(chunk_size=1, continuation_token="1"),
-
     )
     assert len(resp["result"]["events"]) == 1
     assert resp["result"]["continuation_token"] == "2"
@@ -242,7 +235,9 @@ def test_get_events_continuation_token():
 
     resp = rpc_call(
         "starknet_getEvents",
-        params=create_get_events_filter(from_block=0, to_block=1, chunk_size=3, continuation_token="0"),
+        params=create_get_events_filter(
+            from_block=0, to_block=1, chunk_size=3, continuation_token="0"
+        ),
     )
     assert len(resp["result"]["events"]) == 0
     assert "continuation_token" not in resp["result"]
