@@ -180,7 +180,9 @@ def test_get_events_missing_parameter():
     """
     Test RPC get_events with malformed request.
     """
-    resp = rpc_call("starknet_getEvents", params=create_get_events_filter(address=None))
+    params = create_get_events_filter()
+    del params["filter"]["address"]
+    resp = rpc_call("starknet_getEvents", params=params)
     assert resp["error"]["code"] == PredefinedRpcErrorCode.INVALID_PARAMS.value
 
 

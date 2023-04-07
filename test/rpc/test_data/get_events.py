@@ -17,16 +17,15 @@ from starkware.starknet.services.api.feeder_gateway.response_objects import (
     PendingBlock,
 )
 
+from starknet_devnet.blueprints.rpc.structures.types import BlockHash
 from starknet_devnet.blueprints.rpc.utils import rpc_felt
-
-BlockHash = str
 
 
 def create_get_events_filter(
     *,
     from_block: Union[int, str] = 0,
     to_block: Union[int, str] = "latest",
-    address: Optional[str] = rpc_felt(EXPECTED_FEE_TOKEN_ADDRESS),
+    address: str = rpc_felt(EXPECTED_FEE_TOKEN_ADDRESS),
     keys: Optional[List[str]] = None,
     chunk_size: int = 10,
     continuation_token: Optional[str] = None
@@ -49,12 +48,11 @@ def create_get_events_filter(
         keys = [rpc_felt(FEE_CHARGED_EVENT_KEY)]
     filter_body = {
         "from_block": parse_block_delimiter_parameter(from_block),
+        "address": address,
         "keys": keys,
         "to_block": parse_block_delimiter_parameter(to_block),
         "chunk_size": chunk_size,
     }
-    if address is not None:
-        filter_body["address"] = address
     if continuation_token is not None:
         filter_body["continuation_token"] = continuation_token
     return {"filter": filter_body}
