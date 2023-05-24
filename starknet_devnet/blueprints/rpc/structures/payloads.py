@@ -58,8 +58,9 @@ from starknet_devnet.blueprints.rpc.structures.types import (
 from starknet_devnet.blueprints.rpc.utils import rpc_felt, rpc_root
 from starknet_devnet.constants import (
     DEPRECATED_RPC_DECLARE_TX_VERSION,
+    ESTIMATE_FEE_SHIFT,
     LEGACY_RPC_TX_VERSION,
-    SUPPORTED_RPC_DECLARE_TX_VERSION,
+    SUPPORTED_RPC_DECLARE_TX_VERSION, ESTIMATE_FEE_SHIFT,
 )
 from starknet_devnet.state import state
 
@@ -497,9 +498,16 @@ def make_declare(
     declare_transaction: RpcBroadcastedDeclareTxn,
 ) -> Union[Declare, DeprecatedDeclare]:
     """Convert RpcBroadcastedDeclareTxn to Declare or DeprecatedDeclare"""
-    if int(declare_transaction["version"], 0) == SUPPORTED_RPC_DECLARE_TX_VERSION:
+    version = int(declare_transaction["version"], 0)
+    if version in (
+        SUPPORTED_RPC_DECLARE_TX_VERSION,
+        SUPPORTED_RPC_DECLARE_TX_VERSION + ESTIMATE_FEE_SHIFT,
+    ):
         return make_declare_v2(declare_transaction)
-    if int(declare_transaction["version"], 0) == DEPRECATED_RPC_DECLARE_TX_VERSION:
+    if version in (
+        DEPRECATED_RPC_DECLARE_TX_VERSION,
+        DEPRECATED_RPC_DECLARE_TX_VERSION + ESTIMATE_FEE_SHIFT,
+    ):
         return make_declare_v1(declare_transaction)
 
     raise RpcError(
