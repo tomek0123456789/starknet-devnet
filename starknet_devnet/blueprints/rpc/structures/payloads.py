@@ -7,6 +7,7 @@ from __future__ import annotations
 from typing import Callable, Dict, List, Optional, Union
 
 from marshmallow.exceptions import MarshmallowError
+from starkware.starknet.definitions.constants import QUERY_VERSION_BASE
 from starkware.starknet.definitions.general_config import StarknetGeneralConfig
 from starkware.starknet.public.abi import AbiEntryType
 from starkware.starknet.services.api.contract_class.contract_class import (
@@ -58,9 +59,8 @@ from starknet_devnet.blueprints.rpc.structures.types import (
 from starknet_devnet.blueprints.rpc.utils import rpc_felt, rpc_root
 from starknet_devnet.constants import (
     DEPRECATED_RPC_DECLARE_TX_VERSION,
-    ESTIMATE_FEE_SHIFT,
     LEGACY_RPC_TX_VERSION,
-    SUPPORTED_RPC_DECLARE_TX_VERSION, ESTIMATE_FEE_SHIFT,
+    SUPPORTED_RPC_DECLARE_TX_VERSION,
 )
 from starknet_devnet.state import state
 
@@ -501,12 +501,12 @@ def make_declare(
     version = int(declare_transaction["version"], 0)
     if version in (
         SUPPORTED_RPC_DECLARE_TX_VERSION,
-        SUPPORTED_RPC_DECLARE_TX_VERSION + ESTIMATE_FEE_SHIFT,
+        SUPPORTED_RPC_DECLARE_TX_VERSION + QUERY_VERSION_BASE,
     ):
         return make_declare_v2(declare_transaction)
     if version in (
         DEPRECATED_RPC_DECLARE_TX_VERSION,
-        DEPRECATED_RPC_DECLARE_TX_VERSION + ESTIMATE_FEE_SHIFT,
+        DEPRECATED_RPC_DECLARE_TX_VERSION + QUERY_VERSION_BASE,
     ):
         return make_declare_v1(declare_transaction)
 
