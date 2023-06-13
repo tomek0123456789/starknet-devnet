@@ -7,7 +7,7 @@ RPC payload structures
 from __future__ import annotations
 
 from enum import Enum, auto
-from typing import Callable, Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Union, cast
 
 from marshmallow.exceptions import MarshmallowError
 from starkware.starknet.definitions.constants import QUERY_VERSION_BASE
@@ -226,6 +226,11 @@ class RpcDeclareTransaction(RpcTransactionCommon):
     sender_address: Address
 
 
+class RpcDeclareV2Transaction(RpcDeclareTransaction):
+
+    compiled_class_hash: Felt
+
+
 class RpcDeployTransaction(TypedDict):
     """TypedDict for rpc deploy transaction"""
 
@@ -320,7 +325,7 @@ def rpc_declare_transaction(transaction: DeclareSpecificInfo) -> RpcDeclareTrans
     """
     Convert gateway declare transaction to rpc format
     """
-    txn: RpcDeclareTransaction = {
+    txn = {
         "class_hash": rpc_felt(transaction.class_hash),
         "sender_address": rpc_felt(transaction.sender_address),
         "transaction_hash": rpc_felt(transaction.transaction_hash),
@@ -330,7 +335,10 @@ def rpc_declare_transaction(transaction: DeclareSpecificInfo) -> RpcDeclareTrans
         "nonce": rpc_felt(transaction.nonce),
         "type": rpc_txn_type(transaction.tx_type.name),
     }
-    return txn
+    if transaction.compiled_class_hash is not None:
+        txn["compiled_class_hash"] = rpc_felt(transaction.compiled_class_hash)
+        return cast(RpcDeclareV2Transaction, txn)
+    return cast(RpcDeclareTransaction, txn)
 
 
 def rpc_deploy_transaction(transaction: DeploySpecificInfo) -> RpcDeployTransaction:
