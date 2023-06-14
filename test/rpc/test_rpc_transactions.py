@@ -173,7 +173,7 @@ def test_get_transaction_by_hash_declare():
     assert transaction == {
         "transaction_hash": rpc_felt(transaction_hash),
         "max_fee": rpc_felt(block_tx["max_fee"]),
-        "version": hex(SUPPORTED_RPC_TX_VERSION),
+        "version": hex(DEPRECATED_RPC_DECLARE_TX_VERSION),
         "signature": signature,
         "nonce": rpc_felt(0),
         "type": rpc_txn_type(block_tx["type"]),
@@ -198,10 +198,10 @@ def test_get_transaction_by_hash_declare_v2():
     assert_declare_v2_accepted(declaration_resp)
 
     declare_info = declaration_resp.json()
-    block = get_block_with_transaction(declare_info["tx_hash"])
+    transaction_hash: str = declare_info["transaction_hash"]
+    block = get_block_with_transaction(transaction_hash)
     assert len(block["transactions"]) == 1
     block_tx = block["transactions"][0]
-    transaction_hash: str = declare_info["tx_hash"]
     signature: Signature = [rpc_felt(sig) for sig in block_tx["signature"]]
 
     resp = rpc_call(
@@ -213,7 +213,7 @@ def test_get_transaction_by_hash_declare_v2():
     assert transaction == {
         "transaction_hash": rpc_felt(transaction_hash),
         "max_fee": rpc_felt(block_tx["max_fee"]),
-        "version": hex(SUPPORTED_RPC_TX_VERSION),
+        "version": hex(SUPPORTED_RPC_DECLARE_TX_VERSION),
         "signature": signature,
         "nonce": rpc_felt(0),
         "type": rpc_txn_type(block_tx["type"]),
