@@ -336,7 +336,7 @@ def rpc_declare_transaction(transaction: DeclareSpecificInfo) -> RpcDeclareTrans
         "nonce": rpc_felt(transaction.nonce),
         "type": rpc_txn_type(transaction.tx_type.name),
     }
-    if transaction.compiled_class_hash is not None:
+    if transaction.version == 2:
         txn: RpcDeclareV2Transaction = {
             "compiled_class_hash": rpc_felt(transaction.compiled_class_hash),
             **common_data,

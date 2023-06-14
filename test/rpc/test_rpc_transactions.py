@@ -9,6 +9,7 @@ from test.account import (
     declare,
     declare_and_deploy_with_chargeable,
     get_nonce,
+    send_declare_v2,
 )
 from test.rpc.conftest import prepare_deploy_account_tx, rpc_deploy_account_from_gateway
 from test.rpc.rpc_utils import (
@@ -28,7 +29,7 @@ from test.shared import (
     STARKNET_CLI_ACCOUNT_ABI_PATH,
     SUPPORTED_RPC_TX_VERSION,
 )
-from test.test_declare_v2 import load_cairo1_contract
+from test.test_declare_v2 import assert_declare_v2_accepted, load_cairo1_contract
 from test.util import assert_tx_status, call, load_contract_class, mint, send_tx
 from typing import List
 
@@ -178,6 +179,46 @@ def test_get_transaction_by_hash_declare():
         "type": rpc_txn_type(block_tx["type"]),
         "sender_address": rpc_felt(PREDEPLOYED_ACCOUNT_ADDRESS),
         "class_hash": rpc_felt(block_tx["class_hash"]),
+    }
+
+
+@pytest.mark.usefixtures("devnet_with_account")
+def test_get_transaction_by_hash_declare_v2():
+    """
+    Get transaction by hash
+    """
+    contract_class, _, compiled_class_hash = load_cairo1_contract()
+
+    declaration_resp = send_declare_v2(
+        contract_class=contract_class,
+        compiled_class_hash=compiled_class_hash,
+        sender_address=PREDEPLOYED_ACCOUNT_ADDRESS,
+        sender_key=PREDEPLOYED_ACCOUNT_PRIVATE_KEY,
+    )
+    assert_declare_v2_accepted(declaration_resp)
+
+    declare_info = declaration_resp.json()
+    block = get_block_with_transaction(declare_info["tx_hash"])
+    block_tx = block["transactions"][0]
+    transaction_hash: str = declare_info["tx_hash"]
+    signature: Signature = [rpc_felt(sig) for sig in block_tx["signature"]]
+
+    resp = rpc_call(
+        "starknet_getTransactionByHash",
+        params={"transaction_hash": rpc_felt(transaction_hash)},
+    )
+    transaction = resp["result"]
+
+    assert transaction == {
+        "transaction_hash": rpc_felt(transaction_hash),
+        "max_fee": rpc_felt(block_tx["max_fee"]),
+        "version": hex(SUPPORTED_RPC_TX_VERSION),
+        "signature": signature,
+        "nonce": rpc_felt(0),
+        "type": rpc_txn_type(block_tx["type"]),
+        "sender_address": rpc_felt(PREDEPLOYED_ACCOUNT_ADDRESS),
+        "class_hash": rpc_felt(block_tx["class_hash"]),
+        "compiled_class_hash": rpc_felt(block_tx["compiled_class_hash"]),
     }
 
 
