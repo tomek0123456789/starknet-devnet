@@ -199,6 +199,7 @@ def test_get_transaction_by_hash_declare_v2():
 
     declare_info = declaration_resp.json()
     block = get_block_with_transaction(declare_info["tx_hash"])
+    assert len(block["transactions"]) == 1
     block_tx = block["transactions"][0]
     transaction_hash: str = declare_info["tx_hash"]
     signature: Signature = [rpc_felt(sig) for sig in block_tx["signature"]]

@@ -207,6 +207,9 @@ class RpcInvokeTransactionV1(RpcTransactionCommon):
     calldata: List[Felt]
 
 
+RpcInvokeTransaction = Union[RpcInvokeTransactionV0, RpcInvokeTransactionV1]
+
+
 class RpcL1HandlerTransaction(TypedDict):
     """TypedDict for rpc L1 -> L2 message transaction"""
 
@@ -219,17 +222,22 @@ class RpcL1HandlerTransaction(TypedDict):
     nonce: Felt
 
 
-class RpcDeclareTransaction(RpcTransactionCommon):
-    """TypedDict for rpc declare transaction"""
+class RpcDeclareV1Transaction(RpcTransactionCommon):
+    """TypedDict for rpc declare transaction version 1"""
 
     class_hash: Felt
     sender_address: Address
 
 
-class RpcDeclareV2Transaction(RpcDeclareTransaction):
+class RpcDeclareV2Transaction(RpcTransactionCommon):
     """TypedDict for rpc declare transaction version 2"""
 
+    class_hash: Felt
+    sender_address: Address
     compiled_class_hash: Felt
+
+
+RpcDeclareTransaction = Union[RpcDeclareV1Transaction, RpcDeclareV2Transaction]
 
 
 class RpcDeployTransaction(TypedDict):
@@ -252,8 +260,7 @@ class RpcDeployAccountTransaction(RpcTransactionCommon):
 
 
 RpcTransaction = Union[
-    RpcInvokeTransactionV0,
-    RpcInvokeTransactionV1,
+    RpcInvokeTransaction,
     RpcL1HandlerTransaction,
     RpcDeclareTransaction,
     RpcDeployTransaction,
@@ -294,7 +301,7 @@ def make_call_function(function_call: RpcFunctionCall) -> CallFunction:
 
 def rpc_invoke_transaction(
     transaction: InvokeSpecificInfo,
-) -> Union[RpcInvokeTransactionV0, RpcInvokeTransactionV1]:
+) -> RpcInvokeTransaction:
     """
     Convert gateway invoke transaction to rpc format
     """
@@ -336,13 +343,13 @@ def rpc_declare_transaction(transaction: DeclareSpecificInfo) -> RpcDeclareTrans
         "nonce": rpc_felt(transaction.nonce),
         "type": rpc_txn_type(transaction.tx_type.name),
     }
-    if transaction.version == 2:
+    if transaction.version == SUPPORTED_RPC_DECLARE_TX_VERSION:
         txn: RpcDeclareV2Transaction = {
             "compiled_class_hash": rpc_felt(transaction.compiled_class_hash),
             **common_data,
         }
     else:
-        txn: RpcDeclareTransaction = {**common_data}
+        txn: RpcDeclareV1Transaction = {**common_data}
     return txn
 
 
