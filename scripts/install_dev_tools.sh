@@ -23,20 +23,26 @@ fi
 
 # setup cairo1 compiler
 if [ -z "$CAIRO_1_COMPILER_MANIFEST" ]; then
-    mkdir cairo-compiler
-    git clone git@github.com:starkware-libs/cairo.git cairo-compiler \
+    COMPILER_DIR="cairo-compiler"
+    mkdir -p "$COMPILER_DIR"
+    git clone git@github.com:starkware-libs/cairo.git "$COMPILER_DIR" \
         --branch v1.1.0 \
         --single-branch
-    CAIRO_1_COMPILER_MANIFEST="cairo-compiler/Cargo.toml"
+    echo "Downloaded compiler to subdirectory $COMPILER_DIR"
+    CAIRO_1_COMPILER_MANIFEST="$COMPILER_DIR/Cargo.toml"
 
     if [ -n "$CIRCLE_BRANCH" ]; then
         # needed by further testing steps
         echo "export CAIRO_1_COMPILER_MANIFEST=$CAIRO_1_COMPILER_MANIFEST" >>"$BASH_ENV"
         echo "source ~/.cargo/env" >>"$BASH_ENV"
+    else
+        # this is executed if a developer is locally running this script
+        echo "If you did not 'source' this script, you can manually set the\
+ CAIRO_1_COMPILER_MANIFEST variable to $CAIRO_1_COMPILER_MANIFEST"
     fi
 fi
 
-echo "Using Cairo compiler at $CAIRO_1_COMPILER_MANIFEST"
+echo "Checking Cairo compiler at $CAIRO_1_COMPILER_MANIFEST"
 cargo build \
     --bin starknet-compile \
     --bin starknet-sierra-compile \

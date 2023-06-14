@@ -220,7 +220,7 @@ async def estimate_fee(request: List[RpcBroadcastedTxn], block_id: BlockId) -> l
 @validate_schema("simulateTransaction")
 async def simulate_transaction(
     block_id: BlockId,
-    transaction: List[RpcTransaction],
+    transactions: List[RpcTransaction],
     simulation_flags: List[SimulationFlag],
 ) -> list:
     """
@@ -228,7 +228,7 @@ async def simulate_transaction(
     SKIP_EXECUTE SimulationFlag is not supported.
     """
     await assert_block_id_is_valid(block_id)
-    transactions = list(map(make_transaction, transaction))
+    transactions = list(map(make_transaction, transactions))
     skip_validate = SimulationFlag.SKIP_VALIDATE.name in simulation_flags
     skip_execute = SimulationFlag.SKIP_EXECUTE.name in simulation_flags
     simulated_transactions = []

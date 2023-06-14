@@ -6,6 +6,8 @@ sidebar_position: 1
 
 Installing the package adds the `starknet-devnet` command.
 
+<!-- Developer note: the following section should be a copy-paste of `starknet-devnet --help` -->
+
 ```text
 usage: starknet-devnet [-h] [-v] [--host HOST] [--port PORT] [--load-path LOAD_PATH] [--dump-path DUMP_PATH] [--dump-on DUMP_ON]
                        [--lite-mode] [--blocks-on-demand] [--accounts ACCOUNTS] [--initial-balance INITIAL_BALANCE] [--seed SEED]
@@ -59,6 +61,8 @@ optional arguments:
   --sierra-compiler-path SIERRA_COMPILER_PATH
                         Specify the path to the binary executable of starknet-sierra-compile
 ```
+
+<!-- Developer note: the previous section should be a copy-paste of `starknet-devnet --help` -->
 
 You can run `starknet-devnet` in a separate shell, or you can run it in background with `starknet-devnet &`.
 Check that it's alive by running the following (address and port my vary if you specified a different one with `--host` or `--port`):

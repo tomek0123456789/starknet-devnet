@@ -12,6 +12,12 @@ To use an existing Cairo 1 compiler repository, set the environment variable `CA
 $ ./scripts/install_dev_tools.sh
 ```
 
+If you locally run this script, it does not set the `CAIRO_1_COMPILER_MANIFEST` in your environment. You can set it manually, or run
+
+```bash
+$ source ./scripts/install_dev_tools.sh
+```
+
 ## Development - Run
 
 ```text
@@ -53,6 +59,12 @@ $ poetry run pytest -s -v test/ # for more verbose output
 $ poetry run pytest test/<TEST_FILE> # for a single file
 
 $ poetry run pytest test/<TEST_FILE>::<TEST_CASE> # for a single test case
+```
+
+Some of the tests require a locally present Cairo 1 compiler, set the environment `CAIRO_1_COMPILER_MANIFEST` to the path of your compiler's Cargo.toml; e.g.:
+
+```bash
+$ CAIRO_1_COMPILER_MANIFEST=cairo-compiler/Cargo.toml poetry run pytest
 ```
 
 :::info
